@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX BOT PANEL</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+padding:20px;
+}
+
+.card{
+background:#0f172a;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+.glow-btn{
+background:#22c55e;
+border:none;
+padding:10px 18px;
+margin:5px;
+border-radius:8px;
+color:white;
+cursor:pointer;
+}
+
+textarea{
+width:100%;
+height:260px;
+background:#020617;
+color:#22c55e;
+padding:15px;
+border-radius:10px;
+border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<h2>🤖 APX PREMIUM BOT PANEL</h2>
+
+<!-- PAIRS -->
+<div class="card">
+
+<h3>Select Pair</h3>
+
+<button class="glow-btn" onclick="setPair('USDBDT-OTC')">BDT</button>
+<button class="glow-btn" onclick="setPair('USDINR-OTC')">INR</button>
+<button class="glow-btn" onclick="setPair('USDPKR-OTC')">PKR</button>
+<button class="glow-btn" onclick="setPair('USDBRL-OTC')">BRL</button>
+<button class="glow-btn" onclick="setPair('USDMXN-OTC')">MXN</button>
+<button class="glow-btn" onclick="setPair('USDARS-OTC')">ARS</button>
+<button class="glow-btn" onclick="setPair('USDEGP-OTC')">EGP</button>
+<button class="glow-btn" onclick="setPair('USDCOP-OTC')">COP</button>
+
+</div>
+
+<!-- SIGNAL -->
+<div class="card">
+
+<h3>Create Signal</h3>
+
+Direction:
+<select id="dir">
+<option>CALL</option>
+<option>PUT</option>
+</select>
+
+<button class="glow-btn" onclick="makeSignal()">Create Signal</button>
+<button class="glow-btn" onclick="sendSignal()">Send Telegram</button>
+
+<textarea id="signalBox"></textarea>
+
+</div>
+
+<!-- RESULT -->
+<div class="card">
+
+<h3>Result Control</h3>
+
+<button class="glow-btn" onclick="sendResult('WIN')">WIN</button>
+<button class="glow-btn" onclick="sendResult('LOSS')">LOSS</button>
+<button class="glow-btn" onclick="sendResult('MTG 1 WIN')">MTG 1</button>
+
+</div>
+
+<!-- SUMMARY -->
+<div class="card">
+
+<h3>Summary</h3>
+
+<button class="glow-btn" onclick="sendSummary()">Send Summary</button>
+
+</div>
+
+<script>
+
+let pair="USDBDT-OTC";
+
+let win=0;
+let loss=0;
+
+function setPair(p){
+pair=p;
+}
+
+function timeNow(){
+let d=new Date();
+d.setHours(d.getUTCHours()+6);
+return d.toTimeString().slice(0,5);
+}
+
+function makeSignal(){
+
+let dir=document.getElementById("dir").value;
+
+let msg=`
+◆️---▪️ APX PREMIUM LIVE SIGNAL ▪️---◆
+
+👑 ➾ : 🎩 »  ${pair}
+👑 ➾ : ⏰ » ${timeNow()} (GMT+6)
+👑 ➾ : 💸 » ${dir}
+👑 ➾ : 🥌 » 1 Minute
+👑 ➾ : 🔥 » 99.98%
+
+━━━━━━━━━━━━━━━━━━
+██████████████████
+█ 🔆 SIGNAL TYPE : 1 STEP MTG 🔆 █
+██████████████████
+
+💡 TRADING INSTRUCTIONS:
+🔸 Risk: 1–2% per trade
+🔸 Follow market conditions
+🔸 Avoid gap periods
+
+━━━━━━━━━━━━━━━━━━
+🧨 Powered By APX Elite Premium
+`;
+
+signalBox.value=msg;
+
+}
+
+async function sendSignal(){
+
+await fetch("https://signal.mkapi009.workers.dev/send",{
+method:"POST",
+body: signalBox.value
+});
+
+}
+
+async function sendResult(type){
+
+if(type=="WIN") win++;
+if(type=="LOSS") loss++;
+
+let msg=`
+📊 APX RESULT UPDATE
+
+${type} ${pair} ${timeNow()}
+
+Powered By APX Elite Premium
+`;
+
+await fetch("https://signal.mkapi009.workers.dev/send",{
+method:"POST",
+body: msg
+});
+
+}
+
+async function sendSummary(){
+
+let total=win+loss;
+let acc= total>0 ? (win/total*100).toFixed(2) : 0;
+
+let msg=`
+📊 APX SUMMARY
+
+WIN : ${win}
+LOSS : ${loss}
+ACCURACY : ${acc}%
+
+Powered By APX Elite Premium
+`;
+
+await fetch("https://signal.mkapi009.workers.dev/send",{
+method:"POST",
+body: msg
+});
+
+}
+
+</script>
+
+</body>
+</html>
