@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX ULTRA API</title>
+
+<style>
+body{
+background:#031521;
+color:#e6f7ff;
+font-family:Arial;
+text-align:center;
+padding:20px;
+}
+
+h1{
+color:#00ffc8;
+}
+
+.card{
+background:#082032;
+padding:20px;
+border-radius:15px;
+max-width:420px;
+margin:auto;
+}
+
+select,input,button{
+width:90%;
+padding:12px;
+margin:8px;
+border-radius:8px;
+border:none;
+}
+
+select,input{
+background:#031521;
+color:#00ffc8;
+border:1px solid #00ffc8;
+}
+
+button{
+background:#00ffc8;
+color:#002c24;
+font-weight:bold;
+}
+
+#out{
+margin-top:20px;
+background:#021019;
+padding:15px;
+border-radius:10px;
+white-space:pre-line;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🔥 APX ULTRA API 🔥</h1>
+<p>UTC+6 Candle Engine</p>
+
+<div class="card">
+
+<select id="category"></select>
+
+<select id="pairMode">
+<option value="multi">Multi Pair</option>
+<option value="single">Single Pair</option>
+</select>
+
+<select id="pair"></select>
+
+<input type="time" id="start" value="01:00">
+<input type="time" id="end" value="05:00">
+
+<button onclick="generate()">Generate Signals</button>
+<button onclick="sendTG()">Send Telegram</button>
+
+<div id="out">Waiting...</div>
+
+</div>
+
+<script>
+
+// ===== CONFIG =====
+const API="https://candle.mkapi009.workers.dev";
+const TG="https://signal.mkapi009.workers.dev/send";
+
+// ===== PAIRS =====
+const DATA={
+OTC:[
+"USDPKR-OTC","USDINR-OTC","USDBRL-OTC",
+"USDMXN-OTC","USDBDT-OTC","USDARS-OTC","USDEGP-OTC"
+],
+CRYPTO:[
+"ETHUSD-OTC","BNBUSD-OTC"
+],
+STOCK:[
+"MSFT","INTC","PFE","AXP"
+]
+};
+
+let SIGNALS=[];
+
+// ===== LOAD CATEGORY =====
+const catEl=document.getElementById("category");
+Object.keys(DATA).forEach(k=>{
+let o=document.createElement("option");
+o.value=k;
+o.text=k;
+catEl.add(o);
+});
+
+// ===== LOAD PAIRS =====
+function loadPairs(){
+let cat=catEl.value;
+let list=DATA[cat];
+
+pair.innerHTML="";
+list.forEach(p=>{
+let o=document.createElement("option");
+o.text=p;
+pair.add(o);
+});
+}
+
+catEl.onchange=loadPairs;
+loadPairs();
+
+// ===== GET CANDLES =====
+async function getCandles(pair){
+try{
+let r=await fetch(API+`/?pair=${pair}&count=40`);
+let j=await r.json();
+if(!j.candles) return null;
+return j.candles.reverse();
+}catch{
+return null;
+}
+}
+
+// ===== API DIRECTION =====
+function direction(c){
+
+let last=c.slice(-4);
+let up=0,down=0;
+
+for(let i=1;i<last.length;i++){
+if(last[i].close>last[i-1].close) up++;
+if(last[i].close<last[i-1].close) down++;
+}
+
+if(up>=down) return "CALL";
+return "PUT";
+}
+
+// ===== RANDOM TIME =====
+function randTime(s,e){
+let a=new Date("2020-01-01 "+s);
+let b=new Date("2020-01-01 "+e);
+let t=new Date(a.getTime()+Math.random()*(b-a));
+return t.toTimeString().slice(0,5);
+}
+
+// ===== GENERATE =====
+async function generate(){
+
+SIGNALS=[];
+out.innerText="Generating Signals...";
+
+let cat=catEl.value;
+let mode=document.getElementById("pairMode").value;
+let start=startInput();
+let end=endInput();
+
+let list = mode=="single" ? [pair.value] : DATA[cat];
+
+for(let p of list){
+
+let c=await getCandles(p);
+if(!c) continue;
+
+let dir=direction(c);
+let time=randTime(start,end);
+
+SIGNALS.push(`⧉ M1;${p};${time} ➣ ${dir}`);
+
+if(SIGNALS.length>=20) break;
+}
+
+show();
+}
+
+// ===== HELPERS =====
+function startInput(){ return document.getElementById("start").value; }
+function endInput(){ return document.getElementById("end").value; }
+
+// ===== SHOW =====
+function show(){
+
+if(SIGNALS.length==0){
+out.innerText="No API Data";
+return;
+}
+
+out.innerText=
+`APX ULTRA API SIGNALS
+
+${SIGNALS.join("\n")}
+
+UTC+6 | M1 | 1 Step MTG
+
+RULES
+Trade Only Signal Time
+1 Step MTG Only
+Avoid News
+Stop After 2 Loss
+
+Powered By APX Elite`;
+}
+
+// ===== TELEGRAM =====
+async function sendTG(){
+
+if(SIGNALS.length==0){
+alert("Generate First");
+return;
+}
+
+await fetch(TG,{
+method:"POST",
+body:SIGNALS.join("\n")
+});
+
+alert("Sent To Telegram");
+}
+
+</script>
+
+</body>
+</html>
