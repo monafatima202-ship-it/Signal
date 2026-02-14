@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA Dashboard</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+text-align:center;
+overflow-x:hidden;
+}
+
+/* Animated AI Background */
+body::before{
+content:"";
+position:fixed;
+width:200%;
+height:200%;
+background:
+radial-gradient(circle at 30% 30%,#00ffd520,transparent 40%),
+radial-gradient(circle at 70% 70%,#00ffd520,transparent 40%);
+animation:bgMove 25s linear infinite;
+z-index:-1;
+}
+
+@keyframes bgMove{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+
+/* Market Bar */
+.marketBar{
+background:#00ffd5;
+color:#000;
+padding:10px;
+font-weight:bold;
+}
+
+/* Title */
+h1{
+color:#00ffd5;
+text-shadow:0 0 20px #00ffd5;
+}
+
+/* Clock */
+.clock{
+font-size:22px;
+color:#00ffd5;
+text-shadow:0 0 15px #00ffd5;
+margin-bottom:20px;
+}
+
+/* APX Engine Circle */
+.apxCircle{
+width:240px;
+height:240px;
+margin:30px auto;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:42px;
+font-weight:bold;
+color:#00ffd5;
+background:radial-gradient(circle,#021a17,#000);
+box-shadow:
+0 0 40px #00ffd5,
+0 0 80px #00ffd5 inset;
+position:relative;
+overflow:hidden;
+}
+
+/* Rotating Ring */
+.apxCircle::before{
+content:"";
+position:absolute;
+width:320px;
+height:320px;
+border-radius:50%;
+background:conic-gradient(
+transparent,
+#00ffd5,
+transparent,
+#00ffd5,
+transparent
+);
+animation:spin 7s linear infinite;
+}
+
+@keyframes spin{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+
+/* Flash Pulse */
+.apxCircle::after{
+content:"";
+position:absolute;
+width:100%;
+height:100%;
+border-radius:50%;
+box-shadow:0 0 60px #00ffd5;
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+0%{opacity:.4;}
+50%{opacity:1;}
+100%{opacity:.4;}
+}
+
+/* Buttons */
+.btn{
+width:85%;
+max-width:340px;
+margin:15px auto;
+padding:18px;
+border:none;
+border-radius:18px;
+font-size:18px;
+font-weight:bold;
+color:white;
+background:linear-gradient(45deg,#00ffd5,#008f7a);
+box-shadow:0 0 20px #00ffd5;
+cursor:pointer;
+transition:.3s;
+}
+
+.btn:hover{
+transform:scale(1.05);
+box-shadow:0 0 40px #00ffd5;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="marketBar">
+🟢 MARKET OPEN • APX AI ENGINE ACTIVE
+</div>
+
+<h1>APX ULTRA PREMIUM</h1>
+
+<div class="clock" id="clock">Loading...</div>
+
+<div class="apxCircle">APX</div>
+
+<button class="btn" onclick="goFeature()">📊 FEATURE SIGNALS</button>
+
+<button class="btn" onclick="goBot()">🤖 BOT CONTROL</button>
+
+<button class="btn" onclick="logout()">🚪 LOGOUT</button>
+
+<script>
+
+/* UTC+6 CLOCK */
+setInterval(()=>{
+let n=new Date();
+n.setHours(n.getUTCHours()+6);
+document.getElementById("clock").innerText=
+"UTC+6 • "+n.toLocaleTimeString();
+},1000);
+
+/* NAVIGATION */
+function goFeature(){
+window.location="feature.html";
+}
+
+function goBot(){
+window.location="bot.html";
+}
+
+function logout(){
+window.location="index.html";
+}
+
+</script>
+
+</body>
+</html>
