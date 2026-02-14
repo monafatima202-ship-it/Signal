@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA Dashboard</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+text-align:center;
+}
+
+/* Background Glow */
+body::before{
+content:"";
+position:fixed;
+width:100%;
+height:100%;
+background:radial-gradient(circle,#00ffc3 0%, transparent 60%);
+opacity:0.08;
+animation:moveBg 8s infinite alternate;
+z-index:-1;
+}
+
+@keyframes moveBg{
+0%{transform:scale(1);}
+100%{transform:scale(1.3);}
+}
+
+/* Header */
+.header{
+padding:20px;
+font-size:26px;
+color:#22c55e;
+font-weight:bold;
+letter-spacing:2px;
+}
+
+/* Clock */
+.clock{
+font-size:20px;
+margin-bottom:10px;
+color:#00ffc3;
+animation:clockGlow 2s infinite alternate;
+}
+
+@keyframes clockGlow{
+0%{text-shadow:0 0 5px #00ffc3;}
+100%{text-shadow:0 0 20px #00ffc3;}
+}
+
+/* Engine Circle */
+.engine{
+margin-top:20px;
+width:220px;
+height:220px;
+margin-left:auto;
+margin-right:auto;
+border-radius:50%;
+background:radial-gradient(circle,#022c22,#020617);
+box-shadow:0 0 40px #00ffc3;
+display:flex;
+align-items:center;
+justify-content:center;
+animation:rotateRing 12s linear infinite;
+}
+
+.engine span{
+font-size:28px;
+font-weight:bold;
+color:#00ffc3;
+}
+
+@keyframes rotateRing{
+0%{box-shadow:0 0 20px #00ffc3;}
+50%{box-shadow:0 0 60px #00ffc3;}
+100%{box-shadow:0 0 20px #00ffc3;}
+}
+
+/* Buttons */
+.btn{
+margin:15px auto;
+width:85%;
+padding:15px;
+border-radius:12px;
+border:none;
+font-size:18px;
+background:#022c22;
+color:white;
+box-shadow:0 0 15px #00ffc3;
+cursor:pointer;
+transition:0.3s;
+}
+
+.btn:hover{
+box-shadow:0 0 30px #00ffc3;
+}
+
+/* Status */
+.status{
+margin-top:20px;
+font-size:18px;
+color:#22c55e;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="header">APX ULTRA PREMIUM</div>
+<div class="clock" id="clock"></div>
+
+<div class="engine">
+<span>APX</span>
+</div>
+
+<button class="btn" onclick="startBot()">🚀 Start Bot</button>
+<button class="btn" onclick="stopBot()">⛔ Stop Bot</button>
+<button class="btn" onclick="sendTest()">📩 Test Telegram</button>
+
+<div class="status" id="botStatus">Checking...</div>
+
+<script>
+
+const WORKER="https://signal.mkapi009.workers.dev";
+
+/* CLOCK UTC+6 */
+setInterval(()=>{
+let now=new Date();
+now.setHours(now.getUTCHours()+6);
+document.getElementById("clock").innerText=
+"UTC+6 • "+now.toLocaleTimeString();
+},1000);
+
+/* BOT START */
+async function startBot(){
+await fetch(WORKER+"/bot/start");
+document.getElementById("botStatus").innerText="Bot Running";
+}
+
+/* BOT STOP */
+async function stopBot(){
+await fetch(WORKER+"/bot/stop");
+document.getElementById("botStatus").innerText="Bot Stopped";
+}
+
+/* BOT STATUS AUTO */
+async function checkBot(){
+let r=await fetch(WORKER+"/bot/status");
+let d=await r.json();
+document.getElementById("botStatus").innerText=
+d.running ? "Bot Running" : "Bot Stopped";
+}
+setInterval(checkBot,3000);
+
+/* TEST TELEGRAM */
+async function sendTest(){
+await fetch(WORKER+"/send",{
+method:"POST",
+body:"🔥 APX Test Signal Working"
+});
+}
+
+</script>
+
+</body>
+</html>
