@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA GOD MODE</title>
+
+<style>
+
+body{
+background:#020617;
+color:white;
+font-family:Arial;
+text-align:center;
+margin:0;
+}
+
+.god{
+font-size:34px;
+color:#00ffd5;
+text-shadow:0 0 25px #00ffd5;
+margin-top:30px;
+}
+
+.clock{
+font-size:20px;
+color:#00ffd5;
+margin-bottom:20px;
+}
+
+.btn{
+display:block;
+width:85%;
+margin:12px auto;
+padding:15px;
+border-radius:15px;
+border:none;
+font-size:18px;
+background:#00ffd5;
+color:black;
+box-shadow:0 0 20px #00ffd5;
+}
+
+.out{
+margin:20px;
+padding:15px;
+background:#07122b;
+border-radius:15px;
+box-shadow:0 0 20px #00ffd5;
+white-space:pre-line;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="god">🔥 APX ULTRA GOD MODE 🔥</div>
+<div class="clock" id="clock">UTC+6</div>
+
+<select id="category" class="btn">
+<option>OTC</option>
+<option>CRYPTO</option>
+<option>STOCK</option>
+</select>
+
+<button class="btn" onclick="generate()">🚀 Generate GOD Signals</button>
+<button class="btn" onclick="autoGenerate()">⚡ Auto 20 Signals</button>
+<button class="btn" onclick="sendTG()">📩 Send Telegram</button>
+
+<div class="out" id="out">Signals will appear here</div>
+
+<script>
+
+// ===== CLOCK =====
+setInterval(()=>{
+let n=new Date();
+n.setHours(n.getUTCHours()+6);
+clock.innerText="UTC+6 • "+n.toLocaleTimeString();
+},1000);
+
+
+// ===== CONFIG =====
+
+const API="https://candle.mkapi009.workers.dev/";
+const TG="https://signal.mkapi009.workers.dev/send";
+
+const OTC=[
+"USDPKR-OTC","USDINR-OTC","USDBRL-OTC",
+"USDMXN-OTC","USDBDT-OTC","USDARS-OTC",
+"USDEGP-OTC","USDCOP-OTC"
+];
+
+const CRYPTO=[
+"BTCUSD-OTC","ETHUSD-OTC","BNBUSD-OTC"
+];
+
+const STOCK=[
+"MSFT-OTC","PFE-OTC","AXP-OTC","INTC-OTC"
+];
+
+let SIGNALS=[];
+
+
+// ===== GET PAIRS =====
+function pairs(){
+let c=category.value;
+if(c==="CRYPTO") return CRYPTO;
+if(c==="STOCK") return STOCK;
+return OTC;
+}
+
+
+// ===== RANDOM TIME =====
+function rTime(){
+let d=new Date();
+d.setMinutes(d.getMinutes()+Math.floor(Math.random()*50));
+return d.toTimeString().slice(0,5);
+}
+
+
+// ===== TREND =====
+function trend(c){
+let up=0,down=0;
+for(let i=0;i<3;i++){
+if(c[i].close>c[i].open) up++;
+else down++;
+}
+if(up>=2) return "CALL";
+if(down>=2) return "PUT";
+return null;
+}
+
+
+// ===== POWER =====
+function power(c){
+let body=Math.abs(c[0].close-c[0].open);
+let range=Math.abs(c[0].high-c[0].low);
+if(range===0) return 0;
+return body/range;
+}
+
+
+// ===== GENERATE =====
+async function generate(){
+
+SIGNALS=[];
+let ps=pairs();
+
+let tries=0;
+
+while(SIGNALS.length<15 && tries<50){
+
+tries++;
+
+let p=ps[Math.floor(Math.random()*ps.length)];
+
+try{
+
+let r=await fetch(API+"?pair="+p+"&count=6");
+let d=await r.json();
+
+if(!d.candles) continue;
+
+let t=trend(d.candles);
+if(!t) continue;
+
+let pow=power(d.candles);
+if(pow<0.35) continue;
+
+SIGNALS.push(
+"⧉ M1;"+p+";"+rTime()+" ➣ "+t
+);
+
+}catch(e){}
+
+}
+
+show();
+
+}
+
+
+// ===== AUTO =====
+async function autoGenerate(){
+
+SIGNALS=[];
+let ps=pairs();
+
+for(let i=0;i<20;i++){
+
+let p=ps[Math.floor(Math.random()*ps.length)];
+
+try{
+
+let r=await fetch(API+"?pair="+p+"&count=6");
+let d=await r.json();
+
+if(!d.candles) continue;
+
+let t=trend(d.candles);
+if(!t) continue;
+
+SIGNALS.push(
+"⧉ M1;"+p+";"+rTime()+" ➣ "+t
+);
+
+}catch(e){}
+
+}
+
+show();
+
+}
+
+
+// ===== SHOW WITH RULES =====
+function show(){
+
+if(SIGNALS.length===0){
+out.innerText="No Signals";
+return;
+}
+
+out.innerText=
+"🔥 APX ULTRA GOD MODE 🔥\n\n"+
+SIGNALS.join("\n")+
+
+"\n\n===================="+
+"\nUTC+6 Timezone"+
+"\nExpiry: 1 Minute"+
+"\nMoney Management: 1 Step MTG"+
+"\n===================="+
+
+"\n\nTRADING RULES:"+
+"\n1️⃣ Trade only at signal time"+
+"\n2️⃣ Use 1 Step Martingale only"+
+"\n3️⃣ Avoid high impact news"+
+"\n4️⃣ Stop after 2 losses"+
+"\n5️⃣ Trade with trend direction"+
+
+"\n\n👑 Powered by APX Elite Premium";
+
+}
+
+
+// ===== TELEGRAM SEND WITH RULES =====
+async function sendTG(){
+
+if(SIGNALS.length===0){
+alert("Generate First");
+return;
+}
+
+let msg=
+"🔥 APX ULTRA GOD MODE 🔥\n\n"+
+SIGNALS.join("\n")+
+
+"\n\n===================="+
+"\nUTC+6 Timezone"+
+"\nExpiry: 1 Minute"+
+"\nMoney Management: 1 Step MTG"+
+"\n===================="+
+
+"\n\nTRADING RULES:"+
+"\n1️⃣ Trade only at signal time"+
+"\n2️⃣ Use 1 Step Martingale only"+
+"\n3️⃣ Avoid high impact news"+
+"\n4️⃣ Stop after 2 losses"+
+"\n5️⃣ Trade with trend direction"+
+
+"\n\n👑 Powered by APX Elite Premium";
+
+await fetch(TG,{
+method:"POST",
+body:msg
+});
+
+alert("Sent To Telegram");
+
+}
+
+</script>
+
+</body>
+</html>
