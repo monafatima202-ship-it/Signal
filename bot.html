@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX PREMIUM BOT</title>
+
+<style>
+body{
+background:#020617;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.header{
+font-size:26px;
+color:#00ffc3;
+margin-top:15px;
+}
+
+.clock{
+color:#22c55e;
+margin-bottom:20px;
+}
+
+select,input{
+width:90%;
+padding:12px;
+margin:8px;
+border:none;
+border-radius:8px;
+background:#020617;
+color:white;
+}
+
+button{
+width:90%;
+padding:15px;
+margin:10px;
+border:none;
+border-radius:10px;
+background:#022c22;
+color:white;
+box-shadow:0 0 15px #00ffc3;
+font-size:16px;
+}
+
+.resultBtn{
+width:28%;
+display:inline-block;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🚧 APX PREMIUM BOT 🚧</div>
+<div class="clock" id="clock"></div>
+
+<select id="category">
+<option value="otc">OTC</option>
+<option value="stock">Stock</option>
+<option value="crypto">Crypto</option>
+</select>
+
+<select id="pair"></select>
+
+<input id="time" placeholder="Time Auto or 23:25">
+
+<button onclick="apiSignal()">📡 API SIGNAL</button>
+<button onclick="sendSignal()">🚀 SEND SIGNAL</button>
+
+<hr>
+
+<button class="resultBtn" onclick="result('win')">✅ WIN</button>
+<button class="resultBtn" onclick="result('loss')">❌ LOSS</button>
+<button class="resultBtn" onclick="result('mtg')">🔥 MTG1</button>
+
+<hr>
+
+<button onclick="summary()">📊 SEND SUMMARY</button>
+<button onclick="reset()">♻ RESET STATS</button>
+
+<script>
+
+const W="https://signal.mkapi009.workers.dev";
+
+// CLOCK
+setInterval(()=>{
+let n=new Date();
+n.setHours(n.getUTCHours()+6);
+clock.innerText="UTC+6 "+n.toLocaleTimeString();
+},1000);
+
+// PAIRS
+const OTC=[
+"USDPKR-OTC","USDINR-OTC","USDBRL-OTC",
+"USDMXN-OTC","USDBDT-OTC","USDEGP-OTC",
+"USDNGN-OTC","USDCOP-OTC"
+];
+
+const STOCK=[
+"MSFT-OTC","PFE-OTC","AXP-OTC","INTL-OTC"
+];
+
+const CRYPTO=[
+"ETHUSD-OTC","BNBUSD-OTC","SOLUSD-OTC",
+"XRPUSD-OTC","LTCUSD-OTC","DOGEUSD-OTC"
+];
+
+function loadPairs(){
+let cat=category.value;
+let arr=cat=="otc"?OTC:cat=="stock"?STOCK:CRYPTO;
+pair.innerHTML=arr.map(p=>`<option>${p}</option>`).join("");
+}
+category.onchange=loadPairs;
+loadPairs();
+
+// API SIGNAL
+async function apiSignal(){
+
+let p=pair.value;
+
+let r=await fetch(
+`https://candle.mkapi009.workers.dev/?pair=${p}&count=3`
+);
+
+let d=await r.json();
+
+let dir="PUT";
+
+if(d.candles && d.candles[0] && d.candles[1]){
+if(d.candles[0].close>d.candles[1].close) dir="CALL";
+}
+
+window.lastDir=dir;
+
+alert("Signal Ready: "+dir);
+
+}
+
+// SEND SIGNAL
+async function sendSignal(){
+
+let t=time.value;
+
+if(!t){
+let n=new Date();
+n.setHours(n.getUTCHours()+6);
+t=n.toTimeString().slice(0,5);
+}
+
+await fetch(W+"/signal",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+pair:pair.value,
+time:t,
+dir:window.lastDir||"CALL"
+})
+});
+
+}
+
+// RESULT
+async function result(type){
+
+await fetch(W+"/result",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+type:type,
+pair:pair.value,
+time:time.value||"--"
+})
+});
+
+}
+
+// SUMMARY
+async function summary(){
+await fetch(W+"/summary");
+}
+
+// RESET
+async function reset(){
+await fetch(W+"/reset");
+alert("Stats Reset");
+}
+
+</script>
+
+</body>
+</html>
