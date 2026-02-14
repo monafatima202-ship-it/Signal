@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX Admin Panel</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+width:240px;
+height:100vh;
+background:#020617;
+border-right:1px solid #0f172a;
+padding-top:20px;
+}
+
+.sidebar h2{
+text-align:center;
+color:#22c55e;
+}
+
+.sidebar button{
+width:90%;
+margin:10px;
+padding:12px;
+background:#0f172a;
+border:none;
+color:white;
+border-radius:8px;
+cursor:pointer;
+}
+
+.sidebar button:hover{
+background:#22c55e;
+}
+
+/* MAIN */
+.main{
+flex:1;
+padding:20px;
+}
+
+/* CARDS */
+.card{
+background:#0f172a;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+/* PAIR BUTTON */
+.pair-btn{
+background:#020617;
+border:1px solid #22c55e;
+padding:10px;
+margin:5px;
+border-radius:8px;
+color:white;
+cursor:pointer;
+}
+
+/* BOT BUTTON */
+.bot-btn{
+background:#22c55e;
+border:none;
+padding:12px;
+margin:5px;
+border-radius:8px;
+color:white;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+<h2>APX AI</h2>
+
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('feature')">Feature Signals</button>
+<button onclick="showPage('bot')">Bot Control</button>
+
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+
+<div class="card">
+<h3>AI Market Movement</h3>
+<div id="trend">Loading...</div>
+<div id="confidence"></div>
+</div>
+
+<div class="card">
+<h3>Live Clock UTC+6</h3>
+<div id="clock"></div>
+</div>
+
+</div>
+
+<!-- FEATURE -->
+<div id="feature" style="display:none">
+
+<div class="card">
+<h3>Feature Signals</h3>
+
+<button class="pair-btn" onclick="loadSignal('USDPKR-OTC')">USDPKR</button>
+<button class="pair-btn" onclick="loadSignal('USDINR-OTC')">USDINR</button>
+<button class="pair-btn" onclick="loadSignal('USDEGP-OTC')">USDEGP</button>
+<button class="pair-btn" onclick="loadSignal('USDBRL-OTC')">USDBRL</button>
+
+<div id="signalResult"></div>
+
+</div>
+
+</div>
+
+<!-- BOT -->
+<div id="bot" style="display:none">
+
+<div class="card">
+<h3>Bot Control</h3>
+
+<button class="bot-btn" onclick="startBot()">Start Bot</button>
+<button class="bot-btn" onclick="stopBot()">Stop Bot</button>
+
+<div id="botStatus"></div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* PAGE SWITCH */
+function showPage(p){
+
+document.getElementById("dashboard").style.display="none";
+document.getElementById("feature").style.display="none";
+document.getElementById("bot").style.display="none";
+
+document.getElementById(p).style.display="block";
+
+}
+
+/* CLOCK */
+setInterval(()=>{
+let now=new Date();
+now.setHours(now.getUTCHours()+6);
+document.getElementById("clock").innerText=
+now.toLocaleTimeString();
+},1000);
+
+/* AI MOVEMENT */
+async function ai(){
+
+let r=await fetch("https://candle.mkapi009.workers.dev/?pair=USDPKR-OTC&count=30");
+let d=await r.json();
+
+let closes=d.candles.map(x=>x.close);
+let diff=closes[closes.length-1]-closes[0];
+
+let trend= diff>0 ? "BULLISH" : "BEARISH";
+let conf=Math.min(Math.abs(diff)*500,95);
+
+document.getElementById("trend").innerText="Trend: "+trend;
+document.getElementById("confidence").innerText="Confidence: "+conf.toFixed(0)+"%";
+
+}
+setInterval(ai,4000);
+
+/* FEATURE SIGNAL */
+async function loadSignal(pair){
+
+let r=await fetch("https://signal.mkapi009.workers.dev/signal?pair="+pair);
+let d=await r.json();
+
+document.getElementById("signalResult").innerText=
+"M1 "+pair+" "+d.time+" "+d.signal;
+
+}
+
+/* BOT CONTROL */
+async function startBot(){
+
+await fetch("https://signal.mkapi009.workers.dev/bot/start");
+
+document.getElementById("botStatus").innerText="Bot Started";
+
+}
+
+async function stopBot(){
+
+await fetch("https://signal.mkapi009.workers.dev/bot/stop");
+
+document.getElementById("botStatus").innerText="Bot Stopped";
+
+}
+
+</script>
+
+</body>
+</html>
