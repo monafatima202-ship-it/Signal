@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>APX ULTRA API</title>
+
+<style>
+body{
+background:#041522;
+color:#e6f7ff;
+font-family:Arial;
+text-align:center;
+padding:20px;
+}
+
+h1{
+color:#00e0b8;
+}
+
+.card{
+background:#082032;
+padding:20px;
+border-radius:15px;
+max-width:420px;
+margin:auto;
+}
+
+select,input,button{
+width:90%;
+padding:12px;
+margin:8px;
+border-radius:8px;
+border:none;
+}
+
+select,input{
+background:#041522;
+color:#00e0b8;
+border:1px solid #00e0b8;
+}
+
+button{
+background:#00e0b8;
+color:#002b25;
+font-weight:bold;
+}
+
+#out{
+margin-top:20px;
+background:#02101a;
+padding:15px;
+border-radius:10px;
+white-space:pre-line;
+}
+</style>
+</head>
+
+<body>
+
+<h1>🔥 APX ULTRA API 🔥</h1>
+<p>UTC+6 Premium Engine</p>
+
+<div class="card">
+
+<select id="cat">
+<option value="OTC">OTC</option>
+<option value="CRYPTO">CRYPTO</option>
+<option value="STOCK">STOCK</option>
+</select>
+
+<input type="time" id="start" value="01:00">
+<input type="time" id="end" value="05:00">
+
+<button onclick="generate()">Generate Signals</button>
+<button onclick="sendTG()">Send Telegram</button>
+
+<div id="out">Waiting...</div>
+
+</div>
+
+<script>
+
+const API="https://candle.mkapi009.workers.dev";
+const TG="https://signal.mkapi009.workers.dev/send";
+
+const OTC=["USDPKR-OTC","USDINR-OTC","USDBRL-OTC","USDMXN-OTC","USDBDT-OTC","USDARS-OTC","USDEGP-OTC"];
+const CRYPTO=["ETHUSD-OTC","BNBUSD-OTC"];
+const STOCK=["MSFT","INTC","PFE","AXP"];
+
+let SIGNALS=[];
+
+// ===== GET CANDLES =====
+async function getCandles(pair){
+try{
+let r=await fetch(API+`/?pair=${pair}&count=50`);
+let j=await r.json();
+if(!j.candles) return null;
+return j.candles.reverse();
+}catch{
+return null;
+}
+}
+
+// ===== API DIRECTION ENGINE =====
+function apiDirection(c){
+
+let last=c.slice(-5);
+
+let up=0,down=0;
+
+for(let i=1;i<last.length;i++){
+if(last[i].close>last[i-1].close) up++;
+if(last[i].close<last[i-1].close) down++;
+}
+
+if(up>down) return "CALL";
+if(down>up) return "PUT";
+
+// fallback → last candle direction
+return last[last.length-1].close>last[last.length-1].open ? "CALL":"PUT";
+}
+
+// ===== RANDOM TIME RANGE =====
+function randTime(s,e){
+let a=new Date("2020-01-01 "+s);
+let b=new Date("2020-01-01 "+e);
+let t=new Date(a.getTime()+Math.random()*(b-a));
+return t.toTimeString().slice(0,5);
+}
+
+// ===== GENERATE =====
+async function generate(){
+
+SIGNALS=[];
+out.innerText="Generating API Signals...";
+
+let cat=catSelect();
+let start=startInput();
+let end=endInput();
+
+let pairs=cat;
+
+for(let p of pairs){
+
+let candles=await getCandles(p);
+if(!candles) continue;
+
+let dir=apiDirection(candles);
+
+let time=randTime(start,end);
+
+SIGNALS.push(`⧉ M1;${p};${time} ➣ ${dir}`);
+
+if(SIGNALS.length>=20) break;
+}
+
+show();
+}
+
+// ===== HELPERS =====
+function catSelect(){
+let v=document.getElementById("cat").value;
+if(v=="CRYPTO") return CRYPTO;
+if(v=="STOCK") return STOCK;
+return OTC;
+}
+function startInput(){ return document.getElementById("start").value; }
+function endInput(){ return document.getElementById("end").value; }
+
+// ===== SHOW =====
+function show(){
+
+out.innerText=
+`APX ULTRA API SIGNALS
+
+${SIGNALS.join("\n")}
+
+UTC+6 | M1 | 1 Step MTG
+
+TRADING RULES
+Trade only signal time
+1 Step MTG Only
+Avoid News
+Stop After 2 Loss
+
+Powered by APX Elite`;
+}
+
+// ===== TELEGRAM =====
+async function sendTG(){
+
+if(SIGNALS.length==0){
+alert("Generate First");
+return;
+}
+
+await fetch(TG,{
+method:"POST",
+body:SIGNALS.join("\n")
+});
+
+alert("Sent To Telegram");
+}
+
+</script>
+
+</body>
+</html>
