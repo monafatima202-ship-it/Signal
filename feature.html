@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX Ultra Feature Signals</title>
+
+<style>
+body{
+background:#020617;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.header{
+font-size:24px;
+color:#00ffc3;
+margin-top:20px;
+}
+
+select,input{
+width:90%;
+padding:12px;
+margin:10px;
+background:#020617;
+color:white;
+border:none;
+border-radius:8px;
+}
+
+button{
+width:90%;
+padding:15px;
+background:#022c22;
+color:white;
+border:none;
+border-radius:10px;
+box-shadow:0 0 15px #00ffc3;
+margin:10px;
+font-size:16px;
+}
+
+#signals{
+white-space:pre-line;
+padding:15px;
+margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+APX ULTRA PREMIUM<br>
+UTC+6 TIMEZONE
+</div>
+
+<h3>Category</h3>
+<select id="category">
+<option value="otc">OTC</option>
+<option value="stock">Stock</option>
+<option value="crypto">Crypto</option>
+</select>
+
+<h3>Mode</h3>
+<select id="mode">
+<option value="single">Single Pair</option>
+<option value="multi">Multiple Pairs</option>
+</select>
+
+<h3>Start Time</h3>
+<input type="time" id="start">
+
+<h3>End Time</h3>
+<input type="time" id="end">
+
+<button onclick="generate()">Generate Real API Signals</button>
+
+<div id="signals"></div>
+
+<script>
+
+const otc=[
+"USDBRL-OTC","USDNGN-OTC","USDINR-OTC",
+"USDPKR-OTC","USDMXN-OTC","USDBDT-OTC",
+"USDEGP-OTC","USDCOP-OTC"
+];
+
+const stock=[
+"MSFT-OTC","PFE-OTC","AXP-OTC","INTL-OTC"
+];
+
+const crypto=[
+"ETHUSD-OTC","BNBUSD-OTC"
+];
+
+function getPairs(cat){
+if(cat=="otc") return otc;
+if(cat=="stock") return stock;
+return crypto;
+}
+
+async function getSignal(pair){
+
+try{
+
+let res=await fetch(
+`https://candle.mkapi009.workers.dev/?pair=${pair}&count=5`
+);
+
+let data=await res.json();
+
+let c=data.candles;
+
+if(!c || c.length<2) return null;
+
+let last=c[0];
+let prev=c[1];
+
+let dir="PUT";
+
+if(last.close>prev.close) dir="CALL";
+
+if(last.win_prob && last.win_prob>0.78){
+dir= last.signal || dir;
+}
+
+return dir;
+
+}catch{
+return null;
+}
+
+}
+
+async function generate(){
+
+let cat=document.getElementById("category").value;
+let mode=document.getElementById("mode").value;
+let start=document.getElementById("start").value;
+let end=document.getElementById("end").value;
+
+if(!start||!end){
+alert("Select Time");
+return;
+}
+
+let pairs=getPairs(cat);
+
+let [sh,sm]=start.split(":").map(Number);
+let [eh,em]=end.split(":").map(Number);
+
+let now=new Date();
+now.setHours(sh);
+now.setMinutes(sm);
+
+let endTime=new Date();
+endTime.setHours(eh);
+endTime.setMinutes(em);
+
+let out="APX ULTRA PREMIUM\nUTC+6 TIMEZONE\n\n";
+
+let count=0;
+
+while(now<endTime && count<20){
+
+let pair= mode=="single"
+? pairs[0]
+: pairs[Math.floor(Math.random()*pairs.length)];
+
+let dir=await getSignal(pair);
+
+if(dir){
+
+let t=new Date(now);
+let utc=t.getUTCHours()+6;
+t.setHours(utc);
+
+let time=t.toTimeString().slice(0,5);
+
+out+=`⧉ ${pair} ➣ ${dir}\n`;
+out+=`M1;${pair};${time};${dir}\n\n`;
+
+count++;
+
+}
+
+now.setMinutes(now.getMinutes()+2);
+
+}
+
+out+="TRADING RULES:\n";
+out+="Trade only at signal time\n";
+out+="Use 1 Step MTG only\n";
+out+="Avoid High News\n\n";
+out+="Powered by APX Elite Premium";
+
+document.getElementById("signals").innerText=out;
+
+}
+
+</script>
+
+</body>
+</html>
