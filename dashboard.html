@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX ULTRA AI DASHBOARD</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial;
+background:#020617;
+color:white;
+display:flex;
+}
+
+/* SIDEBAR */
+.sidebar{
+width:240px;
+height:100vh;
+background:#020617;
+border-right:1px solid #0f172a;
+padding-top:20px;
+}
+
+.sidebar h2{
+text-align:center;
+color:#22c55e;
+}
+
+.sidebar button{
+width:90%;
+margin:10px;
+padding:12px;
+background:#0f172a;
+border:none;
+color:white;
+border-radius:8px;
+cursor:pointer;
+}
+
+/* MAIN */
+.main{
+flex:1;
+padding:20px;
+overflow:auto;
+}
+
+/* CARD */
+.card{
+background:#0f172a;
+padding:20px;
+border-radius:15px;
+margin-bottom:20px;
+}
+
+/* GRID */
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:20px;
+}
+
+/* GLOW BUTTON */
+.glow-btn{
+background:#22c55e;
+border:none;
+padding:12px 20px;
+border-radius:10px;
+color:white;
+font-weight:bold;
+cursor:pointer;
+margin:5px;
+
+box-shadow:
+0 0 5px #22c55e,
+0 0 15px #22c55e,
+0 0 30px #22c55e;
+
+transition:0.3s;
+}
+
+.glow-btn:hover{
+box-shadow:
+0 0 10px #22c55e,
+0 0 30px #22c55e,
+0 0 60px #22c55e;
+transform:scale(1.05);
+}
+
+select,input{
+padding:10px;
+margin:5px;
+border-radius:8px;
+border:none;
+background:#020617;
+color:white;
+}
+
+textarea{
+width:100%;
+height:260px;
+background:#020617;
+color:#22c55e;
+padding:15px;
+border-radius:10px;
+border:none;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<h2>APX ULTRA</h2>
+<button onclick="show('dash')">Dashboard</button>
+<button onclick="show('feature')">Feature Signals</button>
+<button onclick="show('bot')">Bot Control</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="dash">
+
+<div class="grid">
+
+<div class="card">
+<h3>AI Market Status</h3>
+<div id="trend">Loading...</div>
+<div id="conf"></div>
+<div id="vol"></div>
+<div id="momentum"></div>
+</div>
+
+<div class="card">
+<h3>Clock UTC+6</h3>
+<div id="clock"></div>
+</div>
+
+</div>
+
+</div>
+
+<!-- FEATURE -->
+<div id="feature" style="display:none">
+
+<div class="card">
+
+<h3>Feature Signal Generator</h3>
+
+Category:
+<select id="cat">
+<option value="OTC">OTC</option>
+<option value="CRYPTO">CRYPTO</option>
+<option value="STOCK">STOCK</option>
+</select>
+
+Start Time:
+<input type="time" id="start">
+
+Signal Count:
+<input type="number" id="count" value="15">
+
+<br>
+
+<button class="glow-btn" onclick="generate()">Generate Signals</button>
+<button class="glow-btn" onclick="sendTG()">Send Telegram</button>
+
+<br><br>
+
+<textarea id="output"></textarea>
+
+</div>
+
+</div>
+
+<!-- BOT -->
+<div id="bot" style="display:none">
+
+<div class="card">
+
+<h3>Bot Control</h3>
+
+<button class="glow-btn" onclick="startBot()">Start Bot</button>
+<button class="glow-btn" onclick="stopBot()">Stop Bot</button>
+
+<div id="botStatus"></div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+/* PAGE SWITCH */
+function show(p){
+["dash","feature","bot"].forEach(x=>{
+document.getElementById(x).style.display="none";
+});
+document.getElementById(p).style.display="block";
+}
+
+/* CLOCK */
+setInterval(()=>{
+let n=new Date();
+n.setHours(n.getUTCHours()+6);
+clock.innerText=n.toLocaleTimeString();
+},1000);
+
+/* AI MOVEMENT */
+async function ai(){
+
+let r=await fetch("https://candle.mkapi009.workers.dev/?pair=USDPKR-OTC&count=50");
+let d=await r.json();
+
+let c=d.candles.map(x=>x.close);
+
+let diff=c[c.length-1]-c[0];
+
+let vol=0;
+for(let i=1;i<c.length;i++){
+vol+=Math.abs(c[i]-c[i-1]);
+}
+vol=vol/c.length;
+
+let momentum=c[c.length-1]-c[c.length-5];
+
+trend.innerText=diff>0?"BULLISH":"BEARISH";
+conf.innerText="Confidence "+Math.min(Math.abs(diff)*400,95).toFixed(0)+"%";
+vol.innerText="Volatility "+vol.toFixed(5);
+momentum.innerText="Momentum "+momentum.toFixed(5);
+
+}
+setInterval(ai,4000);
+
+/* ARRAYS */
+const OTC=["USDINR-OTC","USDPKR-OTC","USDBRL-OTC","USDMXN-OTC","USDBDT-OTC","USDARS-OTC","USDEGP-OTC","USDCOP-OTC"];
+const CRYPTO=["BTCUSD-OTC","ETHUSD-OTC","BNBUSD-OTC"];
+const STOCK=["MSFT-OTC","PFE-OTC","AXP-OTC","INTC-OTC"];
+
+/* SIGNAL DIRECTION */
+async function getDirection(pair){
+
+let r=await fetch("https://candle.mkapi009.workers.dev/?pair="+pair+"&count=40");
+let d=await r.json();
+
+let c=d.candles.map(x=>x.close);
+
+let emaFast=c.slice(-5).reduce((a,b)=>a+b)/5;
+let emaSlow=c.slice(-15).reduce((a,b)=>a+b)/15;
+
+let momentum=c[c.length-1]-c[c.length-4];
+
+if(emaFast>emaSlow && momentum>0) return "CALL";
+if(emaFast<emaSlow && momentum<0) return "PUT";
+
+return Math.random()>0.5?"CALL":"PUT";
+}
+
+/* GENERATE SIGNALS */
+async function generate(){
+
+let catVal=cat.value;
+let pairs= catVal=="OTC"?OTC:catVal=="CRYPTO"?CRYPTO:STOCK;
+
+let t=start.value.split(":");
+let now=new Date();
+now.setHours(t[0]);
+now.setMinutes(t[1]);
+
+let txt="🔥 APX ULTRA PREMIUM 🔥\n\n";
+
+for(let i=0;i<count.value;i++){
+
+let pair=pairs[Math.floor(Math.random()*pairs.length)];
+
+let dir=await getDirection(pair);
+
+now.setMinutes(now.getMinutes()+Math.floor(Math.random()*4)+1);
+
+let time=now.toTimeString().slice(0,5);
+
+txt+=`⧉ ${pair} ${time} ➣ ${dir}\n`;
+
+}
+
+txt+=`
+====================
+UTC+6 Timezone
+Expiry: 1 Minute
+Money Management: 1 Step MTG
+====================
+
+TRADE RULES:
+1. Trade only at exact signal time
+2. Expiry strictly 1 Minute
+3. Martingale only 1 step
+4. Avoid high impact news
+5. Stop after 2 losses
+`;
+
+output.value=txt;
+
+}
+
+/* TELEGRAM SEND */
+async function sendTG(){
+
+await fetch("https://signal.mkapi009.workers.dev/send",{
+method:"POST",
+body: output.value
+});
+
+alert("Signals Sent To Telegram");
+
+}
+
+/* BOT CONTROL */
+async function startBot(){
+await fetch("https://signal.mkapi009.workers.dev/bot/start");
+botStatus.innerText="Bot Started";
+}
+
+async function stopBot(){
+await fetch("https://signal.mkapi009.workers.dev/bot/stop");
+botStatus.innerText="Bot Stopped";
+}
+
+</script>
+
+</body>
+</html>
