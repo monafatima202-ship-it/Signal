@@ -60,32 +60,32 @@ select { width:100%; padding:12px; background:#020617; color:white; border:1px s
 
 <script>
 
-const PROXIES=[
-"https://api.allorigins.win/raw?url=",
-"https://corsproxy.io/?"
-];
-
-const API="https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=200&pair=";
+// ===== YOUR API =====
+const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
+// ===== PAIRS =====
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
-STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc","INTSTK_otc","FBSTK_otc"],
-CRYPTO:["BTCUSD","ETHUSD","BNBUSD"]
+STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
+CRYPTO:["BTCUSD_otc","ETHUSD_otc","BNBUSD_otc"]
 };
 
 let SIGNALS=[];
 
+// ===== CLOCK =====
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
+// ===== MARKET SWITCH =====
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
+
 LIST[t].forEach(p=>{
 let o=document.createElement("option");
 o.value=p;
@@ -96,46 +96,51 @@ pairs.add(o);
 
 setMarket("OTC",document.querySelector(".tab"));
 
+// ===== SIGNAL LOCK HASH =====
+function hashCode(str){
+let h=0;
+for(let i=0;i<str.length;i++){
+h=(h<<5)-h+str.charCodeAt(i);
+h|=0;
+}
+return Math.abs(h);
+}
+
+// ===== MAIN ENGINE =====
 async function startEngine(){
 
 SIGNALS=[];
 
 let selected=[...pairs.selectedOptions].map(o=>o.value);
 
-if(selected.length===0){ alert("Select pairs"); return; }
+if(selected.length===0){
+alert("Select pairs");
+return;
+}
 
-output.innerHTML="Reading Real API Candles...";
+output.innerHTML="Reading Locked Candle Signals...";
 
 for(let asset of selected){
 
-let candles=null;
-
-for(let proxy of PROXIES){
-
 try{
-let res=await fetch(proxy+encodeURIComponent(API+asset));
-let txt=await res.text();
-let json=JSON.parse(txt);
 
-candles=json?.data || json?.candles || (Array.isArray(json)?json:null);
+let pairAPI=asset.replace("_otc","-OTC");
 
-if(candles){ break; }
+let res=await fetch(API+pairAPI+"&count=200");
+let json=await res.json();
 
-}catch(e){}
-
-}
-
+let candles=json?.candles;
 if(!candles) continue;
 
+// ===== TREND =====
 let bull=0;
-candles.slice(0,20).forEach(c=>{
-let o=Number(c.open||c.o||0);
-let cl=Number(c.close||c.c||0);
-if(cl>o) bull++;
-});
+for(let i=1;i<20;i++){
+if(candles[i].close>candles[i-1].close) bull++;
+}
 
 let dir=bull>=10?"CALL":"PUT";
 
+// ===== LOCK TIME =====
 let s=start.value||"00:00";
 let e=end.value||"23:59";
 
@@ -143,15 +148,24 @@ let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 
+let seed=hashCode(pairAPI+s+e);
+
 for(let i=0;i<3;i++){
-let r=new Date(sD.getTime()+Math.random()*(eD-sD));
+
+let locked=Math.abs(Math.sin(seed+i))*100000;
+
+let t=new Date(sD.getTime()+(locked%(eD-sD)));
+
 SIGNALS.push({
-pair:asset.replace("_otc","-OTC").toUpperCase(),
-time:r.toTimeString().slice(0,5),
-raw:r.getTime(),
+pair:pairAPI,
+time:t.toTimeString().slice(0,5),
+raw:t.getTime(),
 dir:dir
 });
+
 }
+
+}catch(e){}
 
 }
 
@@ -161,6 +175,7 @@ display();
 
 }
 
+// ===== DISPLAY =====
 function display(){
 
 output.innerHTML="";
@@ -181,9 +196,13 @@ output.innerHTML+=`
 
 }
 
+// ===== TELEGRAM =====
 async function pushTG(){
 
-if(SIGNALS.length===0){ alert("Generate First"); return; }
+if(SIGNALS.length===0){
+alert("Generate First");
+return;
+}
 
 let msg=`🔥 APX ULTRA PREMIUM 🔥
 
