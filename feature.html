@@ -76,11 +76,12 @@ let SIGNALS=[];
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
-clock.innerText="UTC+6 | "+d.toLocaleTimeString();
+document.getElementById("clock").innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
 // ===== MARKET =====
 function setMarket(t,b){
+let pairs=document.getElementById("pairs");
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -109,14 +110,14 @@ async function startEngine(){
 
 SIGNALS=[];
 
-let selected=[...pairs.selectedOptions].map(o=>o.value);
+let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 
 if(selected.length===0){
 alert("Select pairs");
 return;
 }
 
-output.innerHTML="Reading Locked Candle Signals...";
+document.getElementById("output").innerHTML="Reading Locked Candle Signals...";
 
 await Promise.all(selected.map(loadPair));
 
@@ -139,33 +140,34 @@ if(!res.ok) return;
 let json=await res.json();
 let candles=json?.candles;
 
-if(!candles || candles.length<30) return;
+if(!candles || candles.length<20) return;
 
-// ===== TREND =====
+// ===== FIX TREND =====
 let bull=0;
-for(let i=1;i<25;i++){
-if(Number(candles[i].close) > Number(candles[i-1].close)) bull++;
+for(let i=0;i<20;i++){
+if(Number(candles[i].close) > Number(candles[i].open)) bull++;
 }
 
-let dir=bull>=13?"CALL":"PUT";
+let dir=bull>=10?"CALL":"PUT";
 
 // ===== TIME =====
-let s=start.value || "00:00";
-let e=end.value || "23:59";
+let s=document.getElementById("start").value || "00:00";
+let e=document.getElementById("end").value || "23:59";
 
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
-if(eD <= sD) eD.setDate(eD.getDate()+1);
 
-// ===== LOCK TIMES =====
+if(eD<=sD) eD.setDate(eD.getDate()+1);
+
+// ===== LOCK =====
 let seed=hashCode(pairAPI+s+e);
 
 for(let i=0;i<3;i++){
 
 let locked=Math.abs(Math.sin(seed+i))*100000;
 
-let t=new Date(sD.getTime() + (locked % (eD - sD)));
+let t=new Date(sD.getTime()+(locked%(eD-sD)));
 
 SIGNALS.push({
 pair:pairAPI,
@@ -184,6 +186,8 @@ console.log("Pair fail",asset);
 
 // ===== DISPLAY =====
 function displaySignals(){
+
+let output=document.getElementById("output");
 
 output.innerHTML="";
 
