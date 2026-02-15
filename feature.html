@@ -20,7 +20,7 @@
         .main-btn { width: 100%; padding: 16px; background: var(--neon); color: #000; border: none; border-radius: 12px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
         .main-btn:hover { background: #00cca3; box-shadow: 0 0 20px var(--neon); }
         .tg-btn { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; }
+        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; padding: 10px; }
         .sig-row { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; align-items: center; }
         .time { color: var(--gold); font-family: 'Orbitron'; font-size: 13px; }
         .pair-name { font-size: 14px; color: #fff; }
@@ -63,44 +63,40 @@
 <footer>STABLE ENGINE V7.5 | REAL-TIME DATA ONLY</footer>
 
 <script>
-    // Using a reliable CORS proxy
-    const PROXY = "https://api.allorigins.win/raw?url=";
+    // Better CORS proxy
+    const PROXY = "https://corsproxy.io/?";
     const API_TEMPLATE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
     const TG_WEBHOOK = "https://signal.mkapi009.workers.dev/send";
 
     const PAIRS = {
         OTC: ["EURUSD_otc", "GBPUSD_otc", "USDINR_otc", "USDPKR_otc", "USDBDT_otc", "USDBRL_otc", "USDNGN_otc", "USDARS_otc", "USDMXN_otc"],
         STOCKS: ["MSFSTK_otc", "AXPSTK_otc", "PFESTK_otc", "INTSTK_otc", "FBSTK_otc"],
-        CRYPTO: ["BTCUSD_otc", "ETHUSD_otc", "BNBUSD_otc"]   // _otc add kiya taake API sahi se catch kare
+        CRYPTO: ["BTCUSD_otc", "ETHUSD_otc", "BNBUSD_otc"]
     };
 
     let SIGNALS = [];
-    let ALL_CANDLES = {};   // asset => candles array (newest first)
+    let ALL_CANDLES = {};
 
     setInterval(() => {
-        let d = new Date(); 
-        d.setHours(d.getUTCHours() + 6);
+        let d = new Date(); d.setHours(d.getUTCHours() + 6);
         document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
     }, 1000);
 
     window.onload = () => {
-        let d = new Date(); 
-        d.setHours(d.getUTCHours() + 6);
+        let d = new Date(); d.setHours(d.getUTCHours() + 6);
         document.getElementById('s-time').value = d.toTimeString().slice(0, 5);
         let ed = new Date(d.getTime() + 60*60000);
         document.getElementById('e-time').value = ed.toTimeString().slice(0, 5);
-        setMkt('OTC', document.querySelector('.tab'));
+        setMkt('OTC', document.querySelector('.tab.active') || document.querySelector('.tab'));
     };
 
     function setMkt(t, b) {
-        const l = document.getElementById('asset-list'); 
-        l.innerHTML = "";
+        const l = document.getElementById('asset-list'); l.innerHTML = "";
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
         b.classList.add('active');
         PAIRS[t].forEach(p => {
-            let o = document.createElement('option'); 
-            o.value = p;
-            o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
+            let o = document.createElement('option'); o.value = p;
+            o.innerText = p.replace("_otc", "-OTC").toUpperCase();
             l.add(o);
         });
     }
@@ -111,40 +107,47 @@
         const endTime = document.getElementById('e-time').value;
         const box = document.getElementById('output');
 
-        if(assets.length === 0) return alert("Please select assets!");
-        
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ 📡 FETCHING REAL DATA FROM ${assets.length} ASSETS... ]</div>`;
+        if (assets.length === 0) return alert("Please select at least one asset!");
+
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ 📡 FETCHING FROM ${assets.length} ASSETS... ]</div>`;
         SIGNALS = [];
         ALL_CANDLES = {};
 
-        // Parallel fetching (fast)
-        const fetchPromises = assets.map(async (asset) => {
+        for (let asset of assets) {
             try {
                 const finalUrl = `\( {API_TEMPLATE}&pair= \){asset}`;
-                const response = await fetch(PROXY + encodeURIComponent(finalUrl));
+                const response = await fetch(PROXY + encodeURIComponent(finalUrl), { mode: 'cors' });
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
                 const json = await response.json();
 
-                if (json && json.data && json.data.length > 0) {
-                    // Filter exact pair (API mixed data deta hai)
+                if (json && json.success && json.data && json.data.length > 0) {
+                    // Flexible filter for pair name
+                    const normalizedAsset = asset.toLowerCase().replace(/_otc$/, '');
                     const filtered = json.data.filter(c => 
-                        c.pair === asset || 
-                        c.pair === asset.replace("_otc", "") ||
-                        c.pair === asset + "_otc"
+                        c.pair && c.pair.toLowerCase().includes(normalizedAsset)
                     );
-                    
+
                     if (filtered.length >= 10) {
-                        ALL_CANDLES[asset] = filtered;   // newest first
+                        ALL_CANDLES[asset] = filtered;
+                        console.log(`Success for ${asset}: ${filtered.length} candles`);
+                    } else {
+                        console.warn(`Few candles for ${asset}: ${filtered.length}`);
                     }
+                } else {
+                    console.warn(`No valid data for ${asset}`);
                 }
             } catch (err) {
-                console.error("Fetch Error for " + asset);
+                console.error(`Error for ${asset}:`, err.message);
             }
-        });
-
-        await Promise.all(fetchPromises);
+        }
 
         if (Object.keys(ALL_CANDLES).length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">DATA ERROR: API NOT RESPONDING</div>`;
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">
+                DATA ERROR: API NOT RESPONDING<br>
+                <small>(Check console for details - try EURUSD-OTC first)</small>
+            </div>`;
             return;
         }
 
@@ -159,33 +162,24 @@
         if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
 
         const durationMs = eDate.getTime() - sDate.getTime();
-        const durationMin = durationMs / 60000;
-
-        // 10-15 signals (time range ke hisab se adjust)
-        let numSignals = Math.floor(durationMin / 4.5) + 1;   // har \~4.5 minute pe ek signal
-        numSignals = Math.min(15, Math.max(10, numSignals));
+        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1)); // \~every 4 min
 
         SIGNALS = [];
 
         for (let i = 0; i < numSignals; i++) {
-            // Cycle through assets
             const asset = assets[i % assets.length];
             const candles = ALL_CANDLES[asset];
             if (!candles) continue;
 
-            // Real logic: last 20 candles mein green kitne hain?
             const last20 = candles.slice(0, 20);
-            let greenCount = last20.filter(c => c.color === "green").length;
+            const greenCount = last20.filter(c => c.color === "green").length;
+            const direction = greenCount >= 11 ? "CALL" : "PUT";
 
-            let direction = greenCount >= 11 ? "CALL" : "PUT";
-
-            // Evenly spaced time
-            const signalTimeMs = sDate.getTime() + (i * (durationMs / (numSignals - 1 || 1)));
+            const signalTimeMs = sDate.getTime() + (i * (durationMs / Math.max(1, numSignals - 1)));
             const signalDate = new Date(signalTimeMs);
             const signalTimeStr = signalDate.toTimeString().slice(0, 5);
 
-            // Display name
-            let displayPair = asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
+            let displayPair = asset.replace("_otc", "-OTC").toUpperCase();
 
             SIGNALS.push({
                 pair: displayPair,
@@ -195,7 +189,6 @@
             });
         }
 
-        // Time ke hisab se sort
         SIGNALS.sort((a, b) => a.rawTime - b.rawTime);
     }
 
@@ -203,7 +196,7 @@
         const box = document.getElementById('output');
         box.innerHTML = "";
         if (SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">NO SIGNALS GENERATED</div>`;
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS - CHECK CONSOLE</div>`;
             return;
         }
         SIGNALS.forEach(s => {
@@ -217,16 +210,16 @@
     }
 
     async function sendToTG() {
-        if(SIGNALS.length === 0) return alert("Analyze data first!");
-        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* REAL-TIME API\n🎯 *ACCURACY:* 80%+\n⏰ *TIMEZONE:* UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+        if(SIGNALS.length === 0) return alert("No signals to send!");
+        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* REAL-TIME\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
             msg += `🔹 \`M1;\( {s.pair}; \){s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
         });
-        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 *POWERED BY MRBEAXT API*`;
+        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY API`;
         try {
             await fetch(TG_WEBHOOK, { method: "POST", body: msg });
-            alert("Signals Sent to Telegram!");
-        } catch(e) { alert("Telegram Push Error!"); }
+            alert("Sent to Telegram!");
+        } catch(e) { alert("TG Error!"); }
     }
 </script>
 </body>
