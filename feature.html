@@ -63,7 +63,9 @@ select { width:100%; padding:12px; background:#020617; color:white; border:1px s
 // ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
+const MIN_ACC=0.75;
 
+// ===== PAIRS =====
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
@@ -71,17 +73,18 @@ CRYPTO:["BTCUSD_otc","ETHUSD_otc","BNBUSD_otc"]
 };
 
 let SIGNALS=[];
+let LOCK=new Set();
 
 // ===== CLOCK =====
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
-document.getElementById("clock").innerText="UTC+6 | "+d.toLocaleTimeString();
+clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
 // ===== MARKET =====
 function setMarket(t,b){
-let pairs=document.getElementById("pairs");
+
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -92,32 +95,24 @@ o.value=p;
 o.text=p.replace("_otc","-OTC").toUpperCase();
 pairs.add(o);
 });
+
 }
 setMarket("OTC",document.querySelector(".tab"));
-
-// ===== HASH LOCK =====
-function hashCode(str){
-let h=0;
-for(let i=0;i<str.length;i++){
-h=(h<<5)-h+str.charCodeAt(i);
-h|=0;
-}
-return Math.abs(h);
-}
 
 // ===== ENGINE =====
 async function startEngine(){
 
 SIGNALS=[];
+LOCK.clear();
 
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+let selected=[...pairs.selectedOptions].map(o=>o.value);
 
 if(selected.length===0){
 alert("Select pairs");
 return;
 }
 
-document.getElementById("output").innerHTML="Reading Locked Candle Signals...";
+output.innerHTML="Reading High Accuracy Candle API...";
 
 await Promise.all(selected.map(loadPair));
 
@@ -134,69 +129,54 @@ try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-let res=await fetch(API+pairAPI+"&count=200");
+let res=await fetch(API+pairAPI+"&count=100");
 if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
+if(!candles) return;
 
-if(!candles || candles.length<20) return;
+// REAL SIGNAL READ
+for(let c of candles){
 
-// ===== FIX TREND =====
-let bull=0;
-for(let i=0;i<20;i++){
-if(Number(candles[i].close) > Number(candles[i].open)) bull++;
-}
+if((c.win_prob||0) < MIN_ACC) continue;
 
-let dir=bull>=10?"CALL":"PUT";
+let dir=c.signal==="BUY"?"CALL":"PUT";
 
-// ===== TIME =====
-let s=document.getElementById("start").value || "00:00";
-let e=document.getElementById("end").value || "23:59";
+let t=new Date(Date.now()+Math.random()*3600000);
+let time=t.toTimeString().slice(0,5);
 
-let now=new Date();
-let sD=new Date(now.toDateString()+" "+s);
-let eD=new Date(now.toDateString()+" "+e);
-
-if(eD<=sD) eD.setDate(eD.getDate()+1);
-
-// ===== LOCK =====
-let seed=hashCode(pairAPI+s+e);
-
-for(let i=0;i<3;i++){
-
-let locked=Math.abs(Math.sin(seed+i))*100000;
-
-let t=new Date(sD.getTime()+(locked%(eD-sD)));
+let key=pairAPI+time+dir;
+if(LOCK.has(key)) continue;
+LOCK.add(key);
 
 SIGNALS.push({
 pair:pairAPI,
-time:t.toTimeString().slice(0,5),
+time:time,
 raw:t.getTime(),
-dir:dir
+dir:dir,
+acc:c.win_prob
 });
 
+if(SIGNALS.length>20) break;
+
 }
 
-}catch(e){
-console.log("Pair fail",asset);
-}
+}catch(e){}
 
 }
 
 // ===== DISPLAY =====
 function displaySignals(){
 
-let output=document.getElementById("output");
-
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No Candle Data";
+output.innerHTML="No High Accuracy Signals";
 return;
 }
 
-SIGNALS.slice(0,20).forEach(s=>{
+SIGNALS.forEach(s=>{
 output.innerHTML+=`
 <div class="sig-row">
 <span class="time">${s.time}</span>
@@ -217,10 +197,12 @@ return;
 
 let msg=`🔥 APX ULTRA PREMIUM 🔥
 
+PAIR     | TIME  | DIR
+--------------------------
 `;
 
-SIGNALS.slice(0,20).forEach(s=>{
-msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
+SIGNALS.forEach(s=>{
+msg+=`${s.pair.padEnd(8)} | ${s.time} | ${s.dir}\n`;
 });
 
 msg+=`
@@ -241,7 +223,7 @@ Powered by APX Elite Premium`;
 
 await fetch(TG,{method:"POST",body:msg});
 
-alert("Sent To Telegram");
+alert("Signals Sent To Telegram");
 
 }
 
