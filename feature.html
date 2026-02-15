@@ -1,191 +1,221 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA PREMIUM</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
-        body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; overflow-x:hidden; }
-        header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow: 0 0 15px var(--neon); }
-        .logo { font-family:'Orbitron'; color:var(--neon); font-size:20px; text-shadow:0 0 10px var(--neon); letter-spacing: 2px; }
-        .container { max-width:480px; margin:20px auto; padding:15px; }
-        .panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
-        .tabs { display:flex; gap:6px; margin-bottom:15px; }
-        .tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight: bold; }
-        .tab.active { background:var(--neon); color:black; }
-        select { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; outline: none; font-size:14px; }
-        .main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; font-size:14px; transition: 0.3s; }
-        .main-btn:active { transform: scale(0.98); }
-        .tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:bold; margin-top:10px; font-size:13px; }
-        #output { margin-top:20px; padding:5px; border:1px dashed var(--neon); border-radius:15px; background: rgba(0,0,0,0.3); }
-        .sig-row { display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05); align-items: center; }
-        .time { color:var(--gold); font-family:'Orbitron'; font-size:13px; }
-        .pair { font-size: 14px; font-weight: 600; }
-        .CALL { color:var(--call); text-shadow: 0 0 5px var(--call); }
-        .PUT { color:var(--put); text-shadow: 0 0 5px var(--put); }
-        #status { font-size:10px; color:#555; margin-top:10px; text-align: center; }
-        input[type="time"] { background: #020617; color: white; border: 1px solid #30363d; padding: 10px; border-radius: 10px; width: 100%; box-sizing: border-box; font-family: 'Orbitron'; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA PREMIUM</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
+body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
+header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 15px var(--neon); }
+.logo { font-family:'Orbitron'; color:var(--neon); font-size:20px; text-shadow:0 0 10px var(--neon); }
+.container { max-width:480px; margin:20px auto; padding:15px; }
+.panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
+.tabs { display:flex; gap:6px; margin-bottom:15px; }
+.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
+.tab.active { background:var(--neon); color:black; }
+select { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
+.main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
+.tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
+#output { margin-top:20px; padding:5px; border:1px dashed var(--neon); border-radius:15px; background:rgba(0,0,0,0.3); }
+.sig-row { display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05); }
+.time { color:var(--gold); font-family:'Orbitron'; }
+.CALL { color:var(--call); }
+.PUT { color:var(--put); }
+</style>
 </head>
+
 <body>
 
 <header>
-    <div class="logo">APX NEURAL ENGINE</div>
-    <div id="clock">UTC+6 | 00:00:00</div>
+<div class="logo">APX NEURAL ENGINE</div>
+<div id="clock">UTC+6 | 00:00:00</div>
 </header>
 
 <div class="container">
-    <div class="panel">
-        <div class="tabs">
-            <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-            <button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
-            <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-        </div>
+<div class="panel">
 
-        <select id="pairs" multiple size="6"></select>
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top: 5px;">
-            <div><label style="font-size: 10px; color: var(--neon); margin-left:5px;">START</label><input type="time" id="start"></div>
-            <div><label style="font-size: 10px; color: var(--neon); margin-left:5px;">END</label><input type="time" id="end"></div>
-        </div>
-
-        <button class="main-btn" onclick="startEngine()">⚡ GENERATE NEURAL SIGNALS</button>
-        <button class="tg-btn" onclick="pushTG()">📱 PUSH TO TELEGRAM</button>
-
-        <div id="output"><div style="text-align:center; padding:30px; color:#333;">Awaiting Neural Sync...</div></div>
-        <div id="status">Engine Status: Standby</div>
-    </div>
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
 </div>
 
-<footer>V7.7 | HIGH FREQUENCY ALGO</footer>
+<select id="pairs" multiple size="6"></select>
+
+<input type="time" id="start">
+<input type="time" id="end">
+
+<button class="main-btn" onclick="startEngine()">⚡ GENERATE NEURAL SIGNALS</button>
+<button class="tg-btn" onclick="pushTG()">📩 SEND TELEGRAM</button>
+
+<div id="output">Awaiting Neural Sync...</div>
+<div id="status">Engine Standby</div>
+
+</div>
+</div>
 
 <script>
-const PROXIES = [
-    "https://api.allorigins.win/raw?url=",
-    "https://thingproxy.freeboard.io/fetch/",
-    "https://corsproxy.io/?"
+
+const PROXIES=[
+"https://api.allorigins.win/raw?url=",
+"https://corsproxy.io/?"
 ];
-const API_URL = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500&pair=";
-const TG_HOOK = "https://signal.mkapi009.workers.dev/send";
 
-const LIST = {
-    OTC: ["EURUSD_otc","GBPUSD_otc","USDINR_otc","USDPKR_otc","USDBDT_otc","USDBRL_otc","USDNGN_otc","USDARS_otc","USDMXN_otc"],
-    STOCK: ["MSFSTK_otc","AXPSTK_otc","PFESTK_otc","INTSTK_otc","FBSTK_otc"],
-    CRYPTO: ["BTCUSD","ETHUSD","BNBUSD"]
+const API="https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=200&pair=";
+const TG="https://signal.mkapi009.workers.dev/send";
+
+const LIST={
+OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
+STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc","INTSTK_otc","FBSTK_otc"],
+CRYPTO:["BTCUSD","ETHUSD","BNBUSD"]
 };
 
-let SIGNALS = [];
+let SIGNALS=[];
 
-setInterval(() => {
-    let d = new Date(); d.setHours(d.getUTCHours() + 6);
-    document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
-}, 1000);
+setInterval(()=>{
+let d=new Date();
+d.setHours(d.getUTCHours()+6);
+clock.innerText="UTC+6 | "+d.toLocaleTimeString();
+},1000);
 
-function setMarket(t, b) {
-    const s = document.getElementById('pairs'); s.innerHTML = "";
-    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-    b.classList.add('active');
-    LIST[t].forEach(p => {
-        let o = document.createElement("option"); o.value = p;
-        o.text = p.replace("_otc","-OTC").replace("STK_otc","-OTC").toUpperCase();
-        s.add(o);
-    });
-}
-setMarket("OTC", document.querySelector(".tab.active"));
-
-window.onload = () => {
-    let d = new Date(); d.setHours(d.getUTCHours() + 6);
-    document.getElementById('start').value = d.toTimeString().slice(0,5);
-    let ed = new Date(d.getTime() + 45*60000);
-    document.getElementById('end').value = ed.toTimeString().slice(0,5);
-};
-
-async function startEngine() {
-    SIGNALS = [];
-    const box = document.getElementById('output');
-    const status = document.getElementById('status');
-    const assets = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-    
-    if (assets.length === 0) return alert("Select Pairs First!");
-
-    box.innerHTML = "<div style='text-align:center; color:var(--neon); padding:30px;'>📡 SYNCING WITH NEURAL SERVER...</div>";
-    
-    for (let asset of assets) {
-        let success = false;
-        // Loop through multiple proxies for high success rate
-        for(let proxy of PROXIES) {
-            try {
-                const res = await fetch(proxy + encodeURIComponent(API_URL + asset));
-                const json = await res.json();
-                if (json && json.data) {
-                    processData(json.data, asset);
-                    success = true;
-                    break; 
-                }
-            } catch (e) { console.warn("Proxy Switch..."); }
-        }
-        if(!success) status.innerText = `Asset ${asset} Sync Failed.`;
-    }
-
-    SIGNALS.sort((a,b) => a.raw - b.raw);
-    display();
+function setMarket(t,b){
+pairs.innerHTML="";
+document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+b.classList.add("active");
+LIST[t].forEach(p=>{
+let o=document.createElement("option");
+o.value=p;
+o.text=p.replace("_otc","-OTC").toUpperCase();
+pairs.add(o);
+});
 }
 
-function processData(data, asset) {
-    let bull = 0;
-    data.slice(0,15).forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) bull++; });
-    let dir = bull >= 8 ? "CALL" : "PUT";
+setMarket("OTC",document.querySelector(".tab"));
 
-    let sT = document.getElementById('start').value;
-    let eT = document.getElementById('end').value;
-    let now = new Date();
-    let sD = new Date(now.toDateString() + " " + sT);
-    let eD = new Date(now.toDateString() + " " + eT);
-    if (eD <= sD) eD.setDate(eD.getDate() + 1);
+async function startEngine(){
 
-    for(let i=0; i<3; i++) {
-        let rT = new Date(sD.getTime() + Math.random() * (eD.getTime() - sD.getTime()));
-        SIGNALS.push({
-            pair: asset.replace("_otc","-OTC").replace("STK_otc","-OTC").toUpperCase(),
-            time: rT.toTimeString().slice(0,5),
-            raw: rT.getTime(),
-            dir: dir
-        });
-    }
+SIGNALS=[];
+
+let selected=[...pairs.selectedOptions].map(o=>o.value);
+
+if(selected.length===0){ alert("Select pairs"); return; }
+
+output.innerHTML="Reading Real API Candles...";
+
+for(let asset of selected){
+
+let candles=null;
+
+for(let proxy of PROXIES){
+
+try{
+let res=await fetch(proxy+encodeURIComponent(API+asset));
+let txt=await res.text();
+let json=JSON.parse(txt);
+
+candles=json?.data || json?.candles || (Array.isArray(json)?json:null);
+
+if(candles){ break; }
+
+}catch(e){}
+
 }
 
-function display() {
-    const box = document.getElementById('output');
-    box.innerHTML = "";
-    if (SIGNALS.length === 0) {
-        box.innerHTML = "<div style='text-align:center; padding:30px; color:red;'>NETWORK TIMEOUT: RETRY</div>";
-        return;
-    }
-    SIGNALS.forEach(s => {
-        box.innerHTML += `
-        <div class="sig-row">
-            <span class="time">${s.time}</span>
-            <span class="pair">${s.pair}</span>
-            <span class="${s.dir}">${s.dir}</span>
-        </div>`;
-    });
-    document.getElementById('status').innerText = "Neural Sync: Active";
+if(!candles) continue;
+
+let bull=0;
+candles.slice(0,20).forEach(c=>{
+let o=Number(c.open||c.o||0);
+let cl=Number(c.close||c.c||0);
+if(cl>o) bull++;
+});
+
+let dir=bull>=10?"CALL":"PUT";
+
+let s=start.value||"00:00";
+let e=end.value||"23:59";
+
+let now=new Date();
+let sD=new Date(now.toDateString()+" "+s);
+let eD=new Date(now.toDateString()+" "+e);
+
+for(let i=0;i<3;i++){
+let r=new Date(sD.getTime()+Math.random()*(eD-sD));
+SIGNALS.push({
+pair:asset.replace("_otc","-OTC").toUpperCase(),
+time:r.toTimeString().slice(0,5),
+raw:r.getTime(),
+dir:dir
+});
 }
 
-async function pushTG() {
-    if (SIGNALS.length === 0) return;
-    let msg = `🔥 *APX NEURAL PREMIUM* 🔥\n━━━━━━━━━━━━━━━━━━━━\n📊 *MODE:* M1 (NEURAL SYNC)\n🎯 *ACCURACY:* 80%+\n⏰ *TIMEZONE:* UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
-    SIGNALS.forEach(s => {
-        msg += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
-    });
-    msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 *HIGH FREQUENCY ENGINE*`;
-    try {
-        await fetch(TG_HOOK, {method:"POST", body:msg});
-        alert("Pushed to Telegram!");
-    } catch(e) { alert("Push Failed"); }
 }
+
+SIGNALS.sort((a,b)=>a.raw-b.raw);
+
+display();
+
+}
+
+function display(){
+
+output.innerHTML="";
+
+if(SIGNALS.length===0){
+output.innerHTML="No API Data";
+return;
+}
+
+SIGNALS.slice(0,20).forEach(s=>{
+output.innerHTML+=`
+<div class="sig-row">
+<span class="time">${s.time}</span>
+<span>${s.pair}</span>
+<span class="${s.dir}">${s.dir}</span>
+</div>`;
+});
+
+}
+
+async function pushTG(){
+
+if(SIGNALS.length===0){ alert("Generate First"); return; }
+
+let msg=`🔥 APX ULTRA PREMIUM 🔥
+
+`;
+
+SIGNALS.slice(0,20).forEach(s=>{
+msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
+});
+
+msg+=`
+====================
+UTC+6 Timezone
+Expiry: 1 Minute
+Money Management: 1 Step MTG
+====================
+
+TRADING RULES
+1 Trade only at signal time
+2 Use 1 Step Martingale only
+3 Avoid high impact news
+4 Stop after 2 losses
+5 Trade with trend direction
+
+Powered by APX Elite Premium`;
+
+await fetch(TG,{method:"POST",body:msg});
+
+alert("Sent To Telegram");
+
+}
+
 </script>
+
 </body>
 </html>
