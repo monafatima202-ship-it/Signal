@@ -25,7 +25,8 @@
         .CALL { color:var(--call); font-weight:bold; }
         .PUT { color:var(--put); font-weight:bold; }
         footer { text-align:center; padding:20px; font-size:10px; color:#666; }
-        #status { font-size:11px; color:#aaa; margin-top:10px; }
+        #status { font-size:11px; color:#aaa; margin-top:10px; word-break:break-all; }
+        a { color:var(--neon); }
     </style>
 </head>
 <body>
@@ -94,17 +95,17 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-async function fetchWithRetry(url, retries = 2) {
+async function fetchWithRetry(url, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
         try {
-            const res = await fetch(url);
+            const res = await fetch(url, { cache: 'no-store' });
             const text = await res.text();
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            if (text.trim().startsWith('<')) throw new Error("HTML response");
+            if (text.trim().startsWith('<')) throw new Error(`HTML response (error page): ${text.slice(0, 200)}...`);
             return JSON.parse(text);
         } catch (e) {
             if (attempt === retries) throw e;
-            await new Promise(r => setTimeout(r, 1000)); // wait 1s before retry
+            await new Promise(r => setTimeout(r, 1500 * attempt)); // backoff
         }
     }
 }
@@ -113,11 +114,11 @@ async function analyze() {
     SIGNALS = [];
     const output = document.getElementById('output');
     const statusEl = document.getElementById('status');
-    output.innerHTML = "Fetching real candles from your API...";
+    output.innerHTML = "Trying to fetch candles (with retries)...";
     statusEl.innerHTML = "";
 
     const selected = [...pairs.selectedOptions].map(o => o.value);
-    if (selected.length === 0) return alert("Select at least one pair!");
+    if (selected.length === 0) return alert("Select pairs first!");
 
     const startVal = document.getElementById('start').value || "00:00";
     const endVal = document.getElementById('end').value || "23:59";
@@ -133,29 +134,29 @@ async function analyze() {
     let statusMsgs = [];
     let ALL_CANDLES = {};
 
-    const fetches = selected.map(async (p) => {
+    for (let p of selected) {
         try {
             const url = API_BASE + encodeURIComponent(p) + "&format=json&timeframe=M1&limit=500";
             const json = await fetchWithRetry(url);
 
-            if (!json.candles || json.candles.length === 0) throw new Error("No candles");
+            if (!json.candles || json.candles.length === 0) throw new Error("No candles in response");
 
             ALL_CANDLES[p] = json.candles;
-            statusMsgs.push(`${p}: ${json.candles.length} candles OK (latest signal: ${json.candles[0]?.signal || 'N/A'})`);
+            statusMsgs.push(`<strong>${p}:</strong> ${json.candles.length} candles OK (latest signal: ${json.candles[0]?.signal || 'N/A'})`);
         } catch (e) {
-            statusMsgs.push(`${p}: FAILED - \( {e.message} (Test: <a href=" \){API_BASE}${encodeURIComponent(p)}&format=json&timeframe=M1&limit=500" target="_blank">Click to test</a>)`);
+            const testUrl = API_BASE + encodeURIComponent(p) + "&format=json&timeframe=M1&limit=500";
+            statusMsgs.push(`<strong>${p}:</strong> FAILED - \( {e.message} <br><small><a href=" \){testUrl}" target="_blank">Click to test this pair in browser</a></small>`);
         }
-    });
+    }
 
-    await Promise.all(fetches);
-
-    statusEl.innerHTML = "Fetch Status:<br>" + statusMsgs.join("<br>");
+    statusEl.innerHTML = "Fetch Status (refresh page if stuck):<br>" + statusMsgs.join("<br><br>");
 
     if (Object.keys(ALL_CANDLES).length === 0) {
-        output.innerHTML = "No data received. Try WiFi, incognito, or single pair. See status for test links.";
+        output.innerHTML = "No data received yet. Try these:<br>1. Switch to WiFi (mobile data often fails on Cloudflare).<br>2. Open in incognito mode.<br>3. Select only 1 pair and retry.<br>4. Click the test links in status above - if JSON shows there but code fails, it's network issue.";
         return;
     }
 
+    // Generate signals
     for (let i = 0; i < numSignals; i++) {
         const p = selected[i % selected.length];
         const candles = ALL_CANDLES[p];
@@ -186,7 +187,7 @@ function render() {
     const output = document.getElementById('output');
     output.innerHTML = "";
     if (SIGNALS.length === 0) {
-        output.innerHTML = "No signals generated - see status for fetch issues.";
+        output.innerHTML = "No signals - see status for fetch details.";
         return;
     }
 
@@ -202,7 +203,7 @@ function render() {
 
 async function sendTG() {
     if (SIGNALS.length === 0) return alert("Generate signals first!");
-
+    // same as before
     let msg = `╔══════════════════════╗
    APX ULTRA PREMIUM
 ╚══════════════════════╝
