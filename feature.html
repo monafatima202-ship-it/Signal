@@ -87,12 +87,27 @@ function setMarket(type, btn) {
 
     MARKETS[type].forEach(p => {
         let o = document.createElement("option");
-        o.value = p; // hyphen format, Worker accept kar raha hai
+        o.value = p;
         o.text = p;
         pairs.add(o);
     });
 }
 setMarket("OTC", document.querySelector(".tab.active"));
+
+async function fetchWithRetry(url, retries = 2) {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+            const res = await fetch(url);
+            const text = await res.text();
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (text.trim().startsWith('<')) throw new Error("HTML response");
+            return JSON.parse(text);
+        } catch (e) {
+            if (attempt === retries) throw e;
+            await new Promise(r => setTimeout(r, 1000)); // wait 1s before retry
+        }
+    }
+}
 
 async function analyze() {
     SIGNALS = [];
@@ -121,20 +136,14 @@ async function analyze() {
     const fetches = selected.map(async (p) => {
         try {
             const url = API_BASE + encodeURIComponent(p) + "&format=json&timeframe=M1&limit=500";
-            const res = await fetch(url);
-            const text = await res.text();
+            const json = await fetchWithRetry(url);
 
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-            if (text.trim().startsWith('<')) throw new Error("HTML response (Worker error?)");
-
-            const json = JSON.parse(text);
             if (!json.candles || json.candles.length === 0) throw new Error("No candles");
 
             ALL_CANDLES[p] = json.candles;
             statusMsgs.push(`${p}: ${json.candles.length} candles OK (latest signal: ${json.candles[0]?.signal || 'N/A'})`);
         } catch (e) {
-            statusMsgs.push(`${p}: FAILED - ${e.message}`);
+            statusMsgs.push(`${p}: FAILED - \( {e.message} (Test: <a href=" \){API_BASE}${encodeURIComponent(p)}&format=json&timeframe=M1&limit=500" target="_blank">Click to test</a>)`);
         }
     });
 
@@ -143,11 +152,10 @@ async function analyze() {
     statusEl.innerHTML = "Fetch Status:<br>" + statusMsgs.join("<br>");
 
     if (Object.keys(ALL_CANDLES).length === 0) {
-        output.innerHTML = "No data received. Check status above or try different pairs / WiFi.";
+        output.innerHTML = "No data received. Try WiFi, incognito, or single pair. See status for test links.";
         return;
     }
 
-    // Generate signals
     for (let i = 0; i < numSignals; i++) {
         const p = selected[i % selected.length];
         const candles = ALL_CANDLES[p];
@@ -178,7 +186,7 @@ function render() {
     const output = document.getElementById('output');
     output.innerHTML = "";
     if (SIGNALS.length === 0) {
-        output.innerHTML = "No signals generated - check status for errors.";
+        output.innerHTML = "No signals generated - see status for fetch issues.";
         return;
     }
 
