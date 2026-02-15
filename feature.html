@@ -1,228 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA PREMIUM | DATA SYNC</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    <style>
-        :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #010409; --call: #00ff88; --put: #ff3366; }
-        body { margin: 0; background: var(--bg); color: #f1f5f9; font-family: 'Rajdhani', sans-serif; background-image: radial-gradient(circle at center, #0d1117 0%, #010409 100%); }
-        header { padding: 20px; text-align: center; border-bottom: 2px solid var(--neon); background: #000; box-shadow: 0 0 20px rgba(0,255,204,0.3); }
-        .logo { font-family: 'Orbitron'; font-size: 22px; color: var(--neon); text-shadow: 0 0 10px var(--neon); letter-spacing: 3px; }
-        .container { max-width: 480px; margin: 20px auto; padding: 15px; }
-        .panel { background: rgba(13,17,23,0.9); border: 1px solid rgba(0,255,204,0.2); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); }
-        label { display: block; font-size: 11px; color: var(--neon); margin: 10px 0 5px; text-transform: uppercase; letter-spacing: 1px; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-        .tab { flex: 1; padding: 10px; border: 1px solid var(--neon); background: transparent; color: var(--neon); border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; }
-        .tab.active { background: var(--neon); color: #000; }
-        select, input { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; color: #fff; outline: none; box-sizing: border-box; font-family: 'Orbitron', sans-serif; font-size: 13px; }
-        .main-btn { width: 100%; padding: 16px; background: var(--neon); color: #000; border: none; border-radius: 12px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
-        .main-btn:hover { background: #00cca3; box-shadow: 0 0 20px var(--neon); }
-        .tg-btn { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; padding: 15px; font-size: 12px; white-space: pre-wrap; }
-        .sig-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; align-items: center; }
-        .time { color: var(--gold); font-family: 'Orbitron'; font-size: 13px; }
-        .pair-name { font-size: 14px; color: #fff; }
-        .CALL { color: var(--call); text-shadow: 0 0 5px var(--call); }
-        .PUT { color: var(--put); text-shadow: 0 0 5px var(--put); }
-        footer { text-align: center; padding: 20px; font-size: 10px; color: #484f58; letter-spacing: 2px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA PREMIUM</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--neon:#00ffcc;
+--bg:#010409;
+--call:#00ff88;
+--put:#ff3366;
+--gold:#ffcc00;
+}
+
+body{
+margin:0;
+background:var(--bg);
+font-family:'Rajdhani';
+color:white;
+}
+
+header{
+padding:20px;
+text-align:center;
+border-bottom:2px solid var(--neon);
+background:black;
+}
+
+.logo{
+font-family:'Orbitron';
+color:var(--neon);
+font-size:22px;
+text-shadow:0 0 10px var(--neon);
+}
+
+.container{
+max-width:500px;
+margin:20px auto;
+padding:15px;
+}
+
+.panel{
+background:#0d1117;
+border:1px solid rgba(0,255,204,0.3);
+border-radius:20px;
+padding:20px;
+}
+
+.tabs{
+display:flex;
+gap:6px;
+margin-bottom:15px;
+}
+
+.tab{
+flex:1;
+padding:10px;
+border:1px solid var(--neon);
+background:transparent;
+color:var(--neon);
+border-radius:8px;
+cursor:pointer;
+}
+
+.tab.active{
+background:var(--neon);
+color:black;
+}
+
+select{
+width:100%;
+padding:12px;
+background:#020617;
+color:white;
+border:1px solid #30363d;
+border-radius:10px;
+margin-bottom:10px;
+}
+
+button{
+width:100%;
+padding:14px;
+border:none;
+border-radius:12px;
+font-family:'Orbitron';
+cursor:pointer;
+margin-top:8px;
+}
+
+.main-btn{
+background:var(--neon);
+color:black;
+}
+
+.tg-btn{
+background:#0088cc;
+color:white;
+}
+
+#output{
+margin-top:20px;
+padding:15px;
+border:1px dashed var(--neon);
+border-radius:15px;
+min-height:60px;
+}
+
+.sig-row{
+display:flex;
+justify-content:space-between;
+padding:10px;
+border-bottom:1px solid rgba(255,255,255,0.05);
+}
+
+.time{
+color:var(--gold);
+font-family:'Orbitron';
+}
+
+.CALL{ color:var(--call); }
+.PUT{ color:var(--put); }
+
+footer{
+text-align:center;
+padding:20px;
+font-size:10px;
+color:#666;
+}
+</style>
 </head>
+
 <body>
 
 <header>
-    <div class="logo">APX ULTRA PREMIUM</div>
-    <div id="clock">UTC+6 | 00:00:00</div>
+<div class="logo">APX ULTRA PREMIUM</div>
+<div id="clock">UTC+6</div>
 </header>
 
 <div class="container">
-    <div class="panel">
-        <label>Market Class</label>
-        <div class="tabs">
-            <button class="tab active" onclick="setMkt('OTC', this)">OTC</button>
-            <button class="tab" onclick="setMkt('STOCKS', this)">STOCKS</button>
-            <button class="tab" onclick="setMkt('CRYPTO', this)">CRYPTO</button>
-        </div>
+<div class="panel">
 
-        <label>Select Assets (Multi - Start with EURUSD-OTC)</label>
-        <select id="asset-list" multiple size="5"></select>
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+</div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div><label>Start Time</label><input type="time" id="s-time"></div>
-            <div><label>End Time</label><input type="time" id="e-time"></div>
-        </div>
+<select id="pairs" multiple size="6"></select>
 
-        <button class="main-btn" onclick="fetchAndAnalyze()">⚡ ANALYZE API DATA</button>
-        <button class="tg-btn" onclick="sendToTG()">📱 FORWARD TO TELEGRAM</button>
+<button class="main-btn" onclick="analyze()">ANALYZE API DATA</button>
+<button class="tg-btn" onclick="sendTG()">SEND TELEGRAM</button>
 
-        <div id="output"><div style="text-align:center; padding:30px; color:#475569;">Awaiting API Sync...</div></div>
-    </div>
+<div id="output">Waiting API...</div>
+
+</div>
 </div>
 
 <footer>STABLE ENGINE V7.5 | REAL-TIME DATA ONLY</footer>
 
 <script>
-    const API_BASE = "https://candle.mkapi009.workers.dev";
-    const TG_WEBHOOK = "https://signal.mkapi009.workers.dev/send";
 
-    const PAIRS = {
-        OTC: ["EURUSD_otc", "GBPUSD_otc", "USDINR_otc", "USDPKR_otc", "USDBDT_otc", "USDBRL_otc", "USDNGN_otc", "USDARS_otc", "USDMXN_otc"],
-        STOCKS: ["MSFSTK_otc", "AXPSTK_otc", "PFESTK_otc", "INTSTK_otc", "FBSTK_otc"],
-        CRYPTO: ["BTCUSD_otc", "ETHUSD_otc", "BNBUSD_otc"]
-    };
+const PROXY="https://api.allorigins.win/raw?url=";
+const API="https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
+const TG="https://signal.mkapi009.workers.dev/send";
 
-    let SIGNALS = [];
-    let fetchStatus = []; // for debug output
+const MARKETS={
+OTC:["USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
+STOCK:["MSFSTK_otc","PFESTK_otc","AXPSTK_otc"],
+CRYPTO:["BTCUSD","ETHUSD","BNBUSD"]
+};
 
-    setInterval(() => {
-        let d = new Date(); d.setHours(d.getUTCHours() + 6);
-        document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
-    }, 1000);
+let SIGNALS=[];
 
-    window.onload = () => {
-        let d = new Date(); d.setHours(d.getUTCHours() + 6);
-        document.getElementById('s-time').value = d.toTimeString().slice(0, 5);
-        let ed = new Date(d.getTime() + 60*60000);
-        document.getElementById('e-time').value = ed.toTimeString().slice(0, 5);
-        setMkt('OTC', document.querySelector('.tab'));
-    };
+setInterval(()=>{
+let d=new Date();
+d.setHours(d.getUTCHours()+6);
+clock.innerText="UTC+6 | "+d.toLocaleTimeString();
+},1000);
 
-    function setMkt(t, b) {
-        const l = document.getElementById('asset-list'); l.innerHTML = "";
-        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-        PAIRS[t].forEach(p => {
-            let o = document.createElement('option'); o.value = p;
-            o.innerText = p.replace("_otc", "-OTC").toUpperCase();
-            l.add(o);
-        });
-    }
+function setMarket(type,btn){
+pairs.innerHTML="";
+document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+btn.classList.add("active");
 
-    async function fetchAndAnalyze() {
-        const assets = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
-        const startTime = document.getElementById('s-time').value;
-        const endTime = document.getElementById('e-time').value;
-        const box = document.getElementById('output');
+MARKETS[type].forEach(p=>{
+let o=document.createElement("option");
+o.value=p;
+o.text=p.replace("_otc","-OTC").toUpperCase();
+pairs.add(o);
+});
+}
+setMarket("OTC",document.querySelector(".tab"));
 
-        if (assets.length === 0) return alert("Please select at least one asset!");
+async function analyze(){
 
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ FETCHING FROM YOUR API... ]</div>`;
-        SIGNALS = [];
-        fetchStatus = [];
+SIGNALS=[];
+output.innerText="Reading Real API Candles...";
 
-        for (let asset of assets) {
-            try {
-                const url = `\( {API_BASE}?pair= \){asset}&format=json&timeframe=M1&limit=500`;
-                const response = await fetch(url);
-                if (!response.ok) {
-                    fetchStatus.push(`${asset}: HTTP error ${response.status}`);
-                    continue;
-                }
+let selected=[...pairs.selectedOptions].map(o=>o.value);
 
-                const json = await response.json();
+for(let p of selected){
 
-                if (json && json.candles && Array.isArray(json.candles) && json.candles.length > 0) {
-                    ALL_CANDLES[asset] = json.candles;
-                    fetchStatus.push(`${asset}: ${json.candles.length} candles fetched successfully`);
-                    console.log(`Success ${asset}:`, json.candles.length);
-                } else {
-                    fetchStatus.push(`${asset}: No candles array or empty`);
-                }
-            } catch (err) {
-                fetchStatus.push(`${asset}: Fetch failed - ${err.message}`);
-                console.error(err);
-            }
-        }
+try{
+let res=await fetch(PROXY+encodeURIComponent(API+"&pair="+p));
+let txt=await res.text();
+let json=JSON.parse(txt);
 
-        let statusHtml = fetchStatus.length > 0 ? `<div style="margin-bottom:15px; color:#ccc; font-size:11px;">Status:<br>${fetchStatus.join('<br>')}</div>` : '';
+let candles=json.data || json.candles || [];
 
-        if (Object.keys(ALL_CANDLES).length === 0) {
-            box.innerHTML = `${statusHtml}<div style="text-align:center; padding:30px; color:red;">
-                NO CANDLES RECEIVED FROM API<br><br>
-                <small>Test URL (should show JSON with "candles" array):<br>
-                <a href="${API_BASE}?pair=EURUSD_otc&format=json&timeframe=M1&limit=500" target="_blank">Click to test EURUSD_otc</a><br>
-                If no candles: Check Worker script for data fetching logic or increase limit support.</small>
-            </div>`;
-            return;
-        }
+for(let i=10;i<candles.length;i++){
 
-        box.innerHTML = statusHtml;
-        generateSignals(assets, startTime, endTime);
-        renderHTML();
-    }
+let up=0;
+for(let j=1;j<=4;j++){
+if(candles[i-j].close>candles[i-j-1].close) up++;
+}
 
-    let ALL_CANDLES = {}; // reset on each analyze
+if(up>=3 || up<=1){
 
-    function generateSignals(assets, start, end) {
-        let now = new Date();
-        let sDate = new Date(now.toDateString() + " " + start);
-        let eDate = new Date(now.toDateString() + " " + end);
-        if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
+SIGNALS.push({
+pair:p.replace("_otc","-OTC").toUpperCase(),
+time:(candles[i].time||"00:00").slice(11,16),
+dir:up>=3?"CALL":"PUT"
+});
 
-        const durationMs = eDate.getTime() - sDate.getTime();
-        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 5) + 1)); // every \~5 min
+}
 
-        SIGNALS = [];
+}
 
-        for (let i = 0; i < numSignals; i++) {
-            const asset = assets[i % assets.length];
-            const candles = ALL_CANDLES[asset];
-            if (!candles || candles.length === 0) continue;
+}catch(e){}
 
-            const used = candles.slice(0, Math.min(20, candles.length));
-            let greenCount = 0;
-            used.forEach(c => {
-                if (parseFloat(c.close) > parseFloat(c.open)) greenCount++;
-            });
-            const direction = greenCount >= Math.ceil(used.length / 2) ? "CALL" : "PUT";
+}
 
-            const fraction = i / Math.max(1, numSignals - 1);
-            const signalTimeMs = sDate.getTime() + fraction * durationMs;
-            const signalDate = new Date(signalTimeMs);
-            const signalTimeStr = signalDate.toTimeString().slice(0, 5);
+render();
 
-            let displayPair = asset.replace("_otc", "-OTC").toUpperCase();
+}
 
-            SIGNALS.push({
-                pair: displayPair,
-                time: signalTimeStr,
-                rawTime: signalTimeMs,
-                dir: direction
-            });
-        }
+function render(){
+output.innerHTML="";
+SIGNALS.slice(0,15).forEach(s=>{
+output.innerHTML+=`
+<div class="sig-row">
+<span class="time">${s.time}</span>
+<span>${s.pair}</span>
+<span class="${s.dir}">${s.dir}</span>
+</div>`;
+});
+}
 
-        SIGNALS.sort((a, b) => a.rawTime - b.rawTime);
-    }
+async function sendTG(){
 
-    function renderHTML() {
-        const box = document.getElementById('output');
-        if (SIGNALS.length === 0) {
-            box.innerHTML += `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS GENERATED (CHECK CANDLE COUNT)</div>`;
-            return;
-        }
-        SIGNALS.forEach(s => {
-            box.innerHTML += `
-            <div class="sig-row">
-                <span class="time">${s.time}</span>
-                <span class="pair-name">${s.pair}</span>
-                <span class="\( {s.dir}"> \){s.dir}</span>
-            </div>`;
-        });
-    }
+if(SIGNALS.length===0){
+alert("Analyze First");
+return;
+}
 
-    async function sendToTG() {
-        if(SIGNALS.length === 0) return alert("No signals yet - Analyze first!");
-        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* YOUR CANDLE API\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
-        SIGNALS.forEach(s => {
-            msg += `🔹 \`M1;\( {s.pair}; \){s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
-        });
-        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY MKAPI009`;
-        try {
-            await fetch(TG_WEBHOOK, { method: "POST", body: msg });
-            alert("Signals forwarded to Telegram!");
-        } catch(e) { alert("TG send failed!"); }
-    }
+let msg=`╔══════════════════════╗
+   APX ULTRA PREMIUM
+╚══════════════════════╝
+
+DATA     : REAL-TIME API
+ENGINE   : STABLE V7.5
+TIMEZONE : UTC+6
+
+──────────────────────
+`;
+
+SIGNALS.slice(0,15).forEach(s=>{
+msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
+});
+
+msg+=`
+──────────────────────
+TRADING RULES
+• Trade only at signal time
+• Use 1 Step MTG only
+• Avoid High Impact News
+• Stop After 2 Losses
+• Follow Trend Direction
+
+──────────────────────
+STABLE ENGINE V7.5
+REAL-TIME DATA ONLY`;
+
+await fetch(TG,{method:"POST",body:msg});
+
+alert("Sent To Telegram");
+
+}
+
 </script>
+
 </body>
 </html>
