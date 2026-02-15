@@ -73,7 +73,7 @@
     };
 
     let SIGNALS = [];
-    let ALL_CANDLES = {}; // asset => candles array
+    let ALL_CANDLES = {};
 
     setInterval(() => {
         let d = new Date(); d.setHours(d.getUTCHours() + 6);
@@ -120,21 +120,21 @@
                 const json = await response.json();
 
                 if (json && json.candles && json.candles.length > 0) {
-                    ALL_CANDLES[asset] = json.candles; // assume newest first
+                    ALL_CANDLES[asset] = json.candles; // newest first assumed
                     console.log(`Success ${asset}: ${json.candles.length} candles`);
                 } else {
                     console.warn(`No candles for ${asset}`);
                 }
             } catch (err) {
-                console.error(`Error ${asset}:`, err);
+                console.error(`Error ${asset}:`, err.message);
             }
         }
 
         if (Object.keys(ALL_CANDLES).length === 0) {
             box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">
-                DATA ERROR: NO CANDLES FROM YOUR API<br>
-                <small>Check: https://candle.mkapi009.workers.dev?pair=EURUSD_otc&format=json&timeframe=M1&limit=100<br>
-                Try adding more limit or check Worker code.</small>
+                NO CANDLES RECEIVED<br><br>
+                <small>API responded but no candles array. Check Worker logs or try limit=1000.<br>
+                Test: <a href="${API_BASE}?pair=EURUSD_otc&format=json&timeframe=M1&limit=100" target="_blank">Click here</a> - should show JSON with candles.</small>
             </div>`;
             return;
         }
@@ -150,18 +150,22 @@
         if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
 
         const durationMs = eDate.getTime() - sDate.getTime();
-        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1)); // \~every 4 min
+        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1));
 
         SIGNALS = [];
 
         for (let i = 0; i < numSignals; i++) {
             const asset = assets[i % assets.length];
             const candles = ALL_CANDLES[asset];
-            if (!candles || candles.length < 5) continue;
+            if (!candles || candles.length === 0) continue;
 
-            const lastCandles = candles.slice(0, Math.min(20, candles.length));
-            const greenCount = lastCandles.filter(c => parseFloat(c.close) > parseFloat(c.open)).length; // fallback if no 'color'
-            const direction = greenCount >= Math.ceil(lastCandles.length / 2) ? "CALL" : "PUT";
+            // Use available candles (even if only 1-3)
+            const usedCandles = candles.slice(0, Math.min(20, candles.length));
+            let greenCount = 0;
+            usedCandles.forEach(c => {
+                if (parseFloat(c.close) > parseFloat(c.open)) greenCount++;
+            });
+            const direction = greenCount >= Math.ceil(usedCandles.length / 2) ? "CALL" : "PUT";
 
             const signalTimeMs = sDate.getTime() + (i * (durationMs / Math.max(1, numSignals - 1)));
             const signalDate = new Date(signalTimeMs);
@@ -184,7 +188,7 @@
         const box = document.getElementById('output');
         box.innerHTML = "";
         if (SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS - FEW CANDLES AVAILABLE</div>`;
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS - CHECK CANDLE COUNT IN CONSOLE</div>`;
             return;
         }
         SIGNALS.forEach(s => {
