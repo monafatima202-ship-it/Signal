@@ -20,7 +20,7 @@
         .main-btn { width: 100%; padding: 16px; background: var(--neon); color: #000; border: none; border-radius: 12px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
         .main-btn:hover { background: #00cca3; box-shadow: 0 0 20px var(--neon); }
         .tg-btn { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; padding: 15px; font-size: 12px; }
+        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; padding: 15px; font-size: 12px; white-space: pre-wrap; }
         .sig-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; align-items: center; }
         .time { color: var(--gold); font-family: 'Orbitron'; font-size: 13px; }
         .pair-name { font-size: 14px; color: #fff; }
@@ -45,7 +45,7 @@
             <button class="tab" onclick="setMkt('CRYPTO', this)">CRYPTO</button>
         </div>
 
-        <label>Select Assets (Multi - Try EURUSD-OTC first)</label>
+        <label>Select Assets (Multi - Start with EURUSD-OTC)</label>
         <select id="asset-list" multiple size="5"></select>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -73,7 +73,7 @@
     };
 
     let SIGNALS = [];
-    let ALL_CANDLES = {};
+    let fetchStatus = []; // for debug output
 
     setInterval(() => {
         let d = new Date(); d.setHours(d.getUTCHours() + 6);
@@ -105,43 +105,54 @@
         const endTime = document.getElementById('e-time').value;
         const box = document.getElementById('output');
 
-        if (assets.length === 0) return alert("Select at least one asset!");
+        if (assets.length === 0) return alert("Please select at least one asset!");
 
         box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ FETCHING FROM YOUR API... ]</div>`;
         SIGNALS = [];
-        ALL_CANDLES = {};
+        fetchStatus = [];
 
         for (let asset of assets) {
             try {
                 const url = `\( {API_BASE}?pair= \){asset}&format=json&timeframe=M1&limit=500`;
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                if (!response.ok) {
+                    fetchStatus.push(`${asset}: HTTP error ${response.status}`);
+                    continue;
+                }
 
                 const json = await response.json();
 
-                if (json && json.candles && json.candles.length > 0) {
-                    ALL_CANDLES[asset] = json.candles; // newest first assumed
-                    console.log(`Success ${asset}: ${json.candles.length} candles`);
+                if (json && json.candles && Array.isArray(json.candles) && json.candles.length > 0) {
+                    ALL_CANDLES[asset] = json.candles;
+                    fetchStatus.push(`${asset}: ${json.candles.length} candles fetched successfully`);
+                    console.log(`Success ${asset}:`, json.candles.length);
                 } else {
-                    console.warn(`No candles for ${asset}`);
+                    fetchStatus.push(`${asset}: No candles array or empty`);
                 }
             } catch (err) {
-                console.error(`Error ${asset}:`, err.message);
+                fetchStatus.push(`${asset}: Fetch failed - ${err.message}`);
+                console.error(err);
             }
         }
 
+        let statusHtml = fetchStatus.length > 0 ? `<div style="margin-bottom:15px; color:#ccc; font-size:11px;">Status:<br>${fetchStatus.join('<br>')}</div>` : '';
+
         if (Object.keys(ALL_CANDLES).length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">
-                NO CANDLES RECEIVED<br><br>
-                <small>API responded but no candles array. Check Worker logs or try limit=1000.<br>
-                Test: <a href="${API_BASE}?pair=EURUSD_otc&format=json&timeframe=M1&limit=100" target="_blank">Click here</a> - should show JSON with candles.</small>
+            box.innerHTML = `${statusHtml}<div style="text-align:center; padding:30px; color:red;">
+                NO CANDLES RECEIVED FROM API<br><br>
+                <small>Test URL (should show JSON with "candles" array):<br>
+                <a href="${API_BASE}?pair=EURUSD_otc&format=json&timeframe=M1&limit=500" target="_blank">Click to test EURUSD_otc</a><br>
+                If no candles: Check Worker script for data fetching logic or increase limit support.</small>
             </div>`;
             return;
         }
 
+        box.innerHTML = statusHtml;
         generateSignals(assets, startTime, endTime);
         renderHTML();
     }
+
+    let ALL_CANDLES = {}; // reset on each analyze
 
     function generateSignals(assets, start, end) {
         let now = new Date();
@@ -150,7 +161,7 @@
         if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
 
         const durationMs = eDate.getTime() - sDate.getTime();
-        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1));
+        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 5) + 1)); // every \~5 min
 
         SIGNALS = [];
 
@@ -159,15 +170,15 @@
             const candles = ALL_CANDLES[asset];
             if (!candles || candles.length === 0) continue;
 
-            // Use available candles (even if only 1-3)
-            const usedCandles = candles.slice(0, Math.min(20, candles.length));
+            const used = candles.slice(0, Math.min(20, candles.length));
             let greenCount = 0;
-            usedCandles.forEach(c => {
+            used.forEach(c => {
                 if (parseFloat(c.close) > parseFloat(c.open)) greenCount++;
             });
-            const direction = greenCount >= Math.ceil(usedCandles.length / 2) ? "CALL" : "PUT";
+            const direction = greenCount >= Math.ceil(used.length / 2) ? "CALL" : "PUT";
 
-            const signalTimeMs = sDate.getTime() + (i * (durationMs / Math.max(1, numSignals - 1)));
+            const fraction = i / Math.max(1, numSignals - 1);
+            const signalTimeMs = sDate.getTime() + fraction * durationMs;
             const signalDate = new Date(signalTimeMs);
             const signalTimeStr = signalDate.toTimeString().slice(0, 5);
 
@@ -186,9 +197,8 @@
 
     function renderHTML() {
         const box = document.getElementById('output');
-        box.innerHTML = "";
         if (SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS - CHECK CANDLE COUNT IN CONSOLE</div>`;
+            box.innerHTML += `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS GENERATED (CHECK CANDLE COUNT)</div>`;
             return;
         }
         SIGNALS.forEach(s => {
@@ -202,16 +212,16 @@
     }
 
     async function sendToTG() {
-        if(SIGNALS.length === 0) return alert("No signals to send!");
-        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* YOUR API\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+        if(SIGNALS.length === 0) return alert("No signals yet - Analyze first!");
+        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* YOUR CANDLE API\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
             msg += `🔹 \`M1;\( {s.pair}; \){s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
         });
-        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY MKAPI`;
+        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY MKAPI009`;
         try {
             await fetch(TG_WEBHOOK, { method: "POST", body: msg });
-            alert("Signals Sent to Telegram!");
-        } catch(e) { alert("Telegram Push Error!"); }
+            alert("Signals forwarded to Telegram!");
+        } catch(e) { alert("TG send failed!"); }
     }
 </script>
 </body>
