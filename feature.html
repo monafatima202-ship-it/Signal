@@ -6,6 +6,7 @@
     <title>APX ULTRA PREMIUM | DATA SYNC</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
+        /* same style as before, no change needed */
         :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #010409; --call: #00ff88; --put: #ff3366; }
         body { margin: 0; background: var(--bg); color: #f1f5f9; font-family: 'Rajdhani', sans-serif; background-image: radial-gradient(circle at center, #0d1117 0%, #010409 100%); }
         header { padding: 20px; text-align: center; border-bottom: 2px solid var(--neon); background: #000; box-shadow: 0 0 20px rgba(0,255,204,0.3); }
@@ -20,8 +21,8 @@
         .main-btn { width: 100%; padding: 16px; background: var(--neon); color: #000; border: none; border-radius: 12px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
         .main-btn:hover { background: #00cca3; box-shadow: 0 0 20px var(--neon); }
         .tg-btn { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; padding: 10px; }
-        .sig-row { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; align-items: center; }
+        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; padding: 15px; font-size: 12px; }
+        .sig-row { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; align-items: center; }
         .time { color: var(--gold); font-family: 'Orbitron'; font-size: 13px; }
         .pair-name { font-size: 14px; color: #fff; }
         .CALL { color: var(--call); text-shadow: 0 0 5px var(--call); }
@@ -45,7 +46,7 @@
             <button class="tab" onclick="setMkt('CRYPTO', this)">CRYPTO</button>
         </div>
 
-        <label>Select Assets (Multi)</label>
+        <label>Select Assets (Multi - Try EURUSD-OTC First!)</label>
         <select id="asset-list" multiple size="5"></select>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -63,9 +64,11 @@
 <footer>STABLE ENGINE V7.5 | REAL-TIME DATA ONLY</footer>
 
 <script>
-    // Better CORS proxy
-    const PROXY = "https://corsproxy.io/?";
-    const API_TEMPLATE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
+    const PROXIES = [
+        "https://corsproxy.io/?",
+        "https://api.allorigins.win/raw?url="
+    ];
+    const API_TEMPLATE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=1000";
     const TG_WEBHOOK = "https://signal.mkapi009.workers.dev/send";
 
     const PAIRS = {
@@ -76,7 +79,9 @@
 
     let SIGNALS = [];
     let ALL_CANDLES = {};
+    let fetchErrors = [];
 
+    // Clock
     setInterval(() => {
         let d = new Date(); d.setHours(d.getUTCHours() + 6);
         document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
@@ -87,7 +92,7 @@
         document.getElementById('s-time').value = d.toTimeString().slice(0, 5);
         let ed = new Date(d.getTime() + 60*60000);
         document.getElementById('e-time').value = ed.toTimeString().slice(0, 5);
-        setMkt('OTC', document.querySelector('.tab.active') || document.querySelector('.tab'));
+        setMkt('OTC', document.querySelector('.tab'));
     };
 
     function setMkt(t, b) {
@@ -101,59 +106,73 @@
         });
     }
 
+    async function tryFetchWithProxies(url) {
+        for (let proxy of PROXIES) {
+            try {
+                const fullUrl = proxy + encodeURIComponent(url);
+                const res = await fetch(fullUrl, { mode: 'cors', cache: 'no-cache' });
+                if (res.ok) return await res.json();
+            } catch (e) {
+                console.warn(`Proxy ${proxy} failed:`, e);
+            }
+        }
+        throw new Error("All proxies failed");
+    }
+
     async function fetchAndAnalyze() {
         const assets = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
         const startTime = document.getElementById('s-time').value;
         const endTime = document.getElementById('e-time').value;
         const box = document.getElementById('output');
 
-        if (assets.length === 0) return alert("Please select at least one asset!");
+        if (assets.length === 0) return alert("Select at least one asset!");
 
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ 📡 FETCHING FROM ${assets.length} ASSETS... ]</div>`;
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ FETCHING ${assets.length} ASSETS... ]</div>`;
         SIGNALS = [];
         ALL_CANDLES = {};
+        fetchErrors = [];
 
         for (let asset of assets) {
             try {
-                const finalUrl = `\( {API_TEMPLATE}&pair= \){asset}`;
-                const response = await fetch(PROXY + encodeURIComponent(finalUrl), { mode: 'cors' });
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                const json = await response.json();
+                const url = `\( {API_TEMPLATE}&pair= \){asset}`;
+                const json = await tryFetchWithProxies(url);
 
                 if (json && json.success && json.data && json.data.length > 0) {
-                    // Flexible filter for pair name
-                    const normalizedAsset = asset.toLowerCase().replace(/_otc$/, '');
+                    const normalized = asset.toLowerCase().replace(/_otc$/, '');
                     const filtered = json.data.filter(c => 
-                        c.pair && c.pair.toLowerCase().includes(normalizedAsset)
+                        c.pair && (c.pair.toLowerCase() === normalized + '_otc' || c.pair.toLowerCase().includes(normalized))
                     );
 
-                    if (filtered.length >= 10) {
+                    if (filtered.length >= 5) {  // Lowered to 5 for testing
                         ALL_CANDLES[asset] = filtered;
-                        console.log(`Success for ${asset}: ${filtered.length} candles`);
+                        console.log(`OK ${asset}: ${filtered.length} candles`);
                     } else {
-                        console.warn(`Few candles for ${asset}: ${filtered.length}`);
+                        fetchErrors.push(`${asset}: Only ${filtered.length} candles after filter`);
                     }
                 } else {
-                    console.warn(`No valid data for ${asset}`);
+                    fetchErrors.push(`${asset}: Invalid response (no success/data)`);
                 }
             } catch (err) {
-                console.error(`Error for ${asset}:`, err.message);
+                fetchErrors.push(`${asset}: Fetch failed - ${err.message}`);
+                console.error(err);
             }
         }
 
         if (Object.keys(ALL_CANDLES).length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">
-                DATA ERROR: API NOT RESPONDING<br>
-                <small>(Check console for details - try EURUSD-OTC first)</small>
+            let errMsg = `<div style="color:red; padding:20px; text-align:center;">
+                DATA ERROR: API / PROXY ISSUE<br><br>
+                <small>Details:<br>${fetchErrors.join('<br>') || 'No fetch attempted'}</small><br>
+                Try: EURUSD-OTC only, switch to WiFi, or check console.
             </div>`;
+            box.innerHTML = errMsg;
             return;
         }
 
         generateSignals(assets, startTime, endTime);
         renderHTML();
     }
+
+    // generateSignals and renderHTML same as before (no change needed, copy from previous if you want)
 
     function generateSignals(assets, start, end) {
         let now = new Date();
@@ -162,7 +181,7 @@
         if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
 
         const durationMs = eDate.getTime() - sDate.getTime();
-        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1)); // \~every 4 min
+        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1));
 
         SIGNALS = [];
 
@@ -196,7 +215,7 @@
         const box = document.getElementById('output');
         box.innerHTML = "";
         if (SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS - CHECK CONSOLE</div>`;
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS GENERATED - CHECK ERRORS ABOVE</div>`;
             return;
         }
         SIGNALS.forEach(s => {
@@ -210,7 +229,7 @@
     }
 
     async function sendToTG() {
-        if(SIGNALS.length === 0) return alert("No signals to send!");
+        if(SIGNALS.length === 0) return alert("No signals!");
         let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* REAL-TIME\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
             msg += `🔹 \`M1;\( {s.pair}; \){s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
@@ -218,8 +237,8 @@
         msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY API`;
         try {
             await fetch(TG_WEBHOOK, { method: "POST", body: msg });
-            alert("Sent to Telegram!");
-        } catch(e) { alert("TG Error!"); }
+            alert("Sent!");
+        } catch(e) { alert("TG failed"); }
     }
 </script>
 </body>
