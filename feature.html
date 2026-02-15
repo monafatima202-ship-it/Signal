@@ -63,7 +63,7 @@
 <footer>STABLE ENGINE V7.5 | REAL-TIME DATA ONLY</footer>
 
 <script>
-const API = "https://candle.mkapi009.workers.dev/?pair=";
+const API_BASE = "https://candle.mkapi009.workers.dev/?pair=";
 const TG = "https://signal.mkapi009.workers.dev/send";
 
 const MARKETS = {
@@ -87,7 +87,7 @@ function setMarket(type, btn) {
 
     MARKETS[type].forEach(p => {
         let o = document.createElement("option");
-        o.value = p.replace("-OTC", "_otc"); // Worker mein _otc format expect kar sakta hai
+        o.value = p; // hyphen format, Worker accept kar raha hai
         o.text = p;
         pairs.add(o);
     });
@@ -97,12 +97,12 @@ setMarket("OTC", document.querySelector(".tab.active"));
 async function analyze() {
     SIGNALS = [];
     const output = document.getElementById('output');
-    const status = document.getElementById('status');
-    output.innerHTML = "Fetching real candles...";
-    status.innerHTML = "";
+    const statusEl = document.getElementById('status');
+    output.innerHTML = "Fetching real candles from your API...";
+    statusEl.innerHTML = "";
 
     const selected = [...pairs.selectedOptions].map(o => o.value);
-    if (selected.length === 0) return alert("Select pairs");
+    if (selected.length === 0) return alert("Select at least one pair!");
 
     const startVal = document.getElementById('start').value || "00:00";
     const endVal = document.getElementById('end').value || "23:59";
@@ -113,62 +113,74 @@ async function analyze() {
     if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
     const durationMs = eDate - sDate;
 
-    const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 5) + 1)); // \~every 5 min
+    const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 5) + 1));
 
     let statusMsgs = [];
+    let ALL_CANDLES = {};
 
-    // Parallel fetch for speed
     const fetches = selected.map(async (p) => {
         try {
-            const url = API + p + "&format=json&timeframe=M1&limit=500"; // or &count=50
+            const url = API_BASE + encodeURIComponent(p) + "&format=json&timeframe=M1&limit=500";
             const res = await fetch(url);
-            if (!res.ok) throw new Error("HTTP " + res.status);
+            const text = await res.text();
 
-            const json = await res.json();
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            if (text.trim().startsWith('<')) throw new Error("HTML response (Worker error?)");
+
+            const json = JSON.parse(text);
             if (!json.candles || json.candles.length === 0) throw new Error("No candles");
 
-            statusMsgs.push(`${p.replace("_otc","-OTC").toUpperCase()}: ${json.candles.length} candles`);
-
-            // Direction from latest candle signal or fallback
-            const latest = json.candles[0];
-            let dir = "PUT";
-            if (latest.signal === "BUY") dir = "CALL";
-            else if (parseFloat(latest.close) > parseFloat(latest.open)) dir = "CALL";
-
-            // Generate evenly spaced signals
-            for (let i = 0; i < numSignals; i++) {
-                const fraction = numSignals > 1 ? i / (numSignals - 1) : 0;
-                const tMs = sDate.getTime() + fraction * durationMs;
-                const t = new Date(tMs);
-                const timeStr = t.toTimeString().slice(0,5);
-
-                SIGNALS.push({
-                    pair: p.replace("_otc","-OTC").toUpperCase(),
-                    time: timeStr,
-                    dir: dir
-                });
-            }
+            ALL_CANDLES[p] = json.candles;
+            statusMsgs.push(`${p}: ${json.candles.length} candles OK (latest signal: ${json.candles[0]?.signal || 'N/A'})`);
         } catch (e) {
-            statusMsgs.push(`${p.replace("_otc","-OTC").toUpperCase()}: Error - ${e.message}`);
+            statusMsgs.push(`${p}: FAILED - ${e.message}`);
         }
     });
 
     await Promise.all(fetches);
 
-    status.innerHTML = "Status:<br>" + statusMsgs.join("<br>");
+    statusEl.innerHTML = "Fetch Status:<br>" + statusMsgs.join("<br>");
 
-    if (SIGNALS.length === 0) {
-        output.innerHTML = "No signals - check status above or select different pairs.";
+    if (Object.keys(ALL_CANDLES).length === 0) {
+        output.innerHTML = "No data received. Check status above or try different pairs / WiFi.";
         return;
     }
 
+    // Generate signals
+    for (let i = 0; i < numSignals; i++) {
+        const p = selected[i % selected.length];
+        const candles = ALL_CANDLES[p];
+        if (!candles) continue;
+
+        const latest = candles[0];
+        let dir = "PUT";
+        if (latest.signal === "BUY") dir = "CALL";
+        else if (parseFloat(latest.close) > parseFloat(latest.open)) dir = "CALL";
+
+        const fraction = numSignals > 1 ? i / (numSignals - 1) : 0;
+        const tMs = sDate.getTime() + fraction * durationMs;
+        const t = new Date(tMs);
+        const timeStr = t.toTimeString().slice(0,5);
+
+        SIGNALS.push({
+            pair: p,
+            time: timeStr,
+            dir: dir
+        });
+    }
+
+    SIGNALS.sort((a,b) => a.time.localeCompare(b.time));
     render();
 }
 
 function render() {
     const output = document.getElementById('output');
     output.innerHTML = "";
-    SIGNALS.sort((a,b) => a.time.localeCompare(b.time)); // sort by time
+    if (SIGNALS.length === 0) {
+        output.innerHTML = "No signals generated - check status for errors.";
+        return;
+    }
 
     SIGNALS.forEach(s => {
         output.innerHTML += `
@@ -213,9 +225,9 @@ REAL-TIME DATA ONLY`;
 
     try {
         await fetch(TG, {method:"POST", body:msg});
-        alert("Sent to Telegram");
+        alert("Sent to Telegram!");
     } catch(e) {
-        alert("Telegram send failed: " + e.message);
+        alert("Send failed: " + e.message);
     }
 }
 </script>
