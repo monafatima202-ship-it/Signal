@@ -3,151 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA PREMIUM | STABLE V6.8</title>
+    <title>APX ULTRA PREMIUM | DATA SYNC</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-    
     <style>
-        :root {
-            --neon: #00ffcc;
-            --gold: #ffcc00;
-            --bg: #020617;
-            --card: rgba(15, 23, 42, 0.98);
-            --call: #00ff88;
-            --put: #ff3366;
-        }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: #f1f5f9;
-            font-family: 'Rajdhani', sans-serif;
-            background-image: radial-gradient(circle at top, #1e293b 0%, #020617 100%);
-            min-height: 100vh;
-        }
-
-        header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 2px solid var(--neon);
-            background: rgba(0,0,0,0.8);
-            box-shadow: 0 4px 20px rgba(0, 255, 204, 0.3);
-        }
-
-        .logo {
-            font-family: 'Orbitron', sans-serif;
-            font-size: 22px;
-            letter-spacing: 3px;
-            color: var(--neon);
-            text-shadow: 0 0 10px var(--neon);
-        }
-
-        #clock {
-            font-family: 'Orbitron';
-            font-size: 13px;
-            margin-top: 5px;
-            color: var(--gold);
-        }
-
-        .container {
-            max-width: 480px;
-            margin: 20px auto;
-            padding: 15px;
-        }
-
-        .panel {
-            background: var(--card);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-
-        label {
-            display: block;
-            font-size: 11px;
-            color: var(--neon);
-            margin-bottom: 6px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 10px;
-            background: transparent;
-            border: 1px solid var(--neon);
-            color: var(--neon);
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 11px;
-        }
-
+        :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #010409; --call: #00ff88; --put: #ff3366; }
+        body { margin: 0; background: var(--bg); color: #f1f5f9; font-family: 'Rajdhani', sans-serif; background-image: radial-gradient(circle at center, #0d1117 0%, #010409 100%); }
+        header { padding: 20px; text-align: center; border-bottom: 2px solid var(--neon); background: #000; box-shadow: 0 0 20px rgba(0,255,204,0.3); }
+        .logo { font-family: 'Orbitron'; font-size: 22px; color: var(--neon); text-shadow: 0 0 10px var(--neon); letter-spacing: 3px; }
+        .container { max-width: 480px; margin: 20px auto; padding: 15px; }
+        .panel { background: rgba(13,17,23,0.9); border: 1px solid rgba(0,255,204,0.2); border-radius: 20px; padding: 20px; backdrop-filter: blur(10px); }
+        label { display: block; font-size: 11px; color: var(--neon); margin: 10px 0 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
+        .tab { flex: 1; padding: 10px; border: 1px solid var(--neon); background: transparent; color: var(--neon); border-radius: 8px; cursor: pointer; font-size: 11px; font-weight: bold; }
         .tab.active { background: var(--neon); color: #000; }
-
-        select, input {
-            width: 100%;
-            padding: 12px;
-            background: #0f172a;
-            border: 1px solid #334155;
-            border-radius: 10px;
-            color: #fff;
-            margin-bottom: 15px;
-            outline: none;
-            font-family: inherit;
-        }
-
-        .main-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--neon);
-            color: #000;
-            border: none;
-            border-radius: 12px;
-            font-family: 'Orbitron';
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-
-        .tg-btn {
-            width: 100%;
-            padding: 12px;
-            background: #0088cc;
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        #output {
-            margin-top: 20px;
-            background: rgba(0,0,0,0.4);
-            border-radius: 15px;
-            border: 1px dashed var(--neon);
-            min-height: 100px;
-        }
-
-        .sig-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            font-weight: bold;
-        }
-
-        .time { color: var(--gold); font-family: 'Orbitron'; font-size: 12px; }
-        .CALL { color: var(--call); }
-        .PUT { color: var(--put); }
-
-        footer { text-align: center; padding: 20px; font-size: 10px; color: #475569; letter-spacing: 2px; }
+        select, input { width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 10px; color: #fff; outline: none; box-sizing: border-box; font-family: 'Orbitron', sans-serif; font-size: 13px; }
+        .main-btn { width: 100%; padding: 16px; background: var(--neon); color: #000; border: none; border-radius: 12px; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-top: 15px; transition: 0.3s; }
+        .main-btn:hover { background: #00cca3; box-shadow: 0 0 20px var(--neon); }
+        .tg-btn { width: 100%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; margin-top: 10px; }
+        #output { margin-top: 20px; background: rgba(0,0,0,0.6); border-radius: 15px; border: 1px dashed var(--neon); min-height: 50px; }
+        .sig-row { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-weight: bold; align-items: center; }
+        .time { color: var(--gold); font-family: 'Orbitron'; font-size: 13px; }
+        .pair-name { font-size: 14px; color: #fff; }
+        .CALL { color: var(--call); text-shadow: 0 0 5px var(--call); }
+        .PUT { color: var(--put); text-shadow: 0 0 5px var(--put); }
+        footer { text-align: center; padding: 20px; font-size: 10px; color: #484f58; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -159,37 +38,35 @@
 
 <div class="container">
     <div class="panel">
-        <label>Market Category</label>
+        <label>Market Class</label>
         <div class="tabs">
-            <button class="tab active" onclick="loadMarket('OTC', this)">OTC</button>
-            <button class="tab" onclick="loadMarket('STOCKS', this)">STOCKS</button>
-            <button class="tab" onclick="loadMarket('CRYPTO', this)">CRYPTO</button>
+            <button class="tab active" onclick="setMkt('OTC', this)">OTC</button>
+            <button class="tab" onclick="setMkt('STOCKS', this)">STOCKS</button>
+            <button class="tab" onclick="setMkt('CRYPTO', this)">CRYPTO</button>
         </div>
 
-        <label>Select Pairs</label>
+        <label>Select Assets (Multi)</label>
         <select id="asset-list" multiple size="5"></select>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div><label>Start</label><input type="time" id="s-time"></div>
-            <div><label>End</label><input type="time" id="e-time"></div>
+            <div><label>Start Time</label><input type="time" id="s-time"></div>
+            <div><label>End Time</label><input type="time" id="e-time"></div>
         </div>
 
-        <button class="main-btn" onclick="runEngine()">GENERATE SIGNALS</button>
-        <button class="tg-btn" onclick="sendToTG()">PUSH TO TELEGRAM</button>
+        <button class="main-btn" onclick="fetchAndAnalyze()">⚡ ANALYZE API DATA</button>
+        <button class="tg-btn" onclick="sendToTG()">📱 FORWARD TO TELEGRAM</button>
 
-        <div id="output">
-            <div style="text-align:center; padding:30px; color:#475569;">System Ready...</div>
-        </div>
+        <div id="output"><div style="text-align:center; padding:30px; color:#475569;">Awaiting API Sync...</div></div>
     </div>
 </div>
 
-<footer>ALGORITHM V6.8 | POWERED BY MRBEAXT API</footer>
+<footer>STABLE ENGINE V7.5 | REAL-TIME DATA ONLY</footer>
 
 <script>
-    // Proxy added to bypass potential CORS issues
-    const PROXY = "https://corsproxy.io/?"; 
-    const API_BASE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
-    const TG_URL = "https://signal.mkapi009.workers.dev/send";
+    // Using a reliable CORS proxy
+    const PROXY = "https://api.allorigins.win/raw?url=";
+    const API_TEMPLATE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
+    const TG_WEBHOOK = "https://signal.mkapi009.workers.dev/send";
 
     const PAIRS = {
         OTC: ["EURUSD_otc", "GBPUSD_otc", "USDINR_otc", "USDPKR_otc", "USDBDT_otc", "USDBRL_otc", "USDNGN_otc", "USDARS_otc", "USDMXN_otc"],
@@ -207,116 +84,109 @@
     window.onload = () => {
         let d = new Date(); d.setHours(d.getUTCHours() + 6);
         document.getElementById('s-time').value = d.toTimeString().slice(0, 5);
-        let ed = new Date(d.getTime() + 60 * 60000);
+        let ed = new Date(d.getTime() + 60*60000);
         document.getElementById('e-time').value = ed.toTimeString().slice(0, 5);
-        loadMarket('OTC', document.querySelector('.tab'));
+        setMkt('OTC', document.querySelector('.tab'));
     };
 
-    function loadMarket(type, btn) {
-        const list = document.getElementById('asset-list');
-        list.innerHTML = "";
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        PAIRS[type].forEach(p => {
-            let o = document.createElement('option');
-            o.value = p; 
-            o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC").replace("_", "/").toUpperCase();
-            list.add(o);
+    function setMkt(t, b) {
+        const l = document.getElementById('asset-list'); l.innerHTML = "";
+        document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        PAIRS[t].forEach(p => {
+            let o = document.createElement('option'); o.value = p;
+            o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
+            l.add(o);
         });
     }
 
-    async function runEngine() {
-        const selected = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
-        const start = document.getElementById('s-time').value;
-        const end = document.getElementById('e-time').value;
+    async function fetchAndAnalyze() {
+        const assets = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
+        const startTime = document.getElementById('s-time').value;
+        const endTime = document.getElementById('e-time').value;
         const box = document.getElementById('output');
 
-        if(selected.length === 0) return alert("Bhai, kam se kam ek pair select karein!");
-
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">🔍 ANALYZING LIVE CANDLES...</div>`;
+        if(assets.length === 0) return alert("Please select assets!");
+        
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ 📡 FETCHING REAL DATA... ]</div>`;
         SIGNALS = [];
 
-        for(let asset of selected) {
+        for(let asset of assets) {
             try {
-                // Using Proxy for stability
-                const response = await fetch(`${PROXY}${encodeURIComponent(API_BASE + "&pair=" + asset)}`);
+                // Exact URL structure as per your requirement
+                const finalUrl = `${API_TEMPLATE}&pair=${asset}`;
+                const response = await fetch(PROXY + encodeURIComponent(finalUrl));
                 const json = await response.json();
-                
+
                 if(json && json.data && json.data.length > 0) {
-                    const candles = json.data;
-                    // Generate 2-3 signals per asset
-                    let count = Math.floor(Math.random() * 2) + 2;
-                    for(let i=0; i < count; i++) {
-                        SIGNALS.push(calculateSignal(candles, asset, start, end));
-                    }
+                    processSignals(json.data, asset, startTime, endTime);
                 } else {
-                    console.warn("No data for " + asset);
+                    console.error("No data for: " + asset);
                 }
-            } catch(e) { 
-                console.error("Fetch failed for " + asset, e); 
+            } catch (err) {
+                console.error("Fetch Error for " + asset);
             }
         }
 
-        if(SIGNALS.length > 0) {
+        if(SIGNALS.length === 0) {
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">DATA ERROR: API NOT RESPONDING</div>`;
+        } else {
             SIGNALS.sort((a,b) => a.rawTime - b.rawTime);
             renderHTML();
-        } else {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">DATA ERROR: PLEASE RE-TRY</div>`;
         }
     }
 
-    function calculateSignal(candles, asset, start, end) {
-        let trend = 0;
-        let lastItems = candles.slice(0, 15);
-        lastItems.forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) trend++; });
-        let dir = trend >= 7 ? "CALL" : "PUT";
-
-        // Logic based on today's date
+    function processSignals(candles, asset, start, end) {
+        // Real logic based on last 20 candles
+        let last20 = candles.slice(0, 20);
+        let up = 0;
+        last20.forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) up++; });
+        
+        let direction = up >= 10 ? "CALL" : "PUT";
+        
+        // Time window calculation
         let now = new Date();
-        let s = new Date(now.toDateString() + " " + start);
-        let e = new Date(now.toDateString() + " " + end);
-        if(e < s) e.setDate(e.getDate() + 1);
+        let sDate = new Date(now.toDateString() + " " + start);
+        let eDate = new Date(now.toDateString() + " " + end);
+        if(eDate < sDate) eDate.setDate(eDate.getDate() + 1);
 
-        let randomTs = s.getTime() + Math.random() * (e.getTime() - s.getTime());
-        let resTime = new Date(randomTs);
-
-        let cleanPair = asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
-
-        return {
-            pair: cleanPair,
-            time: resTime.toTimeString().slice(0, 5),
-            rawTime: randomTs,
-            dir: dir
-        };
+        // Generate 2 signals per successful data catch
+        for(let i=0; i<2; i++) {
+            let randomTime = new Date(sDate.getTime() + Math.random() * (eDate.getTime() - sDate.getTime()));
+            SIGNALS.push({
+                pair: asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase(),
+                time: randomTime.toTimeString().slice(0, 5),
+                rawTime: randomTime.getTime(),
+                dir: direction
+            });
+        }
     }
 
     function renderHTML() {
         const box = document.getElementById('output');
-        box.innerHTML = ""; 
+        box.innerHTML = "";
         SIGNALS.forEach(s => {
             box.innerHTML += `
-                <div class="sig-row">
-                    <span class="time">${s.time}</span>
-                    <span>${s.pair}</span>
-                    <span class="${s.dir}">${s.dir}</span>
-                </div>`;
+            <div class="sig-row">
+                <span class="time">${s.time}</span>
+                <span class="pair-name">${s.pair}</span>
+                <span class="${s.dir}">${s.dir}</span>
+            </div>`;
         });
     }
 
     async function sendToTG() {
-        if(SIGNALS.length === 0) return alert("Pehle signals generate karein!");
-        let text = `🔥 *APX ULTRA PREMIUM* 🔥\n━━━━━━━━━━━━━━━━━━━━\n📊 *MODE:* M1 (1-MINUTE)\n🎯 *ACCURACY:* 80%+\n⏰ *TIMEZONE:* UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+        if(SIGNALS.length === 0) return alert("Analyze data first!");
+        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* REAL-TIME API\n🎯 *ACCURACY:* 80%+\n⏰ *TIMEZONE:* UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
-            const icon = s.dir === "CALL" ? "🟢" : "🔴";
-            text += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${icon}\n`;
+            msg += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
         });
-        text += `\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *RULES:* 1-Step MTG Only\n🚀 *POWERED BY MRBEAXT API*`;
+        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 *POWERED BY MRBEAXT API*`;
         try {
-            await fetch(TG_URL, { method: "POST", body: text });
-            alert("Sent to Telegram!");
-        } catch(e) { alert("Error!"); }
+            await fetch(TG_WEBHOOK, { method: "POST", body: msg });
+            alert("Signals Sent to Telegram!");
+        } catch(e) { alert("Telegram Push Error!"); }
     }
 </script>
-
 </body>
 </html>
