@@ -71,18 +71,21 @@
     const PAIRS = {
         OTC: ["EURUSD_otc", "GBPUSD_otc", "USDINR_otc", "USDPKR_otc", "USDBDT_otc", "USDBRL_otc", "USDNGN_otc", "USDARS_otc", "USDMXN_otc"],
         STOCKS: ["MSFSTK_otc", "AXPSTK_otc", "PFESTK_otc", "INTSTK_otc", "FBSTK_otc"],
-        CRYPTO: ["BTCUSD", "ETHUSD", "BNBUSD"]
+        CRYPTO: ["BTCUSD_otc", "ETHUSD_otc", "BNBUSD_otc"]   // _otc add kiya taake API sahi se catch kare
     };
 
     let SIGNALS = [];
+    let ALL_CANDLES = {};   // asset => candles array (newest first)
 
     setInterval(() => {
-        let d = new Date(); d.setHours(d.getUTCHours() + 6);
+        let d = new Date(); 
+        d.setHours(d.getUTCHours() + 6);
         document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
     }, 1000);
 
     window.onload = () => {
-        let d = new Date(); d.setHours(d.getUTCHours() + 6);
+        let d = new Date(); 
+        d.setHours(d.getUTCHours() + 6);
         document.getElementById('s-time').value = d.toTimeString().slice(0, 5);
         let ed = new Date(d.getTime() + 60*60000);
         document.getElementById('e-time').value = ed.toTimeString().slice(0, 5);
@@ -90,11 +93,13 @@
     };
 
     function setMkt(t, b) {
-        const l = document.getElementById('asset-list'); l.innerHTML = "";
+        const l = document.getElementById('asset-list'); 
+        l.innerHTML = "";
         document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
         b.classList.add('active');
         PAIRS[t].forEach(p => {
-            let o = document.createElement('option'); o.value = p;
+            let o = document.createElement('option'); 
+            o.value = p;
             o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
             l.add(o);
         });
@@ -108,69 +113,105 @@
 
         if(assets.length === 0) return alert("Please select assets!");
         
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ 📡 FETCHING REAL DATA... ]</div>`;
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ 📡 FETCHING REAL DATA FROM ${assets.length} ASSETS... ]</div>`;
         SIGNALS = [];
+        ALL_CANDLES = {};
 
-        for(let asset of assets) {
+        // Parallel fetching (fast)
+        const fetchPromises = assets.map(async (asset) => {
             try {
-                // Exact URL structure as per your requirement
-                const finalUrl = `${API_TEMPLATE}&pair=${asset}`;
+                const finalUrl = `\( {API_TEMPLATE}&pair= \){asset}`;
                 const response = await fetch(PROXY + encodeURIComponent(finalUrl));
                 const json = await response.json();
 
-                if(json && json.data && json.data.length > 0) {
-                    processSignals(json.data, asset, startTime, endTime);
-                } else {
-                    console.error("No data for: " + asset);
+                if (json && json.data && json.data.length > 0) {
+                    // Filter exact pair (API mixed data deta hai)
+                    const filtered = json.data.filter(c => 
+                        c.pair === asset || 
+                        c.pair === asset.replace("_otc", "") ||
+                        c.pair === asset + "_otc"
+                    );
+                    
+                    if (filtered.length >= 10) {
+                        ALL_CANDLES[asset] = filtered;   // newest first
+                    }
                 }
             } catch (err) {
                 console.error("Fetch Error for " + asset);
             }
+        });
+
+        await Promise.all(fetchPromises);
+
+        if (Object.keys(ALL_CANDLES).length === 0) {
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">DATA ERROR: API NOT RESPONDING</div>`;
+            return;
         }
 
-        if(SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">DATA ERROR: API NOT RESPONDING</div>`;
-        } else {
-            SIGNALS.sort((a,b) => a.rawTime - b.rawTime);
-            renderHTML();
-        }
+        generateSignals(assets, startTime, endTime);
+        renderHTML();
     }
 
-    function processSignals(candles, asset, start, end) {
-        // Real logic based on last 20 candles
-        let last20 = candles.slice(0, 20);
-        let up = 0;
-        last20.forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) up++; });
-        
-        let direction = up >= 10 ? "CALL" : "PUT";
-        
-        // Time window calculation
+    function generateSignals(assets, start, end) {
         let now = new Date();
         let sDate = new Date(now.toDateString() + " " + start);
         let eDate = new Date(now.toDateString() + " " + end);
-        if(eDate < sDate) eDate.setDate(eDate.getDate() + 1);
+        if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
 
-        // Generate 2 signals per successful data catch
-        for(let i=0; i<2; i++) {
-            let randomTime = new Date(sDate.getTime() + Math.random() * (eDate.getTime() - sDate.getTime()));
+        const durationMs = eDate.getTime() - sDate.getTime();
+        const durationMin = durationMs / 60000;
+
+        // 10-15 signals (time range ke hisab se adjust)
+        let numSignals = Math.floor(durationMin / 4.5) + 1;   // har \~4.5 minute pe ek signal
+        numSignals = Math.min(15, Math.max(10, numSignals));
+
+        SIGNALS = [];
+
+        for (let i = 0; i < numSignals; i++) {
+            // Cycle through assets
+            const asset = assets[i % assets.length];
+            const candles = ALL_CANDLES[asset];
+            if (!candles) continue;
+
+            // Real logic: last 20 candles mein green kitne hain?
+            const last20 = candles.slice(0, 20);
+            let greenCount = last20.filter(c => c.color === "green").length;
+
+            let direction = greenCount >= 11 ? "CALL" : "PUT";
+
+            // Evenly spaced time
+            const signalTimeMs = sDate.getTime() + (i * (durationMs / (numSignals - 1 || 1)));
+            const signalDate = new Date(signalTimeMs);
+            const signalTimeStr = signalDate.toTimeString().slice(0, 5);
+
+            // Display name
+            let displayPair = asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
+
             SIGNALS.push({
-                pair: asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase(),
-                time: randomTime.toTimeString().slice(0, 5),
-                rawTime: randomTime.getTime(),
+                pair: displayPair,
+                time: signalTimeStr,
+                rawTime: signalTimeMs,
                 dir: direction
             });
         }
+
+        // Time ke hisab se sort
+        SIGNALS.sort((a, b) => a.rawTime - b.rawTime);
     }
 
     function renderHTML() {
         const box = document.getElementById('output');
         box.innerHTML = "";
+        if (SIGNALS.length === 0) {
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">NO SIGNALS GENERATED</div>`;
+            return;
+        }
         SIGNALS.forEach(s => {
             box.innerHTML += `
             <div class="sig-row">
                 <span class="time">${s.time}</span>
                 <span class="pair-name">${s.pair}</span>
-                <span class="${s.dir}">${s.dir}</span>
+                <span class="\( {s.dir}"> \){s.dir}</span>
             </div>`;
         });
     }
@@ -179,7 +220,7 @@
         if(SIGNALS.length === 0) return alert("Analyze data first!");
         let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* REAL-TIME API\n🎯 *ACCURACY:* 80%+\n⏰ *TIMEZONE:* UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
-            msg += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
+            msg += `🔹 \`M1;\( {s.pair}; \){s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
         });
         msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 *POWERED BY MRBEAXT API*`;
         try {
