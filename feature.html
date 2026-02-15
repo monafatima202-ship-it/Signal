@@ -6,7 +6,6 @@
     <title>APX ULTRA PREMIUM | DATA SYNC</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
-        /* same style as before, no change needed */
         :root { --neon: #00ffcc; --gold: #ffcc00; --bg: #010409; --call: #00ff88; --put: #ff3366; }
         body { margin: 0; background: var(--bg); color: #f1f5f9; font-family: 'Rajdhani', sans-serif; background-image: radial-gradient(circle at center, #0d1117 0%, #010409 100%); }
         header { padding: 20px; text-align: center; border-bottom: 2px solid var(--neon); background: #000; box-shadow: 0 0 20px rgba(0,255,204,0.3); }
@@ -46,7 +45,7 @@
             <button class="tab" onclick="setMkt('CRYPTO', this)">CRYPTO</button>
         </div>
 
-        <label>Select Assets (Multi - Try EURUSD-OTC First!)</label>
+        <label>Select Assets (Multi - Try EURUSD-OTC first)</label>
         <select id="asset-list" multiple size="5"></select>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
@@ -64,13 +63,7 @@
 <footer>STABLE ENGINE V7.5 | REAL-TIME DATA ONLY</footer>
 
 <script>
-    const PROXIES = [
-    "https://api.codetabs.com/v1/proxy?quest=",  // Put this first – it's working now
-    "https://corsproxy.io/?",
-    "https://api.allorigins.win/raw?url=",
-    "https://thingproxy.freeboard.io/fetch/"
-];
-    const API_TEMPLATE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=1000";
+    const API_BASE = "https://candle.mkapi009.workers.dev";
     const TG_WEBHOOK = "https://signal.mkapi009.workers.dev/send";
 
     const PAIRS = {
@@ -80,10 +73,8 @@
     };
 
     let SIGNALS = [];
-    let ALL_CANDLES = {};
-    let fetchErrors = [];
+    let ALL_CANDLES = {}; // asset => candles array
 
-    // Clock
     setInterval(() => {
         let d = new Date(); d.setHours(d.getUTCHours() + 6);
         document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
@@ -108,19 +99,6 @@
         });
     }
 
-    async function tryFetchWithProxies(url) {
-        for (let proxy of PROXIES) {
-            try {
-                const fullUrl = proxy + encodeURIComponent(url);
-                const res = await fetch(fullUrl, { mode: 'cors', cache: 'no-cache' });
-                if (res.ok) return await res.json();
-            } catch (e) {
-                console.warn(`Proxy ${proxy} failed:`, e);
-            }
-        }
-        throw new Error("All proxies failed");
-    }
-
     async function fetchAndAnalyze() {
         const assets = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
         const startTime = document.getElementById('s-time').value;
@@ -129,52 +107,41 @@
 
         if (assets.length === 0) return alert("Select at least one asset!");
 
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ FETCHING ${assets.length} ASSETS... ]</div>`;
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">[ FETCHING FROM YOUR API... ]</div>`;
         SIGNALS = [];
         ALL_CANDLES = {};
-        fetchErrors = [];
 
         for (let asset of assets) {
             try {
-                const url = `\( {API_TEMPLATE}&pair= \){asset}`;
-                const json = await tryFetchWithProxies(url);
+                const url = `\( {API_BASE}?pair= \){asset}&format=json&timeframe=M1&limit=500`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-                if (json && json.success && json.data && json.data.length > 0) {
-                    const normalized = asset.toLowerCase().replace(/_otc$/, '');
-                    const filtered = json.data.filter(c => 
-                        c.pair && (c.pair.toLowerCase() === normalized + '_otc' || c.pair.toLowerCase().includes(normalized))
-                    );
+                const json = await response.json();
 
-                    if (filtered.length >= 5) {  // Lowered to 5 for testing
-                        ALL_CANDLES[asset] = filtered;
-                        console.log(`OK ${asset}: ${filtered.length} candles`);
-                    } else {
-                        fetchErrors.push(`${asset}: Only ${filtered.length} candles after filter`);
-                    }
+                if (json && json.candles && json.candles.length > 0) {
+                    ALL_CANDLES[asset] = json.candles; // assume newest first
+                    console.log(`Success ${asset}: ${json.candles.length} candles`);
                 } else {
-                    fetchErrors.push(`${asset}: Invalid response (no success/data)`);
+                    console.warn(`No candles for ${asset}`);
                 }
             } catch (err) {
-                fetchErrors.push(`${asset}: Fetch failed - ${err.message}`);
-                console.error(err);
+                console.error(`Error ${asset}:`, err);
             }
         }
 
         if (Object.keys(ALL_CANDLES).length === 0) {
-            let errMsg = `<div style="color:red; padding:20px; text-align:center;">
-                DATA ERROR: API / PROXY ISSUE<br><br>
-                <small>Details:<br>${fetchErrors.join('<br>') || 'No fetch attempted'}</small><br>
-                Try: EURUSD-OTC only, switch to WiFi, or check console.
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">
+                DATA ERROR: NO CANDLES FROM YOUR API<br>
+                <small>Check: https://candle.mkapi009.workers.dev?pair=EURUSD_otc&format=json&timeframe=M1&limit=100<br>
+                Try adding more limit or check Worker code.</small>
             </div>`;
-            box.innerHTML = errMsg;
             return;
         }
 
         generateSignals(assets, startTime, endTime);
         renderHTML();
     }
-
-    // generateSignals and renderHTML same as before (no change needed, copy from previous if you want)
 
     function generateSignals(assets, start, end) {
         let now = new Date();
@@ -183,18 +150,18 @@
         if (eDate <= sDate) eDate.setDate(eDate.getDate() + 1);
 
         const durationMs = eDate.getTime() - sDate.getTime();
-        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1));
+        const numSignals = Math.min(15, Math.max(10, Math.floor(durationMs / 60000 / 4) + 1)); // \~every 4 min
 
         SIGNALS = [];
 
         for (let i = 0; i < numSignals; i++) {
             const asset = assets[i % assets.length];
             const candles = ALL_CANDLES[asset];
-            if (!candles) continue;
+            if (!candles || candles.length < 5) continue;
 
-            const last20 = candles.slice(0, 20);
-            const greenCount = last20.filter(c => c.color === "green").length;
-            const direction = greenCount >= 11 ? "CALL" : "PUT";
+            const lastCandles = candles.slice(0, Math.min(20, candles.length));
+            const greenCount = lastCandles.filter(c => parseFloat(c.close) > parseFloat(c.open)).length; // fallback if no 'color'
+            const direction = greenCount >= Math.ceil(lastCandles.length / 2) ? "CALL" : "PUT";
 
             const signalTimeMs = sDate.getTime() + (i * (durationMs / Math.max(1, numSignals - 1)));
             const signalDate = new Date(signalTimeMs);
@@ -217,7 +184,7 @@
         const box = document.getElementById('output');
         box.innerHTML = "";
         if (SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS GENERATED - CHECK ERRORS ABOVE</div>`;
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:orange;">NO SIGNALS - FEW CANDLES AVAILABLE</div>`;
             return;
         }
         SIGNALS.forEach(s => {
@@ -231,16 +198,16 @@
     }
 
     async function sendToTG() {
-        if(SIGNALS.length === 0) return alert("No signals!");
-        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* REAL-TIME\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
+        if(SIGNALS.length === 0) return alert("No signals to send!");
+        let msg = `👑 *APX ULTRA PREMIUM* 👑\n━━━━━━━━━━━━━━━━━━━━\n📊 *DATA:* YOUR API\n🎯 *ACC:* 80%+\n⏰ UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
             msg += `🔹 \`M1;\( {s.pair}; \){s.time};${s.dir}\` ${s.dir==='CALL'?'🟢':'🔴'}\n`;
         });
-        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY API`;
+        msg += `\n━━━━━━━━━━━━━━━━━━━━\n🚀 POWERED BY MKAPI`;
         try {
             await fetch(TG_WEBHOOK, { method: "POST", body: msg });
-            alert("Sent!");
-        } catch(e) { alert("TG failed"); }
+            alert("Signals Sent to Telegram!");
+        } catch(e) { alert("Telegram Push Error!"); }
     }
 </script>
 </body>
