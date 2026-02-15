@@ -60,11 +60,10 @@ select { width:100%; padding:12px; background:#020617; color:white; border:1px s
 
 <script>
 
-// ===== YOUR API =====
+// ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
-// ===== PAIRS =====
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
@@ -80,7 +79,7 @@ d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// ===== MARKET SWITCH =====
+// ===== MARKET =====
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -93,10 +92,9 @@ o.text=p.replace("_otc","-OTC").toUpperCase();
 pairs.add(o);
 });
 }
-
 setMarket("OTC",document.querySelector(".tab"));
 
-// ===== SIGNAL LOCK HASH =====
+// ===== HASH LOCK =====
 function hashCode(str){
 let h=0;
 for(let i=0;i<str.length;i++){
@@ -106,7 +104,7 @@ h|=0;
 return Math.abs(h);
 }
 
-// ===== MAIN ENGINE =====
+// ===== ENGINE =====
 async function startEngine(){
 
 SIGNALS=[];
@@ -120,41 +118,54 @@ return;
 
 output.innerHTML="Reading Locked Candle Signals...";
 
-for(let asset of selected){
+await Promise.all(selected.map(loadPair));
+
+SIGNALS.sort((a,b)=>a.raw-b.raw);
+
+displaySignals();
+
+}
+
+// ===== LOAD PAIR =====
+async function loadPair(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
 let res=await fetch(API+pairAPI+"&count=200");
-let json=await res.json();
+if(!res.ok) return;
 
+let json=await res.json();
 let candles=json?.candles;
-if(!candles) continue;
+
+if(!candles || candles.length<30) return;
 
 // ===== TREND =====
 let bull=0;
-for(let i=1;i<20;i++){
-if(candles[i].close>candles[i-1].close) bull++;
+for(let i=1;i<25;i++){
+if(Number(candles[i].close) > Number(candles[i-1].close)) bull++;
 }
 
-let dir=bull>=10?"CALL":"PUT";
+let dir=bull>=13?"CALL":"PUT";
 
-// ===== LOCK TIME =====
-let s=start.value||"00:00";
-let e=end.value||"23:59";
+// ===== TIME =====
+let s=start.value || "00:00";
+let e=end.value || "23:59";
 
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
+if(eD <= sD) eD.setDate(eD.getDate()+1);
 
+// ===== LOCK TIMES =====
 let seed=hashCode(pairAPI+s+e);
 
 for(let i=0;i<3;i++){
 
 let locked=Math.abs(Math.sin(seed+i))*100000;
 
-let t=new Date(sD.getTime()+(locked%(eD-sD)));
+let t=new Date(sD.getTime() + (locked % (eD - sD)));
 
 SIGNALS.push({
 pair:pairAPI,
@@ -165,23 +176,19 @@ dir:dir
 
 }
 
-}catch(e){}
-
+}catch(e){
+console.log("Pair fail",asset);
 }
-
-SIGNALS.sort((a,b)=>a.raw-b.raw);
-
-display();
 
 }
 
 // ===== DISPLAY =====
-function display(){
+function displaySignals(){
 
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No API Data";
+output.innerHTML="No Candle Data";
 return;
 }
 
