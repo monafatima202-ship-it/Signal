@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA FINAL</title>
+<title>APX PRO ENGINE</title>
 
 <style>
 body{
@@ -19,23 +19,17 @@ h2{ color:#00ffc3; }
 background:#082033;
 padding:20px;
 border-radius:15px;
-max-width:460px;
+max-width:520px;
 margin:auto;
 }
 
 select,input,button{
 width:95%;
 padding:12px;
-margin:8px;
+margin:6px;
 border-radius:8px;
 border:none;
 font-size:15px;
-}
-
-select,input{
-background:#041622;
-color:#00ffc3;
-border:1px solid #00ffc3;
 }
 
 button{
@@ -58,21 +52,34 @@ text-align:left;
 
 <body>
 
-<h2>🔥 APX ULTRA FINAL 🔥</h2>
-<p>UTC+6 Premium Candle Engine</p>
+<h2>🔥 APX ULTRA PREMIUM 🔥</h2>
+<p>UTC+6 Timezone • PRO API Candle Engine</p>
 
 <div class="card">
 
-<select id="category"></select>
-<select id="pairs" multiple size="8"></select>
+<select id="mode">
+<option value="single">Single Pair</option>
+<option value="multi">Multiple Pair</option>
+</select>
 
-<button onclick="selectAll()">Select All Pairs</button>
+<select id="pairs" multiple size="8">
+<option>USDPKR-OTC</option>
+<option>USDINR-OTC</option>
+<option>USDBRL-OTC</option>
+<option>USDMXN-OTC</option>
+<option>USDBDT-OTC</option>
+<option>USDARS-OTC</option>
+<option>USDEGP-OTC</option>
+<option>ETHUSD-OTC</option>
+<option>BNBUSD-OTC</option>
+<option>MSFT</option>
+<option>PFE</option>
+<option>AXP</option>
+<option>INTC</option>
+</select>
 
-<input type="time" id="start" value="01:00">
-<input type="time" id="end" value="05:00">
-
-<button onclick="generate()">Generate Signals</button>
-<button onclick="sendTG()">Send Telegram</button>
+<button onclick="generate()">🚀 Generate API Signals</button>
+<button onclick="sendTG()">📩 Send Telegram</button>
 
 <div id="out">Waiting...</div>
 
@@ -83,163 +90,110 @@ text-align:left;
 const API="https://candle.mkapi009.workers.dev";
 const TG="https://signal.mkapi009.workers.dev/send";
 
-const DATA={
-OTC:["USDPKR-OTC","USDINR-OTC","USDBRL-OTC","USDMXN-OTC","USDBDT-OTC","USDARS-OTC","USDEGP-OTC"],
-CRYPTO:["ETHUSD-OTC","BNBUSD-OTC"],
-STOCK:["MSFT","INTC","PFE","AXP"]
-};
-
+let SIGNAL_CACHE={};
 let SIGNALS=[];
-let lastDir={};
 
-// ===== LOAD CATEGORY =====
-const cat=document.getElementById("category");
-Object.keys(DATA).forEach(k=>{
-let o=document.createElement("option");
-o.value=k;
-o.text=k;
-cat.add(o);
-});
-
-// ===== LOAD PAIRS =====
-function loadPairs(){
-pairs.innerHTML="";
-DATA[cat.value].forEach(p=>{
-let o=document.createElement("option");
-o.text=p;
-pairs.add(o);
-});
-}
-cat.onchange=loadPairs;
-loadPairs();
-
-// ===== SELECT ALL =====
-function selectAll(){
-for(let o of pairs.options) o.selected=true;
-}
-
-// ===== SELECTED =====
-function selectedPairs(){
-return [...pairs.selectedOptions].map(o=>o.text);
-}
-
-// ===== GET CANDLES =====
+// ===== API =====
 async function getCandles(pair){
-try{
-let r=await fetch(API+`/?pair=${pair}&count=30`);
+let r=await fetch(API+`/?pair=${pair}&count=60`);
 let j=await r.json();
-if(!j.candles) return null;
 return j.candles.reverse();
-}catch{
-return null;
-}
 }
 
-// ===== API TREND =====
-function dirFromCandles(c,pair){
-let last=c.slice(-4);
+// ===== MARKET TIME =====
+function getMarketTime(c){
+return c[c.length-1].candle_time;
+}
+
+// ===== PRO SIGNAL =====
+function buildSignals(c,pair){
+
+let list=[];
+
+for(let i=15;i<c.length;i++){
+
+let a=c[i-4].close;
+let b=c[i-3].close;
+let d=c[i-2].close;
+let e=c[i-1].close;
+let f=c[i].close;
+
 let up=0,down=0;
-for(let i=1;i<last.length;i++){
-if(last[i].close>last[i-1].close) up++;
-if(last[i].close<last[i-1].close) down++;
-}
-let dir=up>=down?"CALL":"PUT";
-lastDir[pair]=dir;
-return dir;
+
+if(b>a) up++; else down++;
+if(d>b) up++; else down++;
+if(e>d) up++; else down++;
+if(f>e) up++; else down++;
+
+if(up>=4 || down>=4){
+
+let dir=up>down?"CALL":"PUT";
+
+let t=new Date();
+t.setMinutes(t.getMinutes()+i);
+
+list.push({
+pair:pair.replace("-OTC",""),
+time:t.toTimeString().slice(0,5),
+dir
+});
+
 }
 
-function safeDir(pair){
-return lastDir[pair] || "CALL";
 }
 
-// ===== RANDOM TIME =====
-function randTime(s,e){
-let a=new Date("2020-01-01 "+s);
-let b=new Date("2020-01-01 "+e);
-let t=new Date(a.getTime()+Math.random()*(b-a));
-return t.toTimeString().slice(0,5);
+return list;
 }
 
 // ===== GENERATE =====
 async function generate(){
 
 SIGNALS=[];
-out.innerText="Generating Ultra Signals...";
+out.innerText="Reading PRO Market Structure...";
 
-let list=selectedPairs();
-if(list.length===0){
-out.innerText="Select Pairs First";
-return;
+let selected=[...pairs.selectedOptions].map(o=>o.value);
+
+if(mode.value==="single"){
+selected=selected.slice(0,1);
 }
 
-let s=start.value;
-let e=end.value;
-
-let callCount=0;
-let putCount=0;
-
-while(SIGNALS.length<20){
-
-let p=list[Math.floor(Math.random()*list.length)];
+for(let p of selected){
 
 let c=await getCandles(p);
-let dir=c?dirFromCandles(c,p):safeDir(p);
+let market=getMarketTime(c);
 
-// Balance CALL / PUT
-if(callCount > putCount+3) dir="PUT";
-if(putCount > callCount+3) dir="CALL";
+if(
+SIGNAL_CACHE[p] &&
+SIGNAL_CACHE[p].market===market
+){
+SIGNALS.push(...SIGNAL_CACHE[p].signals);
+}
+else{
 
-if(dir==="CALL") callCount++;
-else putCount++;
+let sig=buildSignals(c,p).slice(0,5);
 
-SIGNALS.push({
-pair:p.replace("-OTC",""),
-time:randTime(s,e),
-dir:dir
-});
+SIGNAL_CACHE[p]={
+market:market,
+signals:sig
+};
+
+SIGNALS.push(...sig);
+}
 
 }
 
-// Sort by Time
-SIGNALS.sort((a,b)=>a.time.localeCompare(b.time));
+SIGNALS=SIGNALS.slice(0,15);
 
 show();
 }
 
-// ===== SHOW =====
+// ===== DISPLAY =====
 function show(){
 
-let rows=SIGNALS.map(s=>{
-return `⧉ ${s.pair}  ${s.time} ➣ ${s.dir}`;
-});
-
 out.innerText=
-`🔥 APX ULTRA FINAL 🔥
+`🔥 APX ULTRA PREMIUM 🔥
 
-${rows.join("\n")}
-
-UTC+6 | Expiry M1 | 1 Step MTG`;
-}
-
-// ===== TELEGRAM TABLE FORMAT =====
-function telegramText(){
-
-let rows=SIGNALS.map(s=>{
-return (
-s.pair.padEnd(8," ")+" | "+
-s.time.padEnd(5," ")+" | "+
-s.dir.padEnd(4," ")
-);
-});
-
-return `
-🔥 APX ULTRA PREMIUM 🔥
-
-\`\`\`
-PAIR     | TIME  | DIR
-------------------------
-${rows.join("\n")}
-\`\`\`
+${SIGNALS.map(s=>`⧉ ${s.pair} ${s.time} ➣ ${s.dir}`).join("\n")}
 
 ====================
 UTC+6 Timezone
@@ -254,25 +208,35 @@ TRADING RULES
 4️⃣ Stop after 2 losses
 5️⃣ Trade with trend direction
 
-👑 Powered by APX Elite Premium
-`;
+👑 Powered by APX Elite Premium`;
 }
 
-// ===== SEND TELEGRAM =====
+// ===== TELEGRAM =====
 async function sendTG(){
 
-if(SIGNALS.length==0){
-alert("Generate First");
-return;
-}
+let text=
+`🔥 APX ULTRA PREMIUM 🔥
+
+${SIGNALS.map(s=>`⧉ ${s.pair} ${s.time} ➣ ${s.dir}`).join("\n")}
+
+====================
+UTC+6 Timezone
+Expiry: 1 Minute
+Money Management: 1 Step MTG
+====================
+
+TRADING RULES
+1️⃣ Trade only at signal time
+2️⃣ Use 1 Step Martingale only
+3️⃣ Avoid high impact news
+4️⃣ Stop after 2 losses
+5️⃣ Trade with trend direction
+
+👑 Powered by APX Elite Premium`;
 
 await fetch(TG,{
 method:"POST",
-headers:{ "Content-Type":"application/json" },
-body: JSON.stringify({
-text: telegramText(),
-parse_mode:"Markdown"
-})
+body:text
 });
 
 alert("Sent To Telegram");
