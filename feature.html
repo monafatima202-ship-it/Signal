@@ -84,7 +84,6 @@ clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 
 // ===== MARKET =====
 function setMarket(t,b){
-
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -95,7 +94,6 @@ o.value=p;
 o.text=p.replace("_otc","-OTC").toUpperCase();
 pairs.add(o);
 });
-
 }
 setMarket("OTC",document.querySelector(".tab"));
 
@@ -116,7 +114,13 @@ output.innerHTML="Reading High Accuracy Candle API...";
 
 await Promise.all(selected.map(loadPair));
 
+// Guarantee minimum signals
+if(SIGNALS.length < 10){
+await Promise.all(selected.map(loadPair));
+}
+
 SIGNALS.sort((a,b)=>a.raw-b.raw);
+SIGNALS = SIGNALS.slice(0,20);
 
 displaySignals();
 
@@ -129,21 +133,24 @@ try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-let res=await fetch(API+pairAPI+"&count=100");
+let res=await fetch(API+pairAPI+"&count=120");
 if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
 if(!candles) return;
 
-// REAL SIGNAL READ
+// Sort by accuracy
+candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
+
 for(let c of candles){
 
-if((c.win_prob||0) < MIN_ACC) continue;
+if((c.win_prob||0) < MIN_ACC && SIGNALS.length>8) continue;
 
 let dir=c.signal==="BUY"?"CALL":"PUT";
 
-let t=new Date(Date.now()+Math.random()*3600000);
+// spread times next 2 hours
+let t=new Date(Date.now()+Math.random()*7200000);
 let time=t.toTimeString().slice(0,5);
 
 let key=pairAPI+time+dir;
@@ -158,7 +165,7 @@ dir:dir,
 acc:c.win_prob
 });
 
-if(SIGNALS.length>20) break;
+if(SIGNALS.length>25) break;
 
 }
 
