@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA PREMIUM | NEURAL V5</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <title>APX ULTRA PREMIUM | NEURAL V6.5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --neon: #00ffcc;
+            --gold: #ffcc00;
             --bg: #020617;
-            --card: #0f172a;
+            --card: rgba(15, 23, 42, 0.9);
             --call: #00ff88;
             --put: #ff3366;
         }
@@ -18,341 +19,309 @@
         body {
             margin: 0;
             background: var(--bg);
-            color: #e2e8f0;
+            color: #f1f5f9;
             font-family: 'Rajdhani', sans-serif;
-            background-image: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
-            min-height: 100vh;
+            background-image: radial-gradient(circle at top, #1e293b 0%, #020617 100%);
         }
 
+        /* HEADER */
         header {
             padding: 25px;
             text-align: center;
             border-bottom: 2px solid var(--neon);
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 5px 20px rgba(0, 255, 204, 0.2);
+            background: rgba(0,0,0,0.7);
+            box-shadow: 0 4px 20px rgba(0, 255, 204, 0.2);
         }
 
-        header h1 {
+        .logo {
             font-family: 'Orbitron', sans-serif;
             font-size: 24px;
+            letter-spacing: 4px;
             color: var(--neon);
-            text-shadow: 0 0 10px var(--neon);
-            margin: 0;
-            letter-spacing: 3px;
+            text-shadow: 0 0 12px var(--neon);
         }
 
         #clock {
             font-family: 'Orbitron';
-            font-size: 14px;
-            color: #94a3b8;
-            margin-top: 10px;
+            font-size: 13px;
+            margin-top: 8px;
+            color: var(--gold);
         }
 
-        .main-content {
+        .container {
             max-width: 500px;
             margin: 20px auto;
             padding: 15px;
         }
 
-        .glass-panel {
-            background: rgba(15, 23, 42, 0.8);
+        .panel {
+            background: var(--card);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 25px;
-            padding: 25px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border-radius: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
         }
 
         label {
             display: block;
-            font-size: 12px;
-            text-transform: uppercase;
+            font-size: 11px;
             color: var(--neon);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            letter-spacing: 2px;
             font-weight: bold;
         }
 
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: 0.3s;
+        }
+
+        .tab.active { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
+
         select, input {
             width: 100%;
-            padding: 14px;
-            background: #1e293b;
+            padding: 12px;
+            background: #0f172a;
             border: 1px solid #334155;
-            border-radius: 12px;
-            color: white;
-            margin-bottom: 20px;
+            border-radius: 10px;
+            color: #fff;
+            margin-bottom: 15px;
             outline: none;
             font-family: inherit;
         }
 
-        .market-tabs {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .tab {
-            padding: 10px;
-            border: 1px solid var(--neon);
-            background: transparent;
-            color: var(--neon);
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-
-        .tab.active { background: var(--neon); color: var(--bg); }
-
-        .btn-gen {
+        .main-btn {
             width: 100%;
-            padding: 18px;
+            padding: 15px;
             background: var(--neon);
-            color: var(--bg);
+            color: #000;
             border: none;
-            border-radius: 15px;
+            border-radius: 12px;
             font-family: 'Orbitron';
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
-            margin-bottom: 15px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+            margin-bottom: 10px;
         }
 
-        .btn-tg {
+        .tg-btn {
             width: 100%;
             padding: 12px;
             background: #0088cc;
             color: white;
             border: none;
-            border-radius: 15px;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: bold;
         }
 
-        #output-box {
-            margin-top: 25px;
-            background: rgba(0,0,0,0.4);
+        /* OUTPUT BOX */
+        .output-box {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.3);
             border-radius: 15px;
-            border: 1px dashed rgba(0,255,204,0.3);
+            border: 1px dashed rgba(255, 204, 0, 0.3);
             min-height: 100px;
-            overflow: hidden;
         }
 
         .sig-row {
             display: flex;
             justify-content: space-between;
-            padding: 15px;
+            padding: 12px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             font-weight: bold;
-            animation: fadeIn 0.4s ease;
+            font-family: 'Rajdhani', sans-serif;
         }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .sig-time { color: #94a3b8; font-family: 'Orbitron'; font-size: 13px; }
+        .time { font-family: 'Orbitron'; font-size: 12px; color: var(--gold); }
         .CALL { color: var(--call); }
         .PUT { color: var(--put); }
 
-        footer {
-            text-align: center;
-            padding: 30px;
-            font-size: 11px;
-            color: #475569;
-            letter-spacing: 2px;
-        }
+        footer { text-align: center; padding: 25px; font-size: 10px; color: #64748b; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>APX ULTRA PREMIUM</h1>
+    <div class="logo">APX ULTRA PREMIUM</div>
     <div id="clock">UTC+6 | 00:00:00</div>
 </header>
 
-<div class="main-content">
-    <div class="glass-panel">
+<div class="container">
+    <div class="panel">
         <label>Market Category</label>
-        <div class="market-tabs">
+        <div class="tabs">
             <button class="tab active" onclick="loadMarket('OTC', this)">OTC</button>
+            <button class="tab" onclick="loadMarket('STOCKS', this)">STOCKS</button>
             <button class="tab" onclick="loadMarket('CRYPTO', this)">CRYPTO</button>
-            <button class="tab" onclick="loadMarket('STOCK', this)">STOCK</button>
         </div>
 
-        <label>Select Assets</label>
-        <select id="asset-list" multiple size="4"></select>
+        <label>Select Pairs</label>
+        <select id="asset-list" multiple size="5"></select>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
             <div>
                 <label>Start Time</label>
-                <input type="time" id="t-start">
+                <input type="time" id="s-time">
             </div>
             <div>
                 <label>End Time</label>
-                <input type="time" id="t-end">
+                <input type="time" id="e-time">
             </div>
         </div>
 
-        <button class="btn-gen" onclick="generateNow()">⚡ GENERATE SIGNALS</button>
-        <button class="btn-tg" onclick="sendTelegram()">📱 SEND TO TELEGRAM</button>
+        <button class="main-btn" onclick="runEngine()">GENERATE SIGNALS</button>
+        <button class="tg-btn" onclick="sendToTG()">PUSH TO TELEGRAM</button>
 
-        <div id="output-box">
-            <div style="text-align:center; padding:30px; color:#475569;">Ready to Analyze...</div>
+        <div class="output-box" id="output">
+            <div style="text-align:center; padding:30px; color:#475569;">System Ready...</div>
         </div>
     </div>
 </div>
 
-<footer>
-    POWERED BY APX ELITE NEURAL ENGINE V5.2
-</footer>
+<footer>ALGORITHM V6.5 | APX NEURAL CORE</footer>
 
 <script>
-    const API_CANDLE = "https://candle.mkapi009.workers.dev";
-    const API_TG = "https://signal.mkapi009.workers.dev/send";
+    const API_URL = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
+    const TG_URL = "https://signal.mkapi009.workers.dev/send";
 
     const PAIRS = {
-        OTC: ["USDPKR-OTC", "USDINR-OTC", "USDBRL-OTC", "USDMXN-OTC", "USDBDT-OTC", "USDARS-OTC"],
-        CRYPTO: ["ETHUSD-OTC", "BNBUSD-OTC", "BTCUSD-OTC"],
-        STOCK: ["MSFT", "PFE", "AXP", "INTC"]
+        OTC: ["EURUSD_otc", "GBPUSD_otc", "USDINR_otc", "USDPKR_otc", "USDBDT_otc", "USDBRL_otc", "USDNGN_otc", "USDARS_otc", "USDMXN_otc"],
+        STOCKS: ["MSFSTK_otc", "AXPSTK_otc", "PFESTK_otc", "INTSTK_otc", "FBSTK_otc"],
+        CRYPTO: ["BTCUSD", "ETHUSD", "BNBUSD"]
     };
 
-    let CURRENT_SIGNALS = [];
+    let SIGNALS = [];
 
-    // Clock Logic
     setInterval(() => {
         let d = new Date();
         d.setHours(d.getUTCHours() + 6);
         document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
     }, 1000);
 
-    // Initial Setup
     window.onload = () => {
-        let d = new Date();
-        d.setHours(d.getUTCHours() + 6);
-        document.getElementById('t-start').value = d.toTimeString().slice(0, 5);
-        
-        let ed = new Date(d.getTime() + 45*60000); // 45 min window
-        document.getElementById('t-end').value = ed.toTimeString().slice(0, 5);
-        
+        let d = new Date(); d.setHours(d.getUTCHours() + 6);
+        document.getElementById('s-time').value = d.toTimeString().slice(0, 5);
+        let ed = new Date(d.getTime() + 60 * 60000);
+        document.getElementById('e-time').value = ed.toTimeString().slice(0, 5);
         loadMarket('OTC', document.querySelector('.tab'));
     };
 
     function loadMarket(type, btn) {
-        const sel = document.getElementById('asset-list');
-        sel.innerHTML = "";
+        const list = document.getElementById('asset-list');
+        list.innerHTML = "";
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
         PAIRS[type].forEach(p => {
             let o = document.createElement('option');
-            o.value = p; o.innerText = "◈ " + p;
-            sel.add(o);
+            o.value = p; o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC");
+            list.add(o);
         });
     }
 
-    async function generateNow() {
-        const assets = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
-        const startTime = document.getElementById('t-start').value;
-        const endTime = document.getElementById('t-end').value;
-        const box = document.getElementById('output-box');
+    async function runEngine() {
+        const selected = [...document.getElementById('asset-list').selectedOptions].map(o => o.value);
+        const start = document.getElementById('s-time').value;
+        const end = document.getElementById('e-time').value;
+        const box = document.getElementById('output');
 
-        if(assets.length === 0) return alert("Bhai, assets to select karo!");
+        if(selected.length === 0) return alert("Select Asset!");
 
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">🔍 ANALYZING MARKET DATA...</div>`;
-        CURRENT_SIGNALS = [];
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">ANALYZING...</div>`;
+        SIGNALS = [];
 
-        for(let asset of assets) {
+        for(let asset of selected) {
             try {
-                const r = await fetch(`${API_CANDLE}/?pair=${asset}&count=50`);
-                const j = await r.json();
-                const candles = j.candles.reverse();
-                
-                // Har asset ke liye 2-3 random time signals
-                let countPerAsset = Math.floor(Math.random() * 2) + 2; 
-                for(let i=0; i < countPerAsset; i++) {
-                    CURRENT_SIGNALS.push(createSignal(candles, asset, startTime, endTime));
+                const res = await fetch(`${API_URL}&pair=${asset}`);
+                const json = await res.json();
+                const candles = json.data;
+
+                // Generate 2-3 signals
+                for(let i=0; i<Math.floor(Math.random()*2)+2; i++) {
+                    SIGNALS.push(logic(candles, asset, start, end));
                 }
-            } catch(e) { console.log("API Fetch Error"); }
+            } catch(e) { console.error("Error fetching " + asset); }
         }
 
-        CURRENT_SIGNALS.sort((a,b) => a.rawTime - b.rawTime);
-        displaySignals();
+        SIGNALS.sort((a,b) => a.rawTime - b.rawTime);
+        renderHTML();
     }
 
-    function createSignal(candles, asset, startStr, endStr) {
-        // Logic check
-        let last3 = candles.slice(-3);
+    function logic(candles, asset, start, end) {
+        let last5 = candles.slice(0, 5);
         let green = 0;
-        last3.forEach(c => { if(c.close > c.open) green++; });
-        let direction = green >= 2 ? "CALL" : "PUT";
+        last5.forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) green++; });
+        let dir = green >= 3 ? "CALL" : "PUT";
 
-        // Time randomizer between start and end
-        let sParts = startStr.split(':');
-        let eParts = endStr.split(':');
-        
-        let sDate = new Date(); sDate.setHours(sParts[0], sParts[1], 0);
-        let eDate = new Date(); eDate.setHours(eParts[0], eParts[1], 0);
-        
-        // Agar end time start se pehle ho (next day), adjust karein
-        if(eDate < sDate) eDate.setDate(eDate.getDate() + 1);
+        let s = new Date(`2026-01-01T${start}:00`);
+        let e = new Date(`2026-01-01T${end}:00`);
+        if(e < s) e.setDate(e.getDate() + 1);
 
-        let randomTs = sDate.getTime() + Math.random() * (eDate.getTime() - sDate.getTime());
-        let finalDate = new Date(randomTs);
+        let randomTs = s.getTime() + Math.random() * (e.getTime() - s.getTime());
+        let finalTime = new Date(randomTs);
+
+        // Format pair name to ASSET-OTC
+        let cleanName = asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
 
         return {
-            pair: asset,
-            time: finalDate.toTimeString().slice(0, 5),
+            pair: cleanName,
+            time: finalTime.toTimeString().slice(0, 5),
             rawTime: randomTs,
-            dir: direction
+            dir: dir
         };
     }
 
-    function displaySignals() {
-        const box = document.getElementById('output-box');
+    function renderHTML() {
+        const box = document.getElementById('output');
         box.innerHTML = "";
-        
-        if(CURRENT_SIGNALS.length === 0) {
-            box.innerHTML = `<div style="text-align:center; padding:20px;">No Signals Generated.</div>`;
-            return;
-        }
-
-        CURRENT_SIGNALS.forEach(s => {
-            const row = document.createElement('div');
-            row.className = 'sig-row';
-            row.innerHTML = `
-                <span class="sig-time">${s.time}</span>
-                <span>${s.pair}</span>
-                <span class="${s.dir}">${s.dir}</span>
-            `;
-            box.appendChild(row);
+        SIGNALS.forEach(s => {
+            box.innerHTML += `
+                <div class="sig-row">
+                    <span class="time">${s.time}</span>
+                    <span>${s.pair}</span>
+                    <span class="${s.dir}">${s.dir}</span>
+                </div>`;
         });
     }
 
-    async function sendTelegram() {
-        if(CURRENT_SIGNALS.length === 0) return alert("Pehle signals generate karein!");
+    async function sendToTG() {
+        if(SIGNALS.length === 0) return alert("Generate signals!");
 
-        let msg = `🔥 *APX ULTRA PREMIUM* 🔥\n`;
-        msg += `━━━━━━━━━━━━━━━\n`;
-        msg += `📊 *MODE:* 1-MINUTE (M1)\n`;
-        msg += `🎯 *ACCURACY:* 80%+\n`;
-        msg += `⏰ *TIMEZONE:* UTC+6\n`;
-        msg += `━━━━━━━━━━━━━━━\n\n`;
+        let text = `🔥 *APX ULTRA PREMIUM* 🔥\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `📊 *MODE:* M1 (1-MINUTE)\n`;
+        text += `🎯 *ACCURACY:* 80%+\n`;
+        text += `⏰ *TIMEZONE:* UTC+6\n`;
+        text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-        CURRENT_SIGNALS.forEach(s => {
+        SIGNALS.forEach(s => {
             const icon = s.dir === "CALL" ? "🟢" : "🔴";
-            // Professional Format
-            msg += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${icon}\n`;
+            text += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${icon}\n`;
         });
 
-        msg += `\n━━━━━━━━━━━━━━━\n`;
-        msg += `⚠️ *RULES:* 1-Step MTG Only\n`;
-        msg += `🚀 *POWERED BY APX API*`;
+        text += `\n━━━━━━━━━━━━━━━━━━━━\n`;
+        text += `⚠️ *RULES:* 1-Step MTG Only\n`;
+        text += `🚀 *POWERED BY MRBEAXT API*`;
 
         try {
-            await fetch(API_TG, { method: "POST", body: msg });
-            alert("Telegram Par Bhej Diye Gaye Hain!");
-        } catch(e) { alert("Error sending to TG"); }
+            await fetch(TG_URL, { method: "POST", body: text });
+            alert("Sent to Telegram!");
+        } catch(e) { alert("Error!"); }
     }
 </script>
 
