@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA PREMIUM | NEURAL V6.5</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <title>APX ULTRA PREMIUM | NEURAL V6.7</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     
     <style>
         :root {
             --neon: #00ffcc;
             --gold: #ffcc00;
             --bg: #020617;
-            --card: rgba(15, 23, 42, 0.9);
+            --card: rgba(15, 23, 42, 0.95);
             --call: #00ff88;
             --put: #ff3366;
         }
@@ -22,34 +22,34 @@
             color: #f1f5f9;
             font-family: 'Rajdhani', sans-serif;
             background-image: radial-gradient(circle at top, #1e293b 0%, #020617 100%);
+            min-height: 100vh;
         }
 
-        /* HEADER */
         header {
-            padding: 25px;
+            padding: 20px;
             text-align: center;
             border-bottom: 2px solid var(--neon);
-            background: rgba(0,0,0,0.7);
-            box-shadow: 0 4px 20px rgba(0, 255, 204, 0.2);
+            background: rgba(0,0,0,0.8);
+            box-shadow: 0 4px 20px rgba(0, 255, 204, 0.3);
         }
 
         .logo {
             font-family: 'Orbitron', sans-serif;
-            font-size: 24px;
-            letter-spacing: 4px;
+            font-size: 22px;
+            letter-spacing: 3px;
             color: var(--neon);
-            text-shadow: 0 0 12px var(--neon);
+            text-shadow: 0 0 10px var(--neon);
         }
 
         #clock {
             font-family: 'Orbitron';
             font-size: 13px;
-            margin-top: 8px;
+            margin-top: 5px;
             color: var(--gold);
         }
 
         .container {
-            max-width: 500px;
+            max-width: 480px;
             margin: 20px auto;
             padding: 15px;
         }
@@ -59,7 +59,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 20px;
             padding: 20px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
         }
 
         label {
@@ -67,11 +67,11 @@
             font-size: 11px;
             color: var(--neon);
             margin-bottom: 6px;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             font-weight: bold;
+            text-transform: uppercase;
         }
 
-        /* TABS */
         .tabs {
             display: flex;
             gap: 8px;
@@ -87,11 +87,10 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            font-size: 12px;
-            transition: 0.3s;
+            font-size: 11px;
         }
 
-        .tab.active { background: var(--neon); color: #000; box-shadow: 0 0 10px var(--neon); }
+        .tab.active { background: var(--neon); color: #000; }
 
         select, input {
             width: 100%;
@@ -107,7 +106,7 @@
 
         .main-btn {
             width: 100%;
-            padding: 15px;
+            padding: 16px;
             background: var(--neon);
             color: #000;
             border: none;
@@ -115,7 +114,6 @@
             font-family: 'Orbitron';
             font-weight: bold;
             cursor: pointer;
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
             margin-bottom: 10px;
         }
 
@@ -130,12 +128,11 @@
             font-weight: bold;
         }
 
-        /* OUTPUT BOX */
-        .output-box {
+        #output {
             margin-top: 20px;
-            background: rgba(0,0,0,0.3);
+            background: rgba(0,0,0,0.4);
             border-radius: 15px;
-            border: 1px dashed rgba(255, 204, 0, 0.3);
+            border: 1px dashed var(--neon);
             min-height: 100px;
         }
 
@@ -145,14 +142,13 @@
             padding: 12px 15px;
             border-bottom: 1px solid rgba(255,255,255,0.05);
             font-weight: bold;
-            font-family: 'Rajdhani', sans-serif;
         }
 
-        .time { font-family: 'Orbitron'; font-size: 12px; color: var(--gold); }
+        .time { color: var(--gold); font-family: 'Orbitron'; font-size: 12px; }
         .CALL { color: var(--call); }
         .PUT { color: var(--put); }
 
-        footer { text-align: center; padding: 25px; font-size: 10px; color: #64748b; letter-spacing: 2px; }
+        footer { text-align: center; padding: 20px; font-size: 10px; color: #475569; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -175,29 +171,23 @@
         <select id="asset-list" multiple size="5"></select>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-            <div>
-                <label>Start Time</label>
-                <input type="time" id="s-time">
-            </div>
-            <div>
-                <label>End Time</label>
-                <input type="time" id="e-time">
-            </div>
+            <div><label>Start</label><input type="time" id="s-time"></div>
+            <div><label>End</label><input type="time" id="e-time"></div>
         </div>
 
         <button class="main-btn" onclick="runEngine()">GENERATE SIGNALS</button>
         <button class="tg-btn" onclick="sendToTG()">PUSH TO TELEGRAM</button>
 
-        <div class="output-box" id="output">
+        <div id="output">
             <div style="text-align:center; padding:30px; color:#475569;">System Ready...</div>
         </div>
     </div>
 </div>
 
-<footer>ALGORITHM V6.5 | APX NEURAL CORE</footer>
+<footer>ALGORITHM V6.7 | APX NEURAL CORE</footer>
 
 <script>
-    const API_URL = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
+    const API_BASE = "https://mrbeaxt.site/Qx/Qx.php?format=json&timeframe=M1&limit=500";
     const TG_URL = "https://signal.mkapi009.workers.dev/send";
 
     const PAIRS = {
@@ -209,8 +199,7 @@
     let SIGNALS = [];
 
     setInterval(() => {
-        let d = new Date();
-        d.setHours(d.getUTCHours() + 6);
+        let d = new Date(); d.setHours(d.getUTCHours() + 6);
         document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB');
     }, 1000);
 
@@ -229,7 +218,7 @@
         btn.classList.add('active');
         PAIRS[type].forEach(p => {
             let o = document.createElement('option');
-            o.value = p; o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC");
+            o.value = p; o.innerText = p.replace("_otc", "-OTC").replace("STK_otc", "-OTC").replace("_", "/");
             list.add(o);
         });
     }
@@ -242,45 +231,47 @@
 
         if(selected.length === 0) return alert("Select Asset!");
 
-        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">ANALYZING...</div>`;
+        box.innerHTML = `<div style="text-align:center; padding:30px; color:var(--neon);">ANALYZING MARKET...</div>`;
         SIGNALS = [];
 
         for(let asset of selected) {
             try {
-                const res = await fetch(`${API_URL}&pair=${asset}`);
-                const json = await res.json();
-                const candles = json.data;
-
-                // Generate 2-3 signals
-                for(let i=0; i<Math.floor(Math.random()*2)+2; i++) {
-                    SIGNALS.push(logic(candles, asset, start, end));
+                const response = await fetch(`${API_BASE}&pair=${asset}`);
+                const json = await response.json();
+                
+                // Extra safety check for data
+                if(json && json.data) {
+                    const candles = json.data;
+                    for(let i=0; i < (Math.floor(Math.random()*2)+2); i++) {
+                        SIGNALS.push(calculateSignal(candles, asset, start, end));
+                    }
                 }
-            } catch(e) { console.error("Error fetching " + asset); }
+            } catch(e) { console.error("Error with " + asset); }
         }
 
         SIGNALS.sort((a,b) => a.rawTime - b.rawTime);
         renderHTML();
     }
 
-    function logic(candles, asset, start, end) {
-        let last5 = candles.slice(0, 5);
-        let green = 0;
-        last5.forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) green++; });
-        let dir = green >= 3 ? "CALL" : "PUT";
+    function calculateSignal(candles, asset, start, end) {
+        // Simple logic check
+        let trend = 0;
+        let lastItems = candles.slice(0, 10);
+        lastItems.forEach(c => { if(parseFloat(c.close) > parseFloat(c.open)) trend++; });
+        let dir = trend >= 5 ? "CALL" : "PUT";
 
-        let s = new Date(`2026-01-01T${start}:00`);
-        let e = new Date(`2026-01-01T${end}:00`);
+        let s = new Date(`2026-02-15T${start}:00`); // Fixed current date for logic
+        let e = new Date(`2026-02-15T${end}:00`);
         if(e < s) e.setDate(e.getDate() + 1);
 
         let randomTs = s.getTime() + Math.random() * (e.getTime() - s.getTime());
-        let finalTime = new Date(randomTs);
+        let resTime = new Date(randomTs);
 
-        // Format pair name to ASSET-OTC
-        let cleanName = asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
+        let cleanPair = asset.replace("_otc", "-OTC").replace("STK_otc", "-OTC").toUpperCase();
 
         return {
-            pair: cleanName,
-            time: finalTime.toTimeString().slice(0, 5),
+            pair: cleanPair,
+            time: resTime.toTimeString().slice(0, 5),
             rawTime: randomTs,
             dir: dir
         };
@@ -288,7 +279,12 @@
 
     function renderHTML() {
         const box = document.getElementById('output');
-        box.innerHTML = "";
+        if(SIGNALS.length === 0) {
+            box.innerHTML = `<div style="text-align:center; padding:30px; color:red;">FAILED TO FETCH DATA</div>`;
+            return;
+        }
+        
+        box.innerHTML = ""; // Clear analyzing text
         SIGNALS.forEach(s => {
             box.innerHTML += `
                 <div class="sig-row">
@@ -301,23 +297,12 @@
 
     async function sendToTG() {
         if(SIGNALS.length === 0) return alert("Generate signals!");
-
-        let text = `🔥 *APX ULTRA PREMIUM* 🔥\n`;
-        text += `━━━━━━━━━━━━━━━━━━━━\n`;
-        text += `📊 *MODE:* M1 (1-MINUTE)\n`;
-        text += `🎯 *ACCURACY:* 80%+\n`;
-        text += `⏰ *TIMEZONE:* UTC+6\n`;
-        text += `━━━━━━━━━━━━━━━━━━━━\n\n`;
-
+        let text = `🔥 *APX ULTRA PREMIUM* 🔥\n━━━━━━━━━━━━━━━━━━━━\n📊 *MODE:* M1 (1-MINUTE)\n🎯 *ACCURACY:* 80%+\n⏰ *TIMEZONE:* UTC+6\n━━━━━━━━━━━━━━━━━━━━\n\n`;
         SIGNALS.forEach(s => {
             const icon = s.dir === "CALL" ? "🟢" : "🔴";
             text += `🔹 \`M1;${s.pair};${s.time};${s.dir}\` ${icon}\n`;
         });
-
-        text += `\n━━━━━━━━━━━━━━━━━━━━\n`;
-        text += `⚠️ *RULES:* 1-Step MTG Only\n`;
-        text += `🚀 *POWERED BY MRBEAXT API*`;
-
+        text += `\n━━━━━━━━━━━━━━━━━━━━\n⚠️ *RULES:* 1-Step MTG Only\n🚀 *POWERED BY MRBEAXT API*`;
         try {
             await fetch(TG_URL, { method: "POST", body: text });
             alert("Sent to Telegram!");
