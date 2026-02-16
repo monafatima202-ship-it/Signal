@@ -63,7 +63,7 @@ select { width:100%; padding:12px; background:#020617; color:white; border:1px s
 // ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
-const MIN_ACC=0.75;
+const MIN_ACC=0.70;
 
 // ===== PAIRS =====
 const LIST={
@@ -84,6 +84,7 @@ clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 
 // ===== MARKET =====
 function setMarket(t,b){
+
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -94,6 +95,7 @@ o.value=p;
 o.text=p.replace("_otc","-OTC").toUpperCase();
 pairs.add(o);
 });
+
 }
 setMarket("OTC",document.querySelector(".tab"));
 
@@ -110,66 +112,63 @@ alert("Select pairs");
 return;
 }
 
-output.innerHTML="Reading High Accuracy Candle API...";
+output.innerHTML="Reading Live API Signals...";
 
 await Promise.all(selected.map(loadPair));
-
-// Guarantee minimum signals
-if(SIGNALS.length < 10){
-await Promise.all(selected.map(loadPair));
-}
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
-SIGNALS = SIGNALS.slice(0,20);
 
 displaySignals();
 
 }
 
-// ===== LOAD PAIR =====
+// ===== LOAD PAIR (FINAL FIX) =====
 async function loadPair(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-let res=await fetch(API+pairAPI+"&count=120");
+let res=await fetch(API+pairAPI+"&count=200");
 if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
-if(!candles) return;
+if(!candles || candles.length===0) return;
 
-// Sort by accuracy
+// SORT HIGH ACC FIRST
 candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
 
 for(let c of candles){
 
-if((c.win_prob||0) < MIN_ACC && SIGNALS.length>8) continue;
+let dir = c.signal==="BUY" ? "CALL" : "PUT";
 
-let dir=c.signal==="BUY"?"CALL":"PUT";
-
-// spread times next 2 hours
-let t=new Date(Date.now()+Math.random()*7200000);
+// TIME NEXT 90 MIN
+let t=new Date(Date.now()+Math.random()*5400000);
 let time=t.toTimeString().slice(0,5);
 
 let key=pairAPI+time+dir;
 if(LOCK.has(key)) continue;
 LOCK.add(key);
 
+// Allow fallback accuracy if signals low
+if((c.win_prob||0) < MIN_ACC && SIGNALS.length > 12) continue;
+
 SIGNALS.push({
 pair:pairAPI,
 time:time,
 raw:t.getTime(),
 dir:dir,
-acc:c.win_prob
+acc:c.win_prob || 0.65
 });
 
-if(SIGNALS.length>25) break;
+if(SIGNALS.length >= 15) break;
 
 }
 
-}catch(e){}
+}catch(e){
+console.log("API Fail",asset);
+}
 
 }
 
@@ -179,7 +178,7 @@ function displaySignals(){
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No High Accuracy Signals";
+output.innerHTML="No High Frequency Signals";
 return;
 }
 
@@ -204,12 +203,10 @@ return;
 
 let msg=`🔥 APX ULTRA PREMIUM 🔥
 
-PAIR     | TIME  | DIR
---------------------------
 `;
 
 SIGNALS.forEach(s=>{
-msg+=`${s.pair.padEnd(8)} | ${s.time} | ${s.dir}\n`;
+msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
 });
 
 msg+=`
@@ -237,4 +234,4 @@ alert("Signals Sent To Telegram");
 </script>
 
 </body>
-</html>
+        </html>
