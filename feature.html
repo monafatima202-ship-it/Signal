@@ -65,7 +65,7 @@ const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=18;
-const MIN_ACC=0.75;
+const MIN_ACC=0.70;
 
 // ===== PAIRS =====
 const LIST={
@@ -81,11 +81,12 @@ let LOCK=new Set();
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
-clock.innerText="UTC+6 | "+d.toLocaleTimeString();
+document.getElementById("clock").innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
 // MARKET
 function setMarket(t,b){
+let pairs=document.getElementById("pairs");
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -105,14 +106,14 @@ async function startEngine(){
 SIGNALS=[];
 LOCK.clear();
 
-let selected=[...pairs.selectedOptions].map(o=>o.value);
+let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 
 if(selected.length===0){
 alert("Select pairs");
 return;
 }
 
-output.innerHTML="Reading High Accuracy API Signals...";
+document.getElementById("output").innerHTML="Reading LIVE API Signals...";
 
 for(let asset of selected){
 
@@ -142,44 +143,36 @@ let json=await res.json();
 let candles=json?.candles;
 if(!candles) return;
 
-// Sort by accuracy
+// High accuracy first
 candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
 
 for(let c of candles){
 
 if(SIGNALS.length>=TARGET) break;
 
-if((c.win_prob||0) < MIN_ACC) continue;
+if((c.win_prob||0) < MIN_ACC && SIGNALS.length < 10) continue;
 
-let dir=c.signal==="BUY"?"CALL":"PUT";
+let dir = c.signal==="BUY" ? "CALL" : "PUT";
 
-// time inside user range
-let s=start.value || "00:00";
-let e=end.value || "23:59";
+// REAL API TIME
+let candleTime = new Date(c.candle_time * 1000);
+let time = candleTime.toTimeString().slice(0,5);
 
-let now=new Date();
-let sD=new Date(now.toDateString()+" "+s);
-let eD=new Date(now.toDateString()+" "+e);
-if(eD<=sD) eD.setDate(eD.getDate()+1);
-
-let t=new Date(sD.getTime()+Math.random()*(eD-sD));
-let time=t.toTimeString().slice(0,5);
-
-let key=pairAPI+time+dir;
+let key = pairAPI + time + dir;
 if(LOCK.has(key)) continue;
 LOCK.add(key);
 
 SIGNALS.push({
 pair:pairAPI,
 time:time,
-raw:t.getTime(),
+raw:c.candle_time,
 dir:dir
 });
 
 }
 
 }catch(e){
-console.log("API fail",asset);
+console.log("API FAIL",asset);
 }
 
 }
@@ -187,6 +180,7 @@ console.log("API fail",asset);
 // ===== DISPLAY =====
 function displaySignals(){
 
+let output=document.getElementById("output");
 output.innerHTML="";
 
 if(SIGNALS.length===0){
