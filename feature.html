@@ -17,7 +17,7 @@ header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); b
 .tabs { display:flex; gap:6px; margin-bottom:15px; }
 .tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
 .tab.active { background:var(--neon); color:black; }
-select,input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
+select { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
 .main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
 .tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
 #output { margin-top:20px; padding:5px; border:1px dashed var(--neon); border-radius:15px; background:rgba(0,0,0,0.3); }
@@ -49,7 +49,7 @@ select,input { width:100%; padding:12px; background:#020617; color:white; border
 <input type="time" id="start">
 <input type="time" id="end">
 
-<button class="main-btn" onclick="startEngine()">⚡ GENERATE NEURAL SIGNALS</button>
+<button class="main-btn" onclick="startEngine()">⚡ GENERATE REAL API SIGNALS</button>
 <button class="tg-btn" onclick="pushTG()">📩 SEND TELEGRAM</button>
 
 <div id="output">Awaiting Neural Sync...</div>
@@ -62,9 +62,10 @@ select,input { width:100%; padding:12px; background:#020617; color:white; border
 // CONFIG
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
-const MIN_ACC=0.70;
 
-// PAIRS
+const TARGET=18;
+const MIN_ACC=0.75;
+
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
@@ -110,51 +111,54 @@ alert("Select pairs");
 return;
 }
 
-document.getElementById("output").innerHTML="Reading PURE API Signals...";
+document.getElementById("output").innerHTML="Reading Real API Signals...";
 
 for(let asset of selected){
+
+if(SIGNALS.length>=TARGET) break;
+
 await loadPair(asset);
+
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
 
 displaySignals();
+
 }
 
-// LOAD PAIR PURE API
+// LOAD PAIR
 async function loadPair(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-let res=await fetch(API+pairAPI+"&count=300");
+let res=await fetch(API+pairAPI+"&count=200");
 if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
 if(!candles) return;
 
-// USER RANGE
-let s=document.getElementById("start").value || "00:00";
-let e=document.getElementById("end").value || "23:59";
+// SORT HIGH ACC FIRST
+candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
 
-let now=new Date();
-let sD=new Date(now.toDateString()+" "+s);
-let eD=new Date(now.toDateString()+" "+e);
-if(eD<=sD) eD.setDate(eD.getDate()+1);
+let now=Date.now();
 
-for(let c of candles){
+for(let i=0;i<candles.length;i++){
 
+let c=candles[i];
+
+if(SIGNALS.length>=TARGET) break;
 if((c.win_prob||0) < MIN_ACC) continue;
 
 let dir=c.signal==="BUY"?"CALL":"PUT";
 
-// REAL TIME FROM CANDLE
-let t=new Date(c.candle_time * 60000);
+// FUTURE SCHEDULE
+let future = now + (SIGNALS.length+1)*60000;
 
-if(t<sD || t>eD) continue;
-
+let t=new Date(future);
 let time=t.toTimeString().slice(0,5);
 
 let key=pairAPI+time+dir;
@@ -164,14 +168,14 @@ LOCK.add(key);
 SIGNALS.push({
 pair:pairAPI,
 time:time,
-raw:t.getTime(),
+raw:future,
 dir:dir
 });
 
 }
 
 }catch(e){
-console.log("API fail",asset);
+console.log("API FAIL",asset);
 }
 
 }
@@ -180,11 +184,10 @@ console.log("API fail",asset);
 function displaySignals(){
 
 let output=document.getElementById("output");
-
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No API Signals In Selected Time Range";
+output.innerHTML="No High Accuracy Signals";
 return;
 }
 
@@ -196,6 +199,7 @@ output.innerHTML+=`
 <span class="${s.dir}">${s.dir}</span>
 </div>`;
 });
+
 }
 
 // TELEGRAM
@@ -206,7 +210,7 @@ alert("Generate First");
 return;
 }
 
-let msg=`🔥 APX PURE API SIGNALS 🔥\n\n`;
+let msg=`🔥 APX ULTRA PREMIUM 🔥\n\n`;
 
 SIGNALS.forEach(s=>{
 msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
