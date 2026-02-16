@@ -64,8 +64,10 @@ const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=18;
-const MIN_ACC=0.70;
+const MAIN_ACC=0.70;
+const FALLBACK_ACC=0.65;
 
+// PAIRS
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
@@ -79,12 +81,11 @@ let LOCK=new Set();
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
-document.getElementById("clock").innerText="UTC+6 | "+d.toLocaleTimeString();
+clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// MARKET
+// MARKET SWITCH
 function setMarket(t,b){
-let pairs=document.getElementById("pairs");
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -104,72 +105,73 @@ async function startEngine(){
 SIGNALS=[];
 LOCK.clear();
 
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+let selected=[...pairs.selectedOptions].map(o=>o.value);
+if(selected.length===0){ alert("Select pairs"); return; }
 
-if(selected.length===0){
-alert("Select pairs");
-return;
+output.innerHTML="Reading Smart Mode Signals...";
+
+for(let asset of selected){
+
+if(SIGNALS.length>=TARGET) break;
+
+await loadPair(asset, MAIN_ACC);
+
 }
 
-document.getElementById("output").innerHTML="Reading LIVE API Signals...";
-
-let allCandles=[];
-
-// LOAD ALL API DATA
+// fallback if low signals
+if(SIGNALS.length<10){
 for(let asset of selected){
+if(SIGNALS.length>=TARGET) break;
+await loadPair(asset, FALLBACK_ACC);
+}
+}
+
+SIGNALS.sort((a,b)=>a.raw-b.raw);
+displaySignals();
+}
+
+// LOAD PAIR
+async function loadPair(asset, MIN_ACC){
+
+try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-try{
 let res=await fetch(API+pairAPI+"&count=200");
+if(!res.ok) return;
+
 let json=await res.json();
+let candles=json?.candles;
+if(!candles) return;
 
-if(json?.candles){
-json.candles.forEach(c=>{
-c._pair=pairAPI;
-allCandles.push(c);
-});
-}
+candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
 
-}catch(e){}
-}
+for(let c of candles){
 
-// SORT BY ACCURACY
-allCandles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
+if(SIGNALS.length>=TARGET) break;
 
-// TIME RANGE
-let s=document.getElementById("start").value || "00:00";
-let e=document.getElementById("end").value || "23:59";
+if((c.win_prob||0) < MIN_ACC) continue;
+
+let dir=c.signal==="BUY"?"CALL":"PUT";
+
+// USER TIME RANGE
+let s=start.value || "00:00";
+let e=end.value || "23:59";
 
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-// TIME DISTRIBUTION
-let step=(eD-sD)/TARGET;
-let cursor=sD.getTime();
-
-// BUILD SIGNALS
-for(let c of allCandles){
-
-if(SIGNALS.length>=TARGET) break;
-
-if((c.win_prob||0) < MIN_ACC && SIGNALS.length < 10) continue;
-
-let dir=c.signal==="BUY"?"CALL":"PUT";
-
-let t=new Date(cursor);
-cursor+=step;
-
+let t=new Date(sD.getTime()+Math.random()*(eD-sD));
 let time=t.toTimeString().slice(0,5);
 
-let key=c._pair+time+dir;
+let key=pairAPI+time+dir;
 if(LOCK.has(key)) continue;
 LOCK.add(key);
 
 SIGNALS.push({
-pair:c._pair,
+pair:pairAPI,
 time:time,
 raw:t.getTime(),
 dir:dir
@@ -177,19 +179,17 @@ dir:dir
 
 }
 
-SIGNALS.sort((a,b)=>a.raw-b.raw);
+}catch(e){}
 
-displaySignals();
 }
 
 // DISPLAY
 function displaySignals(){
 
-let output=document.getElementById("output");
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No Signals Found";
+output.innerHTML="No Smart Signals Found";
 return;
 }
 
@@ -201,15 +201,13 @@ output.innerHTML+=`
 <span class="${s.dir}">${s.dir}</span>
 </div>`;
 });
+
 }
 
 // TELEGRAM
 async function pushTG(){
 
-if(SIGNALS.length===0){
-alert("Generate First");
-return;
-}
+if(SIGNALS.length===0){ alert("Generate First"); return; }
 
 let msg=`🔥 APX ULTRA PREMIUM 🔥\n\n`;
 
@@ -217,12 +215,13 @@ SIGNALS.forEach(s=>{
 msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
 });
 
-await fetch(TG,{method:"POST",body:msg});
+msg+=`\n====================\nUTC+6 Timezone\nExpiry: 1 Minute\nMoney Management: 1 Step MTG\n====================`;
 
+await fetch(TG,{method:"POST",body:msg});
 alert("Signals Sent To Telegram");
+
 }
 
 </script>
-
 </body>
 </html>
