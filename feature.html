@@ -65,8 +65,9 @@ const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=18;
-const MIN_ACC=0.70;
+const MIN_ACC=0.75;
 
+// ===== PAIRS =====
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
@@ -98,7 +99,7 @@ pairs.add(o);
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-// ENGINE
+// ===== ENGINE =====
 async function startEngine(){
 
 SIGNALS=[];
@@ -111,23 +112,23 @@ alert("Select pairs");
 return;
 }
 
-output.innerHTML="Reading Live Candle API Signals...";
+output.innerHTML="Reading High Accuracy API Signals...";
 
 for(let asset of selected){
-await loadPair(asset);
+
 if(SIGNALS.length>=TARGET) break;
+
+await loadPair(asset);
+
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
 
-if(SIGNALS.length<10){
-generateFallback(selected);
-}
-
 displaySignals();
+
 }
 
-// LOAD PAIR
+// ===== LOAD PAIR =====
 async function loadPair(asset){
 
 try{
@@ -141,17 +142,27 @@ let json=await res.json();
 let candles=json?.candles;
 if(!candles) return;
 
+// Sort by accuracy
 candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
 
 for(let c of candles){
 
 if(SIGNALS.length>=TARGET) break;
 
-if((c.win_prob||0) < MIN_ACC && SIGNALS.length<10) continue;
+if((c.win_prob||0) < MIN_ACC) continue;
 
 let dir=c.signal==="BUY"?"CALL":"PUT";
 
-let t=new Date(Date.now()+Math.random()*7200000);
+// time inside user range
+let s=start.value || "00:00";
+let e=end.value || "23:59";
+
+let now=new Date();
+let sD=new Date(now.toDateString()+" "+s);
+let eD=new Date(now.toDateString()+" "+e);
+if(eD<=sD) eD.setDate(eD.getDate()+1);
+
+let t=new Date(sD.getTime()+Math.random()*(eD-sD));
 let time=t.toTimeString().slice(0,5);
 
 let key=pairAPI+time+dir;
@@ -167,49 +178,19 @@ dir:dir
 
 }
 
-}catch(e){}
-
-}
-
-// FALLBACK
-function generateFallback(pairsList){
-
-for(let p of pairsList){
-
-if(SIGNALS.length>=TARGET) break;
-
-let pairAPI=p.replace("_otc","-OTC");
-
-for(let i=0;i<3;i++){
-
-let dir=Math.random()>0.5?"CALL":"PUT";
-let t=new Date(Date.now()+Math.random()*7200000);
-let time=t.toTimeString().slice(0,5);
-
-let key=pairAPI+time+dir;
-if(LOCK.has(key)) continue;
-LOCK.add(key);
-
-SIGNALS.push({
-pair:pairAPI,
-time:time,
-raw:t.getTime(),
-dir:dir
-});
-
+}catch(e){
+console.log("API fail",asset);
 }
 
 }
 
-}
-
-// DISPLAY
+// ===== DISPLAY =====
 function displaySignals(){
 
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No Signals Generated";
+output.innerHTML="No High Accuracy Signals Found";
 return;
 }
 
@@ -224,7 +205,7 @@ output.innerHTML+=`
 
 }
 
-// TELEGRAM
+// ===== TELEGRAM =====
 async function pushTG(){
 
 if(SIGNALS.length===0){
@@ -232,33 +213,18 @@ alert("Generate First");
 return;
 }
 
-let msg=`🔥 APX ULTRA PREMIUM 🔥
-
-`;
+let msg=`🔥 APX ULTRA PREMIUM 🔥\n\n`;
 
 SIGNALS.forEach(s=>{
 msg+=`M1;${s.pair};${s.time};${s.dir}\n`;
 });
 
-msg+=`
-====================
-UTC+6 Timezone
-Expiry: 1 Minute
-Money Management: 1 Step MTG
-====================
-
-TRADING RULES
-1 Trade only at signal time
-2 Use 1 Step Martingale only
-3 Avoid high impact news
-4 Stop after 2 losses
-5 Trade with trend direction
-
-Powered by APX Elite Premium`;
+msg+=`\n====================\nUTC+6 Timezone\nExpiry: 1 Minute\nMoney Management: 1 Step MTG\n====================`;
 
 await fetch(TG,{method:"POST",body:msg});
 
 alert("Signals Sent To Telegram");
+
 }
 
 </script>
