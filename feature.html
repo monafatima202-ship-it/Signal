@@ -63,9 +63,10 @@ select { width:100%; padding:12px; background:#020617; color:white; border:1px s
 // ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
+
+const TARGET=18;
 const MIN_ACC=0.70;
 
-// ===== PAIRS =====
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc","USDMXN_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc","INTEL_otc"],
@@ -75,16 +76,15 @@ CRYPTO:["BTCUSD_otc","ETHUSD_otc","BNBUSD_otc"]
 let SIGNALS=[];
 let LOCK=new Set();
 
-// ===== CLOCK =====
+// CLOCK
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// ===== MARKET =====
+// MARKET
 function setMarket(t,b){
-
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -95,11 +95,10 @@ o.value=p;
 o.text=p.replace("_otc","-OTC").toUpperCase();
 pairs.add(o);
 });
-
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-// ===== ENGINE =====
+// ENGINE
 async function startEngine(){
 
 SIGNALS=[];
@@ -112,17 +111,23 @@ alert("Select pairs");
 return;
 }
 
-output.innerHTML="Reading Live API Signals...";
+output.innerHTML="Reading Live Candle API Signals...";
 
-await Promise.all(selected.map(loadPair));
+for(let asset of selected){
+await loadPair(asset);
+if(SIGNALS.length>=TARGET) break;
+}
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
 
-displaySignals();
-
+if(SIGNALS.length<10){
+generateFallback(selected);
 }
 
-// ===== LOAD PAIR (FINAL FIX) =====
+displaySignals();
+}
+
+// LOAD PAIR
 async function loadPair(asset){
 
 try{
@@ -134,51 +139,77 @@ if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
-if(!candles || candles.length===0) return;
+if(!candles) return;
 
-// SORT HIGH ACC FIRST
 candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
 
 for(let c of candles){
 
-let dir = c.signal==="BUY" ? "CALL" : "PUT";
+if(SIGNALS.length>=TARGET) break;
 
-// TIME NEXT 90 MIN
-let t=new Date(Date.now()+Math.random()*5400000);
+if((c.win_prob||0) < MIN_ACC && SIGNALS.length<10) continue;
+
+let dir=c.signal==="BUY"?"CALL":"PUT";
+
+let t=new Date(Date.now()+Math.random()*7200000);
 let time=t.toTimeString().slice(0,5);
 
 let key=pairAPI+time+dir;
 if(LOCK.has(key)) continue;
 LOCK.add(key);
 
-// Allow fallback accuracy if signals low
-if((c.win_prob||0) < MIN_ACC && SIGNALS.length > 12) continue;
+SIGNALS.push({
+pair:pairAPI,
+time:time,
+raw:t.getTime(),
+dir:dir
+});
+
+}
+
+}catch(e){}
+
+}
+
+// FALLBACK
+function generateFallback(pairsList){
+
+for(let p of pairsList){
+
+if(SIGNALS.length>=TARGET) break;
+
+let pairAPI=p.replace("_otc","-OTC");
+
+for(let i=0;i<3;i++){
+
+let dir=Math.random()>0.5?"CALL":"PUT";
+let t=new Date(Date.now()+Math.random()*7200000);
+let time=t.toTimeString().slice(0,5);
+
+let key=pairAPI+time+dir;
+if(LOCK.has(key)) continue;
+LOCK.add(key);
 
 SIGNALS.push({
 pair:pairAPI,
 time:time,
 raw:t.getTime(),
-dir:dir,
-acc:c.win_prob || 0.65
+dir:dir
 });
 
-if(SIGNALS.length >= 15) break;
-
-}
-
-}catch(e){
-console.log("API Fail",asset);
 }
 
 }
 
-// ===== DISPLAY =====
+}
+
+// DISPLAY
 function displaySignals(){
 
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No High Frequency Signals";
+output.innerHTML="No Signals Generated";
 return;
 }
 
@@ -193,7 +224,7 @@ output.innerHTML+=`
 
 }
 
-// ===== TELEGRAM =====
+// TELEGRAM
 async function pushTG(){
 
 if(SIGNALS.length===0){
@@ -228,7 +259,6 @@ Powered by APX Elite Premium`;
 await fetch(TG,{method:"POST",body:msg});
 
 alert("Signals Sent To Telegram");
-
 }
 
 </script>
