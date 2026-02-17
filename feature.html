@@ -1,200 +1,30 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID PRO</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
-<style>
-:root{
---neon:#00ffcc;
---bg:#010409;
---call:#00ff88;
---put:#ff3366;
---gold:#ffcc00;
-}
-
-body{
-margin:0;
-background:var(--bg);
-font-family:'Rajdhani';
-color:white;
-}
-
-header{
-padding:20px;
-text-align:center;
-border-bottom:2px solid var(--neon);
-background:black;
-box-shadow:0 0 20px var(--neon);
-}
-
-.logo{
-font-family:'Orbitron';
-color:var(--neon);
-font-size:22px;
-text-shadow:0 0 15px var(--neon);
-}
-
-.container{
-max-width:480px;
-margin:20px auto;
-padding:15px;
-}
-
-.panel{
-background:#0d1117;
-border:1px solid rgba(0,255,204,0.3);
-border-radius:20px;
-padding:20px;
-}
-
-.tabs{
-display:flex;
-gap:6px;
-margin-bottom:15px;
-}
-
-.tab{
-flex:1;
-padding:10px;
-border:1px solid var(--neon);
-background:transparent;
-color:var(--neon);
-border-radius:8px;
-cursor:pointer;
-font-weight:bold;
-}
-
-.tab.active{
-background:var(--neon);
-color:black;
-}
-
-select,input{
-width:100%;
-padding:12px;
-background:#020617;
-color:white;
-border:1px solid #30363d;
-border-radius:10px;
-margin-bottom:15px;
-}
-
-.main-btn{
-width:100%;
-padding:16px;
-background:var(--neon);
-color:black;
-border:none;
-border-radius:12px;
-font-family:'Orbitron';
-font-weight:bold;
-cursor:pointer;
-}
-
-.tg-btn{
-width:100%;
-padding:12px;
-background:#0088cc;
-color:white;
-border:none;
-border-radius:12px;
-cursor:pointer;
-margin-top:10px;
-}
-
-#output{
-margin-top:20px;
-border:1px dashed var(--neon);
-border-radius:15px;
-padding:10px;
-}
-
-.loading{
-text-align:center;
-padding:30px;
-color:var(--neon);
-font-family:'Orbitron';
-animation:pulse 1s infinite alternate;
-}
-
-@keyframes pulse{
-from{opacity:0.3}
-to{opacity:1}
-}
-
-.sig-row{
-display:flex;
-justify-content:space-between;
-padding:14px;
-border-bottom:1px solid rgba(255,255,255,0.05);
-}
-
-.time{
-color:var(--gold);
-font-family:'Orbitron';
-}
-
-.CALL{color:var(--call)}
-.PUT{color:var(--put)}
-</style>
-</head>
-
-<body>
-
-<header>
-<div class="logo">APX HYBRID PRO ENGINE</div>
-<div id="clock">UTC+6</div>
-</header>
-
-<div class="container">
-<div class="panel">
-
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-</div>
-
-<select id="pairs" multiple size="6"></select>
-
-<input type="time" id="start">
-<input type="time" id="end">
-
-<button class="main-btn" onclick="startEngine()">⚡ GENERATE HYBRID SIGNALS</button>
-<button class="tg-btn" onclick="sendTG()">📩 SEND TELEGRAM</button>
-
-<div id="output">Awaiting Scan...</div>
-
-</div>
-</div>
-
 <script>
 
-// CONFIG
+// ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
-const TARGET=16;
 
-// PAIRS
+const TARGET=18;
+
+// ===== PAIRS =====
 const LIST={
-OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc"],
+OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
+STOCK:["MSFT_otc","AXP_otc","PFE_otc"],
 CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 };
 
 let SIGNALS=[];
 
-// CLOCK
+// ===== CLOCK =====
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// MARKET
+// ===== MARKET SWITCH =====
 function setMarket(t,b){
+
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
 b.classList.add("active");
@@ -205,57 +35,99 @@ o.value=p;
 o.text=p.replace("_otc","-OTC").toUpperCase();
 pairs.add(o);
 });
+
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-// ENGINE
+
+// ===== SMART CANDLE ANALYZER =====
+function analyzeCandles(c){
+
+let bull=0;
+let bear=0;
+let strong=0;
+
+// last 10 candles scan
+for(let i=0;i<10;i++){
+
+let body=Math.abs(c[i].close-c[i].open);
+let range=Math.abs(c[i].high-c[i].low);
+
+if(range===0) continue;
+
+let power=body/range;
+
+// strong candle
+if(power>0.55) strong++;
+
+if(c[i].close>c[i].open) bull++;
+else bear++;
+
+}
+
+// direction
+let dir=bull>bear?"CALL":"PUT";
+
+// confidence score
+let score=(strong/10)+(Math.max(bull,bear)/10);
+
+return {dir,score};
+
+}
+
+
+// ===== ENGINE =====
 async function startEngine(){
 
 SIGNALS=[];
-output.innerHTML='<div class="loading">SCANNING MARKET...</div>';
 
 let selected=[...pairs.selectedOptions].map(o=>o.value);
-if(selected.length===0) return alert("Select pairs");
+
+if(selected.length===0){
+alert("Select pairs");
+return;
+}
+
+output.innerHTML=`<div class="loading">⧗ SCANNING LIVE MARKET...</div>`;
 
 for(let asset of selected){
-await loadHybrid(asset);
+
 if(SIGNALS.length>=TARGET) break;
+
+await loadPair(asset);
+
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
-renderSignals();
+
+displaySignals();
+
 }
 
-// HYBRID LOGIC
-async function loadHybrid(asset){
+
+// ===== LOAD PAIR =====
+async function loadPair(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
-let res=await fetch(API+pairAPI+"&count=120");
+
+let res=await fetch(API+pairAPI+"&count=150");
+if(!res.ok) return;
+
 let json=await res.json();
 let candles=json?.candles;
+if(!candles || candles.length<20) return;
 
-if(!candles) return;
 
-// Trend Score
-let trend=0;
-for(let i=0;i<25;i++){
-if(candles[i].close>candles[i].open) trend++;
-}
+// ===== SMART ANALYSIS =====
+let smart=analyzeCandles(candles);
 
-// Momentum
-let momentum=Math.abs(candles[0].close-candles[5].close);
+// reject weak signals
+if(smart.score<0.6) return;
 
-// API Bias
-let apiBias=candles[0].signal==="BUY"?1:-1;
 
-// Hybrid Score
-let score=(trend/25)*0.5 + apiBias*0.3 + (momentum*0.2);
-
-let dir=score>0.4?"CALL":"PUT";
-
-// TIME RANGE
+// ===== USER TIME RANGE =====
 let s=start.value||"00:00";
 let e=end.value||"23:59";
 
@@ -264,8 +136,9 @@ let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-// Generate signals
-for(let i=0;i<5;i++){
+
+// ===== GENERATE MULTIPLE TIMES =====
+for(let i=0;i<4;i++){
 
 let t=new Date(sD.getTime()+Math.random()*(eD-sD));
 
@@ -273,23 +146,28 @@ SIGNALS.push({
 pair:pairAPI,
 time:t.toTimeString().slice(0,5),
 raw:t.getTime(),
-dir:dir
+dir:smart.dir,
+power:smart.score
 });
+
+if(SIGNALS.length>=TARGET) break;
 
 }
 
 }catch(e){}
+
 }
 
-// RENDER
-function renderSignals(){
 
-if(SIGNALS.length===0){
-output.innerHTML="No Signals";
-return;
-}
+// ===== DISPLAY =====
+function displaySignals(){
 
 output.innerHTML="";
+
+if(SIGNALS.length===0){
+output.innerHTML="No Smart Signals Found";
+return;
+}
 
 SIGNALS.forEach(s=>{
 output.innerHTML+=`
@@ -299,13 +177,31 @@ output.innerHTML+=`
 <span class="${s.dir}">${s.dir}</span>
 </div>`;
 });
+
 }
 
-// TELEGRAM
-async function sendTG(){
 
-if(SIGNALS.length===0) return alert("Generate first");
+// ===== TELEGRAM =====
+async function pushTG(){
 
+if(SIGNALS.length===0){
+alert("Generate First");
+return;
+}
+
+// fake loading telegram
+await fetch(TG,{
+method:"POST",
+body:`✦ APX ENGINE ✦
+
+⧗ SCANNING MARKET DATA
+▓▓▓░░░░░ 40%`
+});
+
+await new Promise(r=>setTimeout(r,2000));
+
+
+// final message
 let msg=`✦═╡ APX SIGNAL FEED ╞═✦
 
 UTC+6 Timezone
@@ -327,15 +223,13 @@ Trade only at signal time
 Use 1 Step Martingale only
 Avoid high impact news
 Stop after 2 losses
-Trade with trend direction
 
-Powered by APX Hybrid Engine`;
+Powered by APX Elite Premium`;
 
 await fetch(TG,{method:"POST",body:msg});
-alert("Sent To Telegram");
+
+alert("Signals Sent To Telegram");
+
 }
 
 </script>
-
-</body>
-</html>
