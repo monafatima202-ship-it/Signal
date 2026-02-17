@@ -148,6 +148,7 @@ displaySignals();
 }
 
 // LOAD PAIR
+   
 async function loadPair(asset){
 
 try{
@@ -171,14 +172,35 @@ if(eD<=sD) eD.setDate(eD.getDate()+1);
 
 let range=eD-sD;
 
-let good=candles
-.map(c=>({...c,score:scoreCandle(c)}))
-.filter(c=>c.score>=MIN_ACC)
-.sort((a,b)=>b.score-a.score);
+// SMART SCORE BUILD
+let scored=candles.map(c=>{
+let acc=c.win_prob || 0.6;
 
-for(let i=0;i<good.length;i++){
+let body=Math.abs(c.close-c.open);
+let full=Math.abs(c.high-c.low);
+
+if(full>0){
+let strength=body/full;
+if(strength>0.6) acc+=0.05;
+if(strength>0.75) acc+=0.05;
+}
+
+return {...c,score:acc};
+});
+
+// SORT BEST FIRST
+scored.sort((a,b)=>b.score-a.score);
+
+// BUILD SIGNALS
+for(let i=0;i<scored.length;i++){
 
 if(SIGNALS.length>=TARGET) break;
+
+let candle=scored[i];
+
+// ACCEPT ANYTHING ABOVE 0.60 AFTER FIRST 8 SIGNALS
+if(candle.score<0.75 && SIGNALS.length<8) continue;
+if(candle.score<0.60) continue;
 
 let t=new Date(sD.getTime()+((range/TARGET)*SIGNALS.length));
 
@@ -186,7 +208,7 @@ SIGNALS.push({
 pair:pairAPI,
 time:t.toTimeString().slice(0,5),
 raw:t.getTime(),
-dir:good[i].signal==="BUY"?"CALL":"PUT"
+dir:candle.signal==="BUY"?"CALL":"PUT"
 });
 
 }
