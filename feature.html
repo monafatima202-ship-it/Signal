@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA PREMIUM</title>
+<title>APX HYBRID PRO</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -28,14 +28,14 @@ padding:20px;
 text-align:center;
 border-bottom:2px solid var(--neon);
 background:black;
-box-shadow:0 0 15px var(--neon);
+box-shadow:0 0 20px var(--neon);
 }
 
 .logo{
 font-family:'Orbitron';
 color:var(--neon);
-font-size:20px;
-text-shadow:0 0 10px var(--neon);
+font-size:22px;
+text-shadow:0 0 15px var(--neon);
 }
 
 .container{
@@ -65,7 +65,6 @@ background:transparent;
 color:var(--neon);
 border-radius:8px;
 cursor:pointer;
-font-size:11px;
 font-weight:bold;
 }
 
@@ -109,29 +108,28 @@ margin-top:10px;
 
 #output{
 margin-top:20px;
-padding:5px;
 border:1px dashed var(--neon);
 border-radius:15px;
-background:rgba(0,0,0,0.3);
+padding:10px;
 }
 
 .loading{
 text-align:center;
 padding:30px;
-font-family:'Orbitron';
 color:var(--neon);
+font-family:'Orbitron';
 animation:pulse 1s infinite alternate;
 }
 
 @keyframes pulse{
-from{opacity:0.4;}
-to{opacity:1;}
+from{opacity:0.3}
+to{opacity:1}
 }
 
 .sig-row{
 display:flex;
 justify-content:space-between;
-padding:15px;
+padding:14px;
 border-bottom:1px solid rgba(255,255,255,0.05);
 }
 
@@ -140,16 +138,16 @@ color:var(--gold);
 font-family:'Orbitron';
 }
 
-.CALL{color:var(--call);}
-.PUT{color:var(--put);}
+.CALL{color:var(--call)}
+.PUT{color:var(--put)}
 </style>
 </head>
 
 <body>
 
 <header>
-<div class="logo">APX NEURAL ENGINE</div>
-<div id="clock">UTC+6 | 00:00:00</div>
+<div class="logo">APX HYBRID PRO ENGINE</div>
+<div id="clock">UTC+6</div>
 </header>
 
 <div class="container">
@@ -157,7 +155,6 @@ font-family:'Orbitron';
 
 <div class="tabs">
 <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
 <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
 </div>
 
@@ -166,31 +163,28 @@ font-family:'Orbitron';
 <input type="time" id="start">
 <input type="time" id="end">
 
-<button class="main-btn" onclick="startEngine()">⚡ GENERATE SIGNALS</button>
-<button class="tg-btn" onclick="pushTG()">📩 SEND TELEGRAM</button>
+<button class="main-btn" onclick="startEngine()">⚡ GENERATE HYBRID SIGNALS</button>
+<button class="tg-btn" onclick="sendTG()">📩 SEND TELEGRAM</button>
 
-<div id="output">Awaiting Neural Sync...</div>
+<div id="output">Awaiting Scan...</div>
 
 </div>
 </div>
 
 <script>
 
-// ===== CONFIG =====
+// CONFIG
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
+const TARGET=16;
 
-const TARGET=18;
-const MIN_SCORE=0.62;
-
+// PAIRS
 const LIST={
-OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
-STOCK:["MSFT_otc","AXP_otc","PFE_otc"],
+OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc"],
 CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 };
 
 let SIGNALS=[];
-let LOCK=new Set();
 
 // CLOCK
 setInterval(()=>{
@@ -199,7 +193,7 @@ d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// MARKET SWITCH
+// MARKET
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -218,56 +212,50 @@ setMarket("OTC",document.querySelector(".tab"));
 async function startEngine(){
 
 SIGNALS=[];
-LOCK.clear();
+output.innerHTML='<div class="loading">SCANNING MARKET...</div>';
 
 let selected=[...pairs.selectedOptions].map(o=>o.value);
-if(selected.length===0){
-alert("Select pairs");
-return;
-}
-
-output.innerHTML=`<div class="loading">⧗ AI SCANNING LIVE MARKET...</div>`;
+if(selected.length===0) return alert("Select pairs");
 
 for(let asset of selected){
+await loadHybrid(asset);
 if(SIGNALS.length>=TARGET) break;
-await analyzePair(asset);
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
-displaySignals();
+renderSignals();
 }
 
-// SMART ANALYSIS
-async function analyzePair(asset){
+// HYBRID LOGIC
+async function loadHybrid(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
-
-let res=await fetch(API+pairAPI+"&count=150");
-if(!res.ok) return;
-
+let res=await fetch(API+pairAPI+"&count=120");
 let json=await res.json();
 let candles=json?.candles;
-if(!candles || candles.length<50) return;
 
+if(!candles) return;
+
+// Trend Score
 let trend=0;
-for(let i=0;i<20;i++){
+for(let i=0;i<25;i++){
 if(candles[i].close>candles[i].open) trend++;
 }
-trend/=20;
 
-let momentum=0;
-for(let i=0;i<5;i++){
-momentum+=Math.abs(candles[i].close-candles[i].open);
-}
-momentum=Math.min(momentum*5,1);
+// Momentum
+let momentum=Math.abs(candles[0].close-candles[5].close);
 
-let score=(trend*0.6)+(momentum*0.4);
-if(score<MIN_SCORE) return;
+// API Bias
+let apiBias=candles[0].signal==="BUY"?1:-1;
 
-let dir=trend>0.5?"CALL":"PUT";
+// Hybrid Score
+let score=(trend/25)*0.5 + apiBias*0.3 + (momentum*0.2);
 
+let dir=score>0.4?"CALL":"PUT";
+
+// TIME RANGE
 let s=start.value||"00:00";
 let e=end.value||"23:59";
 
@@ -276,20 +264,14 @@ let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-for(let i=0;i<4;i++){
-
-if(SIGNALS.length>=TARGET) break;
+// Generate signals
+for(let i=0;i<5;i++){
 
 let t=new Date(sD.getTime()+Math.random()*(eD-sD));
-let time=t.toTimeString().slice(0,5);
-
-let key=pairAPI+time+dir;
-if(LOCK.has(key)) continue;
-LOCK.add(key);
 
 SIGNALS.push({
 pair:pairAPI,
-time:time,
+time:t.toTimeString().slice(0,5),
 raw:t.getTime(),
 dir:dir
 });
@@ -299,15 +281,15 @@ dir:dir
 }catch(e){}
 }
 
-// DISPLAY
-function displaySignals(){
-
-output.innerHTML="";
+// RENDER
+function renderSignals(){
 
 if(SIGNALS.length===0){
-output.innerHTML="No Smart Signals Found";
+output.innerHTML="No Signals";
 return;
 }
+
+output.innerHTML="";
 
 SIGNALS.forEach(s=>{
 output.innerHTML+=`
@@ -320,24 +302,9 @@ output.innerHTML+=`
 }
 
 // TELEGRAM
-async function pushTG(){
+async function sendTG(){
 
-if(SIGNALS.length===0){
-alert("Generate First");
-return;
-}
-
-await fetch(TG,{
-method:"POST",
-body:`✦ APX ENGINE ✦
-
-⧗ SCANNING MARKET DATA
-▓▓▓▓░░░░░ 50%
-
-Please Wait...`
-});
-
-await new Promise(r=>setTimeout(r,1500));
+if(SIGNALS.length===0) return alert("Generate first");
 
 let msg=`✦═╡ APX SIGNAL FEED ╞═✦
 
@@ -362,11 +329,10 @@ Avoid high impact news
 Stop after 2 losses
 Trade with trend direction
 
-Powered by APX Elite Premium`;
+Powered by APX Hybrid Engine`;
 
 await fetch(TG,{method:"POST",body:msg});
-
-alert("Signals Sent To Telegram");
+alert("Sent To Telegram");
 }
 
 </script>
