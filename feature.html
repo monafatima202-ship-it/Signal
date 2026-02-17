@@ -148,7 +148,7 @@ displaySignals();
 }
 
 // LOAD PAIR
-   
+
 async function loadPair(asset){
 
 try{
@@ -160,8 +160,9 @@ if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
-if(!candles) return;
+if(!candles || candles.length<20) return;
 
+// ===== USER TIME RANGE =====
 let s=start.value || "00:00";
 let e=end.value || "23:59";
 
@@ -170,8 +171,79 @@ let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-let range=eD-sD;
+let totalRange=eD-sD;
 
+// ===== FEATURE PATTERN BUILD =====
+let features=[];
+
+for(let i=5;i<candles.length;i++){
+
+let c=candles[i];
+
+let body=Math.abs(c.close-c.open);
+let range=Math.abs(c.high-c.low);
+
+if(range===0) continue;
+
+let strength=body/range;
+
+// TREND CHECK
+let prevUp=0;
+let prevDown=0;
+
+for(let k=1;k<=3;k++){
+if(candles[i-k].close>candles[i-k].open) prevUp++;
+if(candles[i-k].close<candles[i-k].open) prevDown++;
+}
+
+let score=0;
+
+// STRONG BODY
+if(strength>0.6) score+=0.4;
+if(strength>0.75) score+=0.3;
+
+// MOMENTUM
+if(prevUp>=2) score+=0.2;
+if(prevDown>=2) score+=0.2;
+
+// VOLATILITY BONUS
+if(range>0.02) score+=0.1;
+
+if(score<0.4) continue;
+
+let dir=c.close>c.open?"CALL":"PUT";
+
+features.push({
+score:score,
+dir:dir
+});
+
+}
+
+// SORT BEST FIRST
+features.sort((a,b)=>b.score-a.score);
+
+// ===== BUILD FUTURE SIGNALS =====
+for(let i=0;i<features.length;i++){
+
+if(SIGNALS.length>=TARGET) break;
+
+let slotTime=new Date(sD.getTime()+((totalRange/TARGET)*SIGNALS.length));
+
+SIGNALS.push({
+pair:pairAPI,
+time:slotTime.toTimeString().slice(0,5),
+raw:slotTime.getTime(),
+dir:features[i].dir
+});
+
+}
+
+}catch(e){
+console.log("Feature Engine Fail");
+}
+
+   }
 // SMART SCORE BUILD
 let scored=candles.map(c=>{
 let acc=c.win_prob || 0.6;
