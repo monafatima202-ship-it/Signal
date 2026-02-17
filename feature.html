@@ -71,12 +71,12 @@ to{opacity:1;}
 
 <script>
 
-// ===== CONFIG =====
+// CONFIG
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=15;
-const MIN_ACC=0.68;
+const MIN_ACC=0.65;
 
 const LIST={
 OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc"],
@@ -108,7 +108,6 @@ pairs.add(o);
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-
 // SMART SCORE
 function scoreCandle(c){
 let acc=c.win_prob || 0.6;
@@ -124,7 +123,6 @@ if(strength>0.75) acc+=0.05;
 
 return acc;
 }
-
 
 // ENGINE
 async function startEngine(){
@@ -149,7 +147,6 @@ SIGNALS.sort((a,b)=>a.raw-b.raw);
 displaySignals();
 }
 
-
 // LOAD PAIR
 async function loadPair(asset){
 
@@ -164,7 +161,6 @@ let json=await res.json();
 let candles=json?.candles;
 if(!candles) return;
 
-// TIME RANGE
 let s=start.value || "00:00";
 let e=end.value || "23:59";
 
@@ -175,13 +171,11 @@ if(eD<=sD) eD.setDate(eD.getDate()+1);
 
 let range=eD-sD;
 
-// FILTER
 let good=candles
 .map(c=>({...c,score:scoreCandle(c)}))
 .filter(c=>c.score>=MIN_ACC)
 .sort((a,b)=>b.score-a.score);
 
-// BUILD SIGNALS
 for(let i=0;i<good.length;i++){
 
 if(SIGNALS.length>=TARGET) break;
@@ -199,7 +193,6 @@ dir:good[i].signal==="BUY"?"CALL":"PUT"
 
 }catch(e){}
 }
-
 
 // DISPLAY
 function displaySignals(){
@@ -220,7 +213,6 @@ output.innerHTML+=`
 </div>`;
 });
 }
-
 
 // TELEGRAM
 async function pushTG(){
@@ -250,4 +242,24 @@ MM : 1 Step MTG
 `;
 
 SIGNALS.forEach((s,i)=>{
-msg+=`${(i+1).toString().padStart(2,"0
+msg+=`${(i+1).toString().padStart(2,"0")} | ${s.pair} | ${s.time} | ${s.dir}\n`;
+});
+
+msg+=`
+──────── TRADING RULES ────────
+Trade on signal time
+Use 1 Step Martingale
+Avoid High News
+Stop after 2 Loss
+
+Powered by APX Elite Premium`;
+
+await fetch(TG,{method:"POST",body:msg});
+
+alert("Signals Sent To Telegram");
+
+}
+
+</script>
+</body>
+</html>
