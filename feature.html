@@ -9,22 +9,140 @@
 
 <style>
 :root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
-body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
-header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 15px var(--neon); }
-.logo { font-family:'Orbitron'; color:var(--neon); font-size:20px; }
-.container { max-width:480px; margin:20px auto; padding:15px; }
-.panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
-.tabs { display:flex; gap:6px; margin-bottom:15px; }
-.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
-.tab.active { background:var(--neon); color:black; }
-select, input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
-.main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
-.tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
-#output { margin-top:20px; padding:5px; border:1px dashed var(--neon); border-radius:15px; }
-.sig-row { display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05); }
-.time { color:var(--gold); font-family:'Orbitron'; }
-.CALL { color:var(--call); }
-.PUT { color:var(--put); }
+
+body{
+margin:0;
+background:var(--bg);
+font-family:'Rajdhani';
+color:white;
+}
+
+header{
+padding:20px;
+text-align:center;
+border-bottom:2px solid var(--neon);
+background:black;
+box-shadow:0 0 15px var(--neon);
+}
+
+.logo{
+font-family:'Orbitron';
+color:var(--neon);
+font-size:20px;
+text-shadow:0 0 10px var(--neon);
+}
+
+.container{
+max-width:480px;
+margin:20px auto;
+padding:15px;
+}
+
+.panel{
+background:#0d1117;
+border:1px solid rgba(0,255,204,0.3);
+border-radius:20px;
+padding:20px;
+}
+
+.tabs{
+display:flex;
+gap:6px;
+margin-bottom:15px;
+}
+
+.tab{
+flex:1;
+padding:10px;
+border:1px solid var(--neon);
+background:transparent;
+color:var(--neon);
+border-radius:8px;
+cursor:pointer;
+font-size:11px;
+font-weight:bold;
+}
+
+.tab.active{
+background:var(--neon);
+color:black;
+}
+
+select{
+width:100%;
+padding:12px;
+background:#020617;
+color:white;
+border:1px solid #30363d;
+border-radius:10px;
+margin-bottom:15px;
+}
+
+.main-btn{
+width:100%;
+padding:16px;
+background:var(--neon);
+color:black;
+border:none;
+border-radius:12px;
+font-family:'Orbitron';
+font-weight:bold;
+cursor:pointer;
+}
+
+.tg-btn{
+width:100%;
+padding:12px;
+background:#0088cc;
+color:white;
+border:none;
+border-radius:12px;
+cursor:pointer;
+margin-top:10px;
+}
+
+#output{
+margin-top:20px;
+padding:5px;
+border:1px dashed var(--neon);
+border-radius:15px;
+background:rgba(0,0,0,0.3);
+}
+
+/* Animated Loading */
+.loading{
+text-align:center;
+padding:30px;
+font-family:'Orbitron';
+color:var(--neon);
+animation:pulse 1s infinite alternate;
+}
+
+@keyframes pulse{
+from{opacity:0.4;}
+to{opacity:1;}
+}
+
+.sig-row{
+display:flex;
+justify-content:space-between;
+padding:15px;
+border-bottom:1px solid rgba(255,255,255,0.05);
+}
+
+.time{
+color:var(--gold);
+font-family:'Orbitron';
+}
+
+.CALL{
+color:var(--call);
+}
+
+.PUT{
+color:var(--put);
+}
+
 </style>
 </head>
 
@@ -32,7 +150,7 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 
 <header>
 <div class="logo">APX NEURAL ENGINE</div>
-<div id="clock">UTC+6</div>
+<div id="clock">UTC+6 | 00:00:00</div>
 </header>
 
 <div class="container">
@@ -45,19 +163,21 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 </div>
 
 <select id="pairs" multiple size="6"></select>
+
 <input type="time" id="start">
 <input type="time" id="end">
 
-<button class="main-btn" onclick="startEngine()">GENERATE SIGNALS</button>
-<button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
+<button class="main-btn" onclick="startEngine()">⚡ GENERATE SIGNALS</button>
+<button class="tg-btn" onclick="pushTG()">📩 SEND TELEGRAM</button>
 
-<div id="output">Ready</div>
+<div id="output">Awaiting Neural Sync...</div>
 
 </div>
 </div>
 
 <script>
 
+// CONFIG
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
@@ -65,7 +185,7 @@ const TARGET=18;
 const MIN_ACC=0.70;
 
 const LIST={
-OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc"],
+OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc"],
 CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 };
@@ -73,12 +193,14 @@ CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 let SIGNALS=[];
 let LOCK=new Set();
 
+// CLOCK
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
+// MARKET SWITCH
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -93,6 +215,7 @@ pairs.add(o);
 }
 setMarket("OTC",document.querySelector(".tab"));
 
+// ENGINE
 async function startEngine(){
 
 SIGNALS=[];
@@ -105,18 +228,18 @@ alert("Select pairs");
 return;
 }
 
-output.innerHTML="Reading API + Smart Logic...";
+output.innerHTML=`<div class="loading">⧗ SCANNING LIVE MARKET...</div>`;
 
 for(let asset of selected){
-await loadPair(asset);
 if(SIGNALS.length>=TARGET) break;
+await loadPair(asset);
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
-
 displaySignals();
 }
 
+// LOAD PAIR
 async function loadPair(asset){
 
 try{
@@ -130,22 +253,17 @@ let json=await res.json();
 let candles=json?.candles;
 if(!candles) return;
 
-// SMART SCORE (API + TREND LOGIC)
+candles.sort((a,b)=>(b.win_prob||0)-(a.win_prob||0));
+
 for(let c of candles){
 
-let acc=c.win_prob || 0.6;
-
-// extra smart boost
-if(c.close > c.open) acc+=0.03;
-if(c.high - c.low < 0.02) acc+=0.02;
-
-if(acc < MIN_ACC) continue;
+if(SIGNALS.length>=TARGET) break;
+if((c.win_prob||0)<MIN_ACC) continue;
 
 let dir=c.signal==="BUY"?"CALL":"PUT";
 
-// TIME RANGE
-let s=start.value || "00:00";
-let e=end.value || "23:59";
+let s=start.value||"00:00";
+let e=end.value||"23:59";
 
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
@@ -166,16 +284,13 @@ raw:t.getTime(),
 dir:dir
 });
 
-if(SIGNALS.length>=TARGET) break;
+}
+
+}catch(e){}
 
 }
 
-}catch(e){
-console.log("API FAIL",asset);
-}
-
-}
-
+// DISPLAY
 function displaySignals(){
 
 output.innerHTML="";
@@ -196,6 +311,7 @@ output.innerHTML+=`
 
 }
 
+// TELEGRAM LOADING + FINAL SEND
 async function pushTG(){
 
 if(SIGNALS.length===0){
@@ -203,36 +319,53 @@ alert("Generate First");
 return;
 }
 
-let msg=`╔══════════════════════╗
-   APX ULTRA PREMIUM
-╚══════════════════════╝
+// Loading Message
+await fetch(TG,{
+method:"POST",
+body:`✦ APX ENGINE ✦
 
-Timezone : UTC+6
-Expiry : 1 Minute
-MM : 1 Step MTG
+⧗ SCANNING MARKET DATA
+▓▓░░░░░░░ 25%
 
-──────── SIGNAL BOARD ────────
+Please Wait...`
+});
+
+// Small delay fake loading
+await new Promise(r=>setTimeout(r,2000));
+
+// Final Message
+let msg=`✦═╡ APX SIGNAL FEED ╞═✦
+
+UTC+6 Timezone
+Expiry: 1 Minute
+Money Management: 1 Step MTG
+
 `;
 
-SIGNALS.forEach((s,i)=>{
-msg+=`${(i+1).toString().padStart(2,"0")} | ${s.pair} | ${s.time} | ${s.dir}\n`;
+SIGNALS.forEach(s=>{
+msg+=`⟡ ${s.pair} │ ${s.time} │ ${s.dir}\n`;
 });
 
 msg+=`
-──────── TRADING RULES ────────
-Trade on signal time
-Use 1 Step Martingale
-Avoid High News
-Stop after 2 Loss
 
-Powered by APX Elite Premium
-`;
+══════════════════
+TRADING RULES
+══════════════════
+Trade only at signal time
+Use 1 Step Martingale only
+Avoid high impact news
+Stop after 2 losses
+Trade with trend direction
+
+Powered by APX Elite Premium`;
 
 await fetch(TG,{method:"POST",body:msg});
 
-alert("Sent To Telegram");
+alert("Signals Sent To Telegram");
+
 }
 
 </script>
+
 </body>
 </html>
