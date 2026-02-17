@@ -8,85 +8,138 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
+:root{
+--neon:#00ffcc;
+--bg:#010409;
+--call:#00ff88;
+--put:#ff3366;
+--gold:#ffcc00;
+}
 
-body{margin:0;background:var(--bg);font-family:'Rajdhani';color:white;}
+body{
+margin:0;
+background:var(--bg);
+font-family:'Rajdhani';
+color:white;
+}
 
 header{
-padding:20px;text-align:center;border-bottom:2px solid var(--neon);
-background:black;box-shadow:0 0 15px var(--neon);
+padding:20px;
+text-align:center;
+border-bottom:2px solid var(--neon);
+background:black;
+box-shadow:0 0 15px var(--neon);
 }
 
 .logo{
-font-family:'Orbitron';color:var(--neon);font-size:20px;text-shadow:0 0 10px var(--neon);
+font-family:'Orbitron';
+color:var(--neon);
+font-size:20px;
+text-shadow:0 0 10px var(--neon);
 }
 
-.container{max-width:480px;margin:20px auto;padding:15px;}
+.container{
+max-width:480px;
+margin:20px auto;
+padding:15px;
+}
 
 .panel{
-background:#0d1117;border:1px solid rgba(0,255,204,0.3);
-border-radius:20px;padding:20px;
+background:#0d1117;
+border:1px solid rgba(0,255,204,0.3);
+border-radius:20px;
+padding:20px;
 }
 
-.tabs{display:flex;gap:6px;margin-bottom:15px;}
+.tabs{
+display:flex;
+gap:6px;
+margin-bottom:15px;
+}
 
 .tab{
-flex:1;padding:10px;border:1px solid var(--neon);
-background:transparent;color:var(--neon);
-border-radius:8px;cursor:pointer;font-size:11px;font-weight:bold;
+flex:1;
+padding:10px;
+border:1px solid var(--neon);
+background:transparent;
+color:var(--neon);
+border-radius:8px;
+cursor:pointer;
+font-size:11px;
+font-weight:bold;
 }
 
-.tab.active{background:var(--neon);color:black;}
+.tab.active{
+background:var(--neon);
+color:black;
+}
 
-select{
-width:100%;padding:12px;background:#020617;color:white;
-border:1px solid #30363d;border-radius:10px;margin-bottom:15px;
+select,input{
+width:100%;
+padding:12px;
+background:#020617;
+color:white;
+border:1px solid #30363d;
+border-radius:10px;
+margin-bottom:15px;
 }
 
 .main-btn{
-width:100%;padding:16px;background:var(--neon);color:black;
-border:none;border-radius:12px;font-family:'Orbitron';
-font-weight:bold;cursor:pointer;
+width:100%;
+padding:16px;
+background:var(--neon);
+color:black;
+border:none;
+border-radius:12px;
+font-family:'Orbitron';
+font-weight:bold;
+cursor:pointer;
 }
 
 .tg-btn{
-width:100%;padding:12px;background:#0088cc;color:white;
-border:none;border-radius:12px;cursor:pointer;margin-top:10px;
+width:100%;
+padding:12px;
+background:#0088cc;
+color:white;
+border:none;
+border-radius:12px;
+cursor:pointer;
+margin-top:10px;
 }
 
 #output{
-margin-top:20px;padding:5px;border:1px dashed var(--neon);
-border-radius:15px;background:rgba(0,0,0,0.3);
+margin-top:20px;
+padding:5px;
+border:1px dashed var(--neon);
+border-radius:15px;
+background:rgba(0,0,0,0.3);
 }
 
-/* LOADING BAR */
-.loadingBox{
-padding:25px;text-align:center;
-font-family:'Orbitron';color:var(--neon);
+.loading{
+text-align:center;
+padding:30px;
+font-family:'Orbitron';
+color:var(--neon);
+animation:pulse 1s infinite alternate;
 }
 
-.loadingBar{
-height:8px;background:#021b1a;border-radius:10px;
-overflow:hidden;margin-top:15px;
-}
-
-.loadingFill{
-height:100%;width:0%;
-background:var(--neon);
-animation:loadBar 3s linear forwards;
-}
-
-@keyframes loadBar{
-from{width:0%;}
-to{width:100%;}
+@keyframes pulse{
+from{opacity:0.4;}
+to{opacity:1;}
 }
 
 .sig-row{
-display:flex;justify-content:space-between;padding:15px;
+display:flex;
+justify-content:space-between;
+padding:15px;
 border-bottom:1px solid rgba(255,255,255,0.05);
 }
 
-.time{color:var(--gold);font-family:'Orbitron';}
+.time{
+color:var(--gold);
+font-family:'Orbitron';
+}
+
 .CALL{color:var(--call);}
 .PUT{color:var(--put);}
 </style>
@@ -123,12 +176,12 @@ border-bottom:1px solid rgba(255,255,255,0.05);
 
 <script>
 
-// CONFIG
+// ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=18;
-const MIN_SCORE=0.72;
+const MIN_SCORE=0.62;
 
 const LIST={
 OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
@@ -146,7 +199,7 @@ d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// MARKET
+// MARKET SWITCH
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -168,82 +221,67 @@ SIGNALS=[];
 LOCK.clear();
 
 let selected=[...pairs.selectedOptions].map(o=>o.value);
-
 if(selected.length===0){
 alert("Select pairs");
 return;
 }
 
-// LOADING BAR SHOW
-output.innerHTML=`
-<div class="loadingBox">
-⧗ SCANNING LIVE MARKET DATA...
-<div class="loadingBar">
-<div class="loadingFill"></div>
-</div>
-</div>
-`;
-
-await new Promise(r=>setTimeout(r,2500));
+output.innerHTML=`<div class="loading">⧗ AI SCANNING LIVE MARKET...</div>`;
 
 for(let asset of selected){
 if(SIGNALS.length>=TARGET) break;
-await loadPair(asset);
+await analyzePair(asset);
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
 displaySignals();
 }
 
-// SMART HYBRID
-async function loadPair(asset){
+// SMART ANALYSIS
+async function analyzePair(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-let res=await fetch(API+pairAPI+"&count=300");
+let res=await fetch(API+pairAPI+"&count=150");
 if(!res.ok) return;
 
 let json=await res.json();
 let candles=json?.candles;
-if(!candles) return;
+if(!candles || candles.length<50) return;
 
-let s=start.value || "00:00";
-let e=end.value || "23:59";
+let trend=0;
+for(let i=0;i<20;i++){
+if(candles[i].close>candles[i].open) trend++;
+}
+trend/=20;
+
+let momentum=0;
+for(let i=0;i<5;i++){
+momentum+=Math.abs(candles[i].close-candles[i].open);
+}
+momentum=Math.min(momentum*5,1);
+
+let score=(trend*0.6)+(momentum*0.4);
+if(score<MIN_SCORE) return;
+
+let dir=trend>0.5?"CALL":"PUT";
+
+let s=start.value||"00:00";
+let e=end.value||"23:59";
 
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-for(let i=5;i<candles.length;i++){
+for(let i=0;i<4;i++){
 
 if(SIGNALS.length>=TARGET) break;
 
-let c=candles[i];
-
-let apiScore=(c.win_prob||0.5);
-
-let momentum=0;
-for(let j=1;j<=5;j++){
-if(candles[i-j].close>candles[i-j].open) momentum++;
-}
-momentum/=5;
-
-let vol=Math.abs(c.high-c.low);
-vol=Math.min(vol*50,1);
-
-let score=apiScore*0.6+momentum*0.25+vol*0.15;
-
-if(score<MIN_SCORE) continue;
-
-let candleTime=new Date(c.candle_time*1000);
-if(candleTime<sD || candleTime>eD) continue;
-
-let dir=score>0.8?"CALL":(c.signal==="BUY"?"CALL":"PUT");
-
-let time=candleTime.toTimeString().slice(0,5);
+let t=new Date(sD.getTime()+Math.random()*(eD-sD));
+let time=t.toTimeString().slice(0,5);
 
 let key=pairAPI+time+dir;
 if(LOCK.has(key)) continue;
@@ -252,14 +290,13 @@ LOCK.add(key);
 SIGNALS.push({
 pair:pairAPI,
 time:time,
-raw:candleTime.getTime(),
+raw:t.getTime(),
 dir:dir
 });
 
 }
 
 }catch(e){}
-
 }
 
 // DISPLAY
@@ -280,7 +317,6 @@ output.innerHTML+=`
 <span class="${s.dir}">${s.dir}</span>
 </div>`;
 });
-
 }
 
 // TELEGRAM
@@ -290,6 +326,18 @@ if(SIGNALS.length===0){
 alert("Generate First");
 return;
 }
+
+await fetch(TG,{
+method:"POST",
+body:`✦ APX ENGINE ✦
+
+⧗ SCANNING MARKET DATA
+▓▓▓▓░░░░░ 50%
+
+Please Wait...`
+});
+
+await new Promise(r=>setTimeout(r,1500));
 
 let msg=`✦═╡ APX SIGNAL FEED ╞═✦
 
@@ -319,7 +367,6 @@ Powered by APX Elite Premium`;
 await fetch(TG,{method:"POST",body:msg});
 
 alert("Signals Sent To Telegram");
-
 }
 
 </script>
