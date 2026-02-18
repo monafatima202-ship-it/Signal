@@ -120,7 +120,6 @@ font-family:'Orbitron';
 color:var(--neon);
 animation:pulse 1s infinite alternate;
 }
-
 @keyframes pulse{
 from{opacity:0.4;}
 to{opacity:1;}
@@ -133,13 +132,9 @@ padding:15px;
 border-bottom:1px solid rgba(255,255,255,0.05);
 }
 
-.time{
-color:var(--gold);
-font-family:'Orbitron';
-}
-
-.CALL{color:var(--call);}
-.PUT{color:var(--put);}
+.time{ color:var(--gold); font-family:'Orbitron'; }
+.CALL{ color:var(--call); }
+.PUT{ color:var(--put); }
 </style>
 </head>
 
@@ -173,26 +168,29 @@ font-family:'Orbitron';
 
 <script>
 
+// CONFIG
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=15;
-const MIN_SCORE=0.68;
+const BASE_ACC=0.65;
 
 const LIST={
-OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
+OTC:["USDNGN_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc"],
 CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 };
 
 let SIGNALS=[];
 
+// CLOCK
 setInterval(()=>{
 let d=new Date();
 d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
+// MARKET
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -207,69 +205,57 @@ pairs.add(o);
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-function candleScore(c){
-let score=c.win_prob||0.6;
+// SMART SCORE
+function smartScore(c){
+let score=c.win_prob || BASE_ACC;
 
 let body=Math.abs(c.close-c.open);
 let range=Math.abs(c.high-c.low);
 
 if(range>0){
-let power=body/range;
-if(power>0.6) score+=0.04;
-if(power>0.75) score+=0.04;
+let strength=body/range;
+score+=strength*0.1;
 }
+
+if(c.close>c.open) score+=0.02;
 
 return score;
 }
 
+// ENGINE
 async function startEngine(){
 
 SIGNALS=[];
 
 let selected=[...pairs.selectedOptions].map(o=>o.value);
-if(selected.length===0){
-alert("Select pairs");
-return;
-}
+if(selected.length===0){ alert("Select pairs"); return; }
 
-output.innerHTML=`<div class="loading">SCANNING LIVE MARKET...</div>`;
-
-let all=[];
+output.innerHTML=`<div class="loading">SCANNING MARKET DATA...</div>`;
 
 for(let asset of selected){
+await loadPair(asset);
+if(SIGNALS.length>=TARGET) break;
+}
+
+SIGNALS.sort((a,b)=>a.raw-b.raw);
+displaySignals();
+}
+
+// LOAD PAIR
+async function loadPair(asset){
 
 try{
 
 let pairAPI=asset.replace("_otc","-OTC");
 
-let res=await fetch(API+pairAPI+"&count=150");
-if(!res.ok) continue;
+let res=await fetch(API+pairAPI+"&count=300");
+if(!res.ok) return;
 
 let json=await res.json();
-let candles=json?.candles||[];
+let candles=json?.candles;
+if(!candles) return;
 
-candles.forEach(c=>{
-let s=candleScore(c);
-if(s>=MIN_SCORE){
-all.push({
-pair:pairAPI,
-dir:c.signal==="BUY"?"CALL":"PUT",
-score:s
-});
-}
-});
-
-}catch(e){}
-
-}
-
-if(all.length===0){
-output.innerHTML="No Signals Found";
-return;
-}
-
-all.sort((a,b)=>b.score-a.score);
-
+// TIME RANGE
 let s=start.value||"00:00";
 let e=end.value||"23:59";
 
@@ -278,29 +264,46 @@ let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-let gap=(eD-sD)/TARGET;
+let range=eD-sD;
 
-for(let i=0;i<TARGET;i++){
-let pick=all[i%all.length];
+let scored=candles.map(c=>({...c,score:smartScore(c)}));
+scored.sort((a,b)=>b.score-a.score);
 
-let t=new Date(sD.getTime()+gap*i);
+let dynamicAcc=BASE_ACC;
+
+for(let i=0;i<scored.length;i++){
+
+if(SIGNALS.length>=TARGET) break;
+
+if(scored[i].score<dynamicAcc){
+dynamicAcc-=0.02;
+if(dynamicAcc<0.55) break;
+continue;
+}
+
+let t=new Date(sD.getTime()+((range/TARGET)*SIGNALS.length));
 
 SIGNALS.push({
-pair:pick.pair,
+pair:pairAPI,
 time:t.toTimeString().slice(0,5),
 raw:t.getTime(),
-dir:pick.dir
+dir:scored[i].signal==="BUY"?"CALL":"PUT"
 });
+
 }
 
-SIGNALS.sort((a,b)=>a.raw-b.raw);
-
-displaySignals();
+}catch(e){}
 }
 
+// DISPLAY
 function displaySignals(){
 
 output.innerHTML="";
+
+if(SIGNALS.length===0){
+output.innerHTML="No Smart Signals Found";
+return;
+}
 
 SIGNALS.forEach(s=>{
 output.innerHTML+=`
@@ -310,9 +313,9 @@ output.innerHTML+=`
 <span class="${s.dir}">${s.dir}</span>
 </div>`;
 });
-
 }
 
+// TELEGRAM
 async function pushTG(){
 
 if(SIGNALS.length===0){
@@ -320,21 +323,12 @@ alert("Generate First");
 return;
 }
 
-await fetch(TG,{
-method:"POST",
-body:`APX ENGINE SCANNING...
-▓▓▓▓▓▓░░░░`
-});
-
-await new Promise(r=>setTimeout(r,2000));
-
 let msg=`✦═╡ APX SIGNAL FEED ╞═✦
 
 UTC+6 Timezone
-Expiry : 1 Minute
-Money Management : 1 Step MTG
+Expiry: 1 Minute
+Money Management: 1 Step MTG
 
-════════ SIGNAL STREAM ════════
 `;
 
 SIGNALS.forEach(s=>{
@@ -342,7 +336,9 @@ msg+=`⟡ ${s.pair} │ ${s.time} │ ${s.dir}\n`;
 });
 
 msg+=`
-════════ TRADING RULES ════════
+══════════════════
+TRADING RULES
+══════════════════
 Trade only at signal time
 Use 1 Step Martingale
 Avoid high impact news
@@ -351,9 +347,7 @@ Stop after 2 losses
 Powered by APX Elite Premium`;
 
 await fetch(TG,{method:"POST",body:msg});
-
-alert("Sent To Telegram");
-
+alert("Signals Sent");
 }
 
 </script>
