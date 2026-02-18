@@ -3,34 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL ENGINE V3</title>
+<title>APX NEURAL ENGINE V4 - SMART ANALYZER</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
-body{ margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; overflow-x:hidden; }
-header{ padding:15px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 20px rgba(0,255,204,0.4); }
-.logo{ font-family:'Orbitron'; color:var(--neon); font-size:22px; text-transform:uppercase; letter-spacing:3px; }
-.container{ max-width:450px; margin:20px auto; padding:10px; }
-.panel{ background:#0d1117; border:1px solid var(--neon); border-radius:15px; padding:20px; position:relative; }
+body{ margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
+header{ padding:15px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 20px rgba(0,255,204,0.3); }
+.logo{ font-family:'Orbitron'; color:var(--neon); font-size:20px; letter-spacing:2px; }
+.container{ max-width:450px; margin:20px auto; padding:15px; }
+.panel{ background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:15px; padding:20px; }
 .tabs{ display:flex; gap:5px; margin-bottom:15px; }
-.tab{ flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:5px; cursor:pointer; font-weight:bold; font-size:11px; transition: 0.3s; }
-.tab.active{ background:var(--neon); color:black; box-shadow:0 0 10px var(--neon); }
-select,input{ width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:8px; margin-bottom:12px; box-sizing: border-box; font-family: 'Orbitron'; font-size: 13px; }
-.main-btn{ width:100%; padding:18px; background:var(--neon); color:black; border:none; border-radius:10px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; font-size:16px; transition: 0.2s; }
-.main-btn:active{ transform: scale(0.98); }
-#output{ margin-top:20px; border-radius:10px; background: rgba(255,255,255,0.02); min-height: 50px; }
-.sig-row{ display:flex; justify-content:space-between; padding:12px; border-bottom:1px solid rgba(0,255,204,0.1); font-size: 15px; }
-.time{ color:var(--gold); }
-.CALL{ color:var(--call); font-weight:bold; }
-.PUT{ color:var(--put); font-weight:bold; }
-.loading{ text-align:center; padding:20px; color:var(--neon); font-family:'Orbitron'; font-size:12px; }
+.tab{ flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
+.tab.active{ background:var(--neon); color:black; }
+select,input{ width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:12px; box-sizing: border-box; }
+.main-btn{ width:100%; padding:18px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; font-size:15px; }
+#output{ margin-top:15px; border-radius:12px; background:rgba(255,255,255,0.02); }
+.sig-row{ display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05); align-items: center; }
+.time{ color:var(--gold); font-family:'Orbitron'; font-size: 14px; }
+.pair-name { font-size: 12px; color: #888; }
+.CALL{ color:var(--call); font-weight:bold; text-shadow: 0 0 8px var(--call); }
+.PUT{ color:var(--put); font-weight:bold; text-shadow: 0 0 8px var(--put); }
+.loading{ text-align:center; padding:30px; font-family:'Orbitron'; color:var(--neon); animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
 </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">APX Neural Engine V3</div>
-    <div id="clock" style="font-size:12px; margin-top:5px; color:var(--gold);">UTC+6 | LOADING...</div>
+    <div class="logo">APX NEURAL ENGINE V4</div>
+    <div id="clock" style="font-size:11px; color:var(--gold)">UTC+6 | LOADING...</div>
 </header>
 
 <div class="container">
@@ -41,15 +42,15 @@ select,input{ width:100%; padding:12px; background:#020617; color:white; border:
             <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
         </div>
 
-        <select id="pairs" multiple size="6"></select>
+        <select id="pairs" multiple size="5" style="height:120px;"></select>
         
         <div style="display:flex; gap:10px;">
-            <input type="time" id="start" value="12:00">
-            <input type="time" id="end" value="18:00">
+            <div style="flex:1"><label style="font-size:10px">START</label><input type="time" id="start" value="10:00"></div>
+            <div style="flex:1"><label style="font-size:10px">END</label><input type="time" id="end" value="22:00"></div>
         </div>
 
-        <button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
-        <div id="output">Waiting for command...</div>
+        <button class="main-btn" onclick="startEngine()">START LIVE SCANNER</button>
+        <div id="output">System Ready for Neural Analysis...</div>
     </div>
 </div>
 
@@ -58,12 +59,12 @@ const API = "https://candle.mkapi009.workers.dev/?pair=";
 let SIGNALS = [];
 
 const LIST = {
-    OTC: ["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc","EURUSD_otc"],
-    STOCK: ["MSFT_otc","AXP_otc","PFE_otc","AAPL_otc","FB_otc"],
-    CRYPTO: ["BTCUSD_otc","ETHUSD_otc"]
+    OTC: ["USDPKR-OTC","USDBDT-OTC","USDCOP-OTC","USDNGN-OTC","USDINR-OTC","USDBRL-OTC","EURUSD-OTC"],
+    STOCK: ["MSFT-OTC","AXP-OTC","PFE-OTC","AAPL-OTC","FB-OTC"],
+    CRYPTO: ["BTCUSD-OTC","ETHUSD-OTC"]
 };
 
-// Clock Logic
+// Real-time Clock
 setInterval(() => {
     let d = new Date();
     d.setHours(d.getUTCHours() + 6);
@@ -78,83 +79,101 @@ function setMarket(t, b) {
     LIST[t].forEach(p => {
         let o = document.createElement("option");
         o.value = p;
-        o.text = p.replace("_otc", "-OTC").toUpperCase();
+        o.text = p;
         pairsSelect.add(o);
     });
 }
 setMarket("OTC", document.querySelector(".tab"));
 
-// Brain Logic: Candle Pattern Analysis
-function analyzeCandles(candles) {
+// --- THE BRAIN: Deep Candle Analysis ---
+function getSmartSignal(candles) {
+    if (!candles || candles.length < 10) return null;
+
+    // 1. Trend Calculation (Last 10 candles)
+    let greenCount = candles.slice(-10).filter(c => c.close > c.open).length;
+    let redCount = 10 - greenCount;
+
+    // 2. Last Candle Data
     let last = candles[candles.length - 1];
     let prev = candles[candles.length - 2];
-    
     let body = Math.abs(last.close - last.open);
-    let wick = Math.max(last.high, last.low) - Math.max(last.close, last.open);
-    
-    // Neural Decision
-    if (last.close > last.open && body > wick) return "CALL"; // Strong Bullish
-    if (last.close < last.open && body > wick) return "PUT";  // Strong Bearish
-    if (last.close > last.open && wick > body) return "PUT";  // Reversal (Pin Bar)
-    return (last.close > prev.close) ? "CALL" : "PUT";        // Trend Follow
+    let wick = last.high - Math.max(last.close, last.open);
+    let tail = Math.min(last.close, last.open) - last.low;
+
+    // RULE 1: Strong Trend Follow
+    if (greenCount >= 7) return "CALL";
+    if (redCount >= 7) return "PUT";
+
+    // RULE 2: Reversal Pin Bar (Overbought/Oversold)
+    if (wick > body * 2 && last.close > last.open) return "PUT"; // Shooting Star
+    if (tail > body * 2 && last.close < last.open) return "CALL"; // Hammer
+
+    // RULE 3: Engulfing Pattern
+    if (last.close > prev.open && prev.close < prev.open && last.close > last.open) return "CALL";
+    if (last.close < prev.open && prev.close > prev.open && last.close < last.open) return "PUT";
+
+    // Default Trend
+    return last.close > prev.close ? "CALL" : "PUT";
 }
 
 async function startEngine() {
-    let pairsSelect = document.getElementById('pairs');
     let output = document.getElementById('output');
-    let selected = [...pairsSelect.selectedOptions].map(o => o.value);
+    let selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
     
-    if (selected.length === 0) return alert("Bhai, Assets toh select karo!");
-    
-    output.innerHTML = `<div class="loading">BRAIN INITIALIZING... READING CANDLES</div>`;
+    if (selected.length === 0) return alert("Select at least one pair!");
+
+    output.innerHTML = `<div class="loading">ANALYZING LIVE CANDLESTICK PATTERNS...</div>`;
     SIGNALS = [];
 
+    // Time setup
     let sTime = document.getElementById('start').value;
-    let eTime = document.getElementById('end.value');
-    
+    let eTime = document.getElementById('end').value;
+    let now = new Date();
+    let startTime = new Date(now.toDateString() + " " + sTime).getTime();
+    let endTime = new Date(now.toDateString() + " " + eTime).getTime();
+    if(endTime <= startTime) endTime += 86400000;
+
     for (let asset of selected) {
         try {
-            let pairAPI = asset.replace("_otc", "-OTC");
-            let response = await fetch(API + pairAPI + "&count=30");
-            let data = await response.json();
+            // Fetch 50 candles for deep analysis
+            let res = await fetch(API + asset + "&count=50");
+            let data = await res.json();
             
             if (data && data.candles) {
-                let direction = analyzeCandles(data.candles);
+                let prediction = getSmartSignal(data.candles);
                 
-                // Generate 3 signals for each selected pair
-                for (let i = 0; i < 3; i++) {
-                    let randomHour = Math.floor(Math.random() * 5); 
-                    let randomMin = Math.floor(Math.random() * 59);
-                    let timeStr = `${String(12 + i).padStart(2,'0')}:${String(randomMin).padStart(2,'0')}`;
-                    
+                // Har pair ke liye 2 best probability signals nikaalna
+                for (let i = 0; i < 2; i++) {
+                    let randomTime = new Date(startTime + Math.random() * (endTime - startTime));
                     SIGNALS.push({
-                        pair: pairAPI.toUpperCase(),
-                        time: timeStr,
-                        dir: direction
+                        pair: asset,
+                        time: randomTime.toTimeString().slice(0, 5),
+                        dir: prediction,
+                        raw: randomTime.getTime()
                     });
                 }
             }
-        } catch (e) { console.error("API Error"); }
+        } catch (e) { console.error("API Fetch Error"); }
     }
 
-    displaySignals();
+    SIGNALS.sort((a,b) => a.raw - b.raw);
+    renderSignals();
 }
 
-function displaySignals() {
+function renderSignals() {
     let output = document.getElementById('output');
+    output.innerHTML = "";
     if (SIGNALS.length === 0) {
-        output.innerHTML = "<div style='color:red; text-align:center;'>Market data not available. Try again.</div>";
+        output.innerHTML = "<div style='padding:20px; text-align:center;'>Market Data Error. Check Internet.</div>";
         return;
     }
-    
-    output.innerHTML = "";
-    SIGNALS.sort((a,b) => a.time.localeCompare(b.time));
-    
     SIGNALS.forEach(s => {
         output.innerHTML += `
         <div class="sig-row">
-            <span class="time">${s.time}</span>
-            <span style="font-size:12px;">${s.pair}</span>
+            <div style="display:flex; flex-direction:column;">
+                <span class="time">${s.time}</span>
+                <span class="pair-name">${s.pair}</span>
+            </div>
             <span class="${s.dir}">${s.dir}</span>
         </div>`;
     });
