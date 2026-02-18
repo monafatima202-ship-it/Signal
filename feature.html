@@ -8,20 +8,110 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
-body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
-header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 15px var(--neon); }
-.logo { font-family:'Orbitron'; color:var(--neon); font-size:20px; }
-.container { max-width:480px; margin:20px auto; padding:15px; }
-.panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
-.tabs { display:flex; gap:6px; margin-bottom:15px; }
-.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
-.tab.active { background:var(--neon); color:black; }
-select,input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
-.main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
-.tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
+:root{
+--neon:#00ffcc;
+--bg:#010409;
+--call:#00ff88;
+--put:#ff3366;
+--gold:#ffcc00;
+}
 
-#output { margin-top:20px; padding:5px; border:1px dashed var(--neon); border-radius:15px; }
+body{
+margin:0;
+background:var(--bg);
+font-family:'Rajdhani';
+color:white;
+}
+
+header{
+padding:20px;
+text-align:center;
+border-bottom:2px solid var(--neon);
+background:black;
+box-shadow:0 0 15px var(--neon);
+}
+
+.logo{
+font-family:'Orbitron';
+color:var(--neon);
+font-size:20px;
+}
+
+.container{
+max-width:480px;
+margin:20px auto;
+padding:15px;
+}
+
+.panel{
+background:#0d1117;
+border:1px solid rgba(0,255,204,0.3);
+border-radius:20px;
+padding:20px;
+}
+
+.tabs{
+display:flex;
+gap:6px;
+margin-bottom:15px;
+}
+
+.tab{
+flex:1;
+padding:10px;
+border:1px solid var(--neon);
+background:transparent;
+color:var(--neon);
+border-radius:8px;
+cursor:pointer;
+font-size:11px;
+font-weight:bold;
+}
+
+.tab.active{
+background:var(--neon);
+color:black;
+}
+
+select,input{
+width:100%;
+padding:12px;
+background:#020617;
+color:white;
+border:1px solid #30363d;
+border-radius:10px;
+margin-bottom:15px;
+}
+
+.main-btn{
+width:100%;
+padding:16px;
+background:var(--neon);
+color:black;
+border:none;
+border-radius:12px;
+font-family:'Orbitron';
+font-weight:bold;
+cursor:pointer;
+}
+
+.tg-btn{
+width:100%;
+padding:12px;
+background:#0088cc;
+color:white;
+border:none;
+border-radius:12px;
+cursor:pointer;
+margin-top:10px;
+}
+
+#output{
+margin-top:20px;
+padding:5px;
+border:1px dashed var(--neon);
+border-radius:15px;
+}
 
 .loading{
 text-align:center;
@@ -36,10 +126,16 @@ from{opacity:0.4;}
 to{opacity:1;}
 }
 
-.sig-row { display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05); }
-.time { color:var(--gold); font-family:'Orbitron'; }
-.CALL { color:var(--call); }
-.PUT { color:var(--put); }
+.sig-row{
+display:flex;
+justify-content:space-between;
+padding:15px;
+border-bottom:1px solid rgba(255,255,255,0.05);
+}
+
+.time{ color:var(--gold); font-family:'Orbitron'; }
+.CALL{ color:var(--call); }
+.PUT{ color:var(--put); }
 </style>
 </head>
 
@@ -73,14 +169,14 @@ to{opacity:1;}
 
 <script>
 
-// CONFIG
+// ===== CONFIG =====
 const API="https://candle.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const TARGET=18;
 
 const LIST={
-OTC:["USDNGN_otc","USDARS_otc","USDEGP_otc","USDBDT_otc","USDCOP_otc","USDPKR_otc","USDINR_otc","USDBRL_otc"],
+OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
 STOCK:["MSFT_otc","AXP_otc","PFE_otc"],
 CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 };
@@ -94,7 +190,7 @@ d.setHours(d.getUTCHours()+6);
 clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 },1000);
 
-// MARKET
+// MARKET SWITCH
 function setMarket(t,b){
 pairs.innerHTML="";
 document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
@@ -109,86 +205,68 @@ pairs.add(o);
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-// SMART CANDLE SCORE
-function smartScore(c){
-let score = c.win_prob || 0.6;
+// ===== SMART CANDLE ANALYSIS =====
+function analyze(c){
+let score=c.win_prob || 0.6;
 
-let body = Math.abs(c.close - c.open);
-let range = Math.abs(c.high - c.low);
+let body=Math.abs(c.close-c.open);
+let range=Math.abs(c.high-c.low);
 
 if(range>0){
-let power = body/range;
-if(power>0.5) score+=0.05;
-if(power>0.7) score+=0.05;
+let strength=body/range;
+if(strength>0.5) score+=0.05;
+if(strength>0.7) score+=0.05;
 }
 
 return score;
 }
 
-// ENGINE
+// ===== ENGINE =====
 async function startEngine(){
 
 SIGNALS=[];
 
 let selected=[...pairs.selectedOptions].map(o=>o.value);
-if(selected.length===0){ alert("Select pairs"); return; }
+if(selected.length===0) return alert("Select pairs");
 
 output.innerHTML=`<div class="loading">SCANNING LIVE MARKET...</div>`;
 
-for(let pair of selected){
-await buildSignals(pair);
-if(SIGNALS.length>=TARGET) break;
-}
-
-SIGNALS.sort((a,b)=>a.raw-b.raw);
-
-displaySignals();
-}
-
-// BUILD HYBRID SIGNALS
-async function buildSignals(asset){
-
-try{
-
-let pairAPI = asset.replace("_otc","-OTC");
-
-let res = await fetch(API+pairAPI+"&count=200");
-if(!res.ok) return;
-
-let json = await res.json();
-let candles = json?.candles;
-if(!candles || candles.length<5) return;
-
-// TIME RANGE
-let s=start.value||"00:00";
-let e=end.value||"23:59";
+let s=start.value || "00:00";
+let e=end.value || "23:59";
 
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
-let totalRange = eD - sD;
+let step=(eD-sD)/TARGET;
+let index=0;
 
-// SCORE + SORT
-let scored = candles.map(c=>({...c,score:smartScore(c)}))
+for(let asset of selected){
+
+let pair=asset.replace("_otc","-OTC");
+
+try{
+let res=await fetch(API+pair+"&count=200");
+let data=await res.json();
+let candles=data.candles || [];
+
+let good=candles
+.map(c=>({...c,score:analyze(c)}))
 .sort((a,b)=>b.score-a.score);
 
-// GENERATE
-for(let i=0;i<scored.length;i++){
+for(let g of good){
 
 if(SIGNALS.length>=TARGET) break;
 
-let dir = scored[i].signal==="BUY"?"CALL":"PUT";
-
-let slot = SIGNALS.length;
-let t = new Date(sD.getTime() + (totalRange/TARGET)*slot);
+let t=new Date(sD.getTime()+(step*index));
+index++;
 
 SIGNALS.push({
-pair:pairAPI,
+pair:pair,
 time:t.toTimeString().slice(0,5),
 raw:t.getTime(),
-dir:dir
+dir:g.signal==="BUY"?"CALL":"PUT"
 });
 
 }
@@ -197,13 +275,17 @@ dir:dir
 
 }
 
+SIGNALS.sort((a,b)=>a.raw-b.raw);
+displaySignals();
+}
+
 // DISPLAY
 function displaySignals(){
 
 output.innerHTML="";
 
 if(SIGNALS.length===0){
-output.innerHTML="No Smart Signals Found";
+output.innerHTML="No Signals Generated";
 return;
 }
 
@@ -220,10 +302,12 @@ output.innerHTML+=`
 // TELEGRAM
 async function pushTG(){
 
-if(SIGNALS.length===0){ alert("Generate First"); return; }
+if(SIGNALS.length===0) return alert("Generate First");
 
-// Loading animation message
-await fetch(TG,{method:"POST",body:"APX ENGINE SCANNING...\n▓▓▓▓░░░░░"});
+await fetch(TG,{
+method:"POST",
+body:`✦ APX ENGINE SCANNING ✦\n▓▓▓▓▓░░░░`
+});
 
 await new Promise(r=>setTimeout(r,2000));
 
@@ -254,8 +338,7 @@ Powered by APX Elite Premium`;
 
 await fetch(TG,{method:"POST",body:msg});
 
-alert("Signals Sent To Telegram");
-
+alert("Signals Sent");
 }
 
 </script>
