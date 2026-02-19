@@ -1,63 +1,90 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>APX HYBRID ENGINE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA HYBRID</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-body{background:#010409;color:white;font-family:Arial;margin:0;padding:20px}
-button{padding:10px;width:100%;margin-top:10px;background:#00ffcc;border:none;border-radius:6px}
-select,input{width:100%;padding:8px;margin-top:10px;background:#020617;color:white;border:1px solid #333}
-.sig{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #222}
-.CALL{color:#00ff88;font-weight:bold}
-.PUT{color:#ff3366;font-weight:bold}
-.time{color:#ffcc00}
-.loading{text-align:center;padding:20px;color:#00ffcc}
+:root{--neon:#00ffcc;--bg:#010409;--call:#00ff88;--put:#ff3366;--gold:#ffcc00;}
+body{margin:0;background:var(--bg);font-family:'Rajdhani';color:white;}
+header{padding:15px;text-align:center;border-bottom:2px solid var(--neon);background:black;}
+.logo{font-family:'Orbitron';color:var(--neon);font-size:18px;}
+.container{max-width:480px;margin:20px auto;padding:15px;}
+.panel{background:#0d1117;border:1px solid rgba(0,255,204,0.3);border-radius:15px;padding:20px;}
+select,input{width:100%;padding:10px;margin-bottom:10px;background:#020617;color:white;border:1px solid #30363d;border-radius:8px;}
+button{width:100%;padding:14px;background:var(--neon);color:black;border:none;border-radius:10px;font-weight:bold;margin-bottom:8px;}
+#output{margin-top:15px;border:1px dashed var(--neon);border-radius:10px;padding:10px;}
+.loading{text-align:center;padding:20px;color:var(--neon);animation:pulse 1s infinite alternate;}
+@keyframes pulse{from{opacity:0.4;}to{opacity:1;}}
+.sig{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+.time{color:var(--gold);font-family:'Orbitron';}
+.CALL{color:var(--call);}
+.PUT{color:var(--put);}
 </style>
 </head>
 
 <body>
 
-<h3>APX HYBRID SMART ENGINE</h3>
+<header>
+<div class="logo">APX ULTRA HYBRID ENGINE</div>
+<div id="clock">UTC+6</div>
+</header>
+
+<div class="container">
+<div class="panel">
 
 <select id="pair">
-<option value="USDINR-otc">USDINR-OTC</option>
 <option value="USDPKR-otc">USDPKR-OTC</option>
+<option value="USDINR-otc">USDINR-OTC</option>
 <option value="USDBDT-otc">USDBDT-OTC</option>
 <option value="USDCOP-otc">USDCOP-OTC</option>
+<option value="USDNGN-otc">USDNGN-OTC</option>
 </select>
 
 <input type="time" id="start" value="10:00">
 <input type="time" id="end" value="22:00">
 
 <button onclick="generate()">GENERATE SIGNALS</button>
+<button onclick="sendTG()">SEND TELEGRAM</button>
 
 <div id="output">Ready</div>
 
+</div>
+</div>
+
 <script>
 
-const API="https://otcapi.mkapi009.workers.dev/?pair=";
-const TARGET=15;
+const API="https://apx.mkapi009.workers.dev/?pair=";
+const TG="https://signal.mkapi009.workers.dev/send";
+let SIGNALS=[];
+
+setInterval(()=>{
+let d=new Date();
+d.setHours(d.getUTCHours()+6);
+clock.innerText="UTC+6 | "+d.toLocaleTimeString();
+},1000);
 
 function analyze(candles){
 
-let recent=candles.slice(-40);
 let score=0;
+let last=candles.slice(-30);
 
-for(let i=1;i<recent.length;i++){
-
-let c=recent[i];
-let p=recent[i-1];
+for(let i=1;i<last.length;i++){
+let c=last[i];
+let prev=last[i-1];
 
 let body=Math.abs(c.close-c.open);
 let range=c.high-c.low;
-let strength=range?body/range:0.5;
+let strength=range>0?body/range:0.5;
 
 if(c.close>c.open) score+=strength;
 else score-=strength;
 
-if(c.close>p.close) score+=0.4;
-else score-=0.4;
+if(c.close>prev.close) score+=0.3;
+else score-=0.3;
 }
 
 return score>=0?"CALL":"PUT";
@@ -65,79 +92,77 @@ return score>=0?"CALL":"PUT";
 
 async function generate(){
 
-output.innerHTML='<div class="loading">SCANNING MARKET...</div>';
+SIGNALS=[];
+output.innerHTML=`<div class="loading">SCANNING MARKET...</div>`;
 
 let pair=document.getElementById("pair").value;
+let res=await fetch(API+pair+"&tf=M1&limit=200");
 
-try{
-
-let response=await fetch(API+pair+"&tf=M1&limit=500");
-let raw=await response.text();
-
-let json;
-try{
-json=JSON.parse(raw);
-}catch{
-output.innerHTML="Invalid API JSON";
+if(!res.ok){
+output.innerHTML="API Error";
 return;
 }
 
-let candles=[];
+let data=await res.json();
+let candles=data.candles || data;
 
-if(Array.isArray(json)) candles=json;
-else if(json.data) candles=json.data;
-else if(json.candles) candles=json.candles;
-
-if(!candles || candles.length<30){
-output.innerHTML="Not enough candle data";
+if(!candles || candles.length<20){
+output.innerHTML="No Candle Data";
 return;
 }
 
 let direction=analyze(candles);
 
-/* TIME DISTRIBUTION */
-
-let s=document.getElementById("start").value;
-let e=document.getElementById("end").value;
-
+let s=start.value;
+let e=end.value;
 let now=new Date();
 let sD=new Date(now.toDateString()+" "+s);
 let eD=new Date(now.toDateString()+" "+e);
 if(eD<=sD) eD.setDate(eD.getDate()+1);
 
 let total=eD-sD;
-let gap=total/TARGET;
+let count=15;
+let gap=total/count;
 
-let signals=[];
-
-for(let i=0;i<TARGET;i++){
+for(let i=0;i<count;i++){
 let t=new Date(sD.getTime()+gap*i);
-signals.push({
+SIGNALS.push({
 time:t.toTimeString().slice(0,5),
+pair:pair.toUpperCase(),
 dir:direction
 });
 }
 
-signals.sort((a,b)=>a.time.localeCompare(b.time));
+display();
+}
 
+function display(){
 output.innerHTML="";
-
-signals.forEach(s=>{
+SIGNALS.forEach(s=>{
 output.innerHTML+=`
 <div class="sig">
 <span class="time">${s.time}</span>
-<span>${pair.toUpperCase()}</span>
+<span>${s.pair}</span>
 <span class="${s.dir}">${s.dir}</span>
 </div>`;
 });
-
-}catch(e){
-output.innerHTML="API Fetch Failed";
 }
 
+async function sendTG(){
+if(!SIGNALS.length) return alert("Generate First");
+
+let msg=`✦═╡ APX SIGNAL FEED ╞═✦\n\nUTC+6 Timezone\nExpiry: 1 Minute\nMoney Management: 1 Step MTG\n\n`;
+
+SIGNALS.forEach(s=>{
+msg+=`⟡ ${s.pair} │ ${s.time} │ ${s.dir}\n`;
+});
+
+msg+=`\nTRADING RULES\nTrade only at signal time\nUse 1 Step Martingale\nStop after 2 losses\n\nPowered by APX Elite Premium`;
+
+await fetch(TG,{method:"POST",body:msg});
+alert("Sent To Telegram");
 }
 
 </script>
-
 </body>
 </html>
