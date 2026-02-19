@@ -1,37 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>API Test</title>
+</head>
+<body style="background:black;color:lime;font-family:monospace">
+
+<h2>API TEST</h2>
+
+<input id="pair" value="USDINR-otc">
+<button onclick="test()">TEST API</button>
+
+<div id="output">Waiting...</div>
+
 <script>
 
-const API="https://apx.mkapi009.workers.dev/?pair=";
+async function test(){
 
-async function generate(){
-
-output.innerHTML="Connecting to API...";
-
-let pair=document.getElementById("pair").value;
+document.getElementById("output").innerHTML="Fetching...";
 
 try{
 
-let res=await fetch(API+pair+"&tf=M1&limit=10");
-
-if(!res.ok){
-output.innerHTML="HTTP Error: "+res.status;
-return;
-}
+let res=await fetch("https://otcapi.mkapi009.workers.dev/?pair=USDINR-otc&tf=M1&limit=5");
 
 let text=await res.text();
 
-console.log("RAW RESPONSE:", text);
+document.getElementById("output").innerText=text;
 
-try{
-let json=JSON.parse(text);
-output.innerHTML="<pre style='font-size:10px;white-space:pre-wrap;'>"+JSON.stringify(json,null,2)+"</pre>";
-}catch(e){
-output.innerHTML="Response is not valid JSON:<br><br>"+text;
-}
+console.log(text);
 
 }catch(e){
-output.innerHTML="Fetch Failed: "+e.message;
+document.getElementById("output").innerText="ERROR: "+e.message;
 }
 
 }
 
 </script>
+
+</body>
+</html>
