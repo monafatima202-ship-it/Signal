@@ -2,96 +2,23 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>APX ULTRA SMART</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<title>APX HYBRID ENGINE</title>
 
 <style>
-:root{
---bg:#010409;
---neon:#00ffcc;
---call:#00ff88;
---put:#ff3366;
---gold:#ffcc00;
-}
-
-body{
-background:var(--bg);
-color:white;
-font-family:'Rajdhani';
-margin:0;
-}
-
-header{
-padding:15px;
-text-align:center;
-border-bottom:2px solid var(--neon);
-}
-
-.container{
-max-width:480px;
-margin:20px auto;
-padding:15px;
-}
-
-select,input{
-width:100%;
-padding:10px;
-margin-bottom:10px;
-background:#020617;
-color:white;
-border:1px solid #333;
-border-radius:8px;
-}
-
-button{
-width:100%;
-padding:12px;
-margin-top:5px;
-background:var(--neon);
-color:black;
-border:none;
-border-radius:10px;
-font-weight:bold;
-cursor:pointer;
-}
-
-#output{
-margin-top:20px;
-}
-
-.loading{
-text-align:center;
-padding:20px;
-color:var(--neon);
-animation:pulse 1s infinite alternate;
-}
-
-@keyframes pulse{
-from{opacity:0.4;}
-to{opacity:1;}
-}
-
-.sig{
-display:flex;
-justify-content:space-between;
-padding:10px;
-border-bottom:1px solid #222;
-}
-
-.time{color:var(--gold)}
-.CALL{color:var(--call);font-weight:bold}
-.PUT{color:var(--put);font-weight:bold}
+body{background:#010409;color:white;font-family:Arial;margin:0;padding:20px}
+button{padding:10px;width:100%;margin-top:10px;background:#00ffcc;border:none;border-radius:6px}
+select,input{width:100%;padding:8px;margin-top:10px;background:#020617;color:white;border:1px solid #333}
+.sig{display:flex;justify-content:space-between;padding:8px;border-bottom:1px solid #222}
+.CALL{color:#00ff88;font-weight:bold}
+.PUT{color:#ff3366;font-weight:bold}
+.time{color:#ffcc00}
+.loading{text-align:center;padding:20px;color:#00ffcc}
 </style>
 </head>
 
 <body>
 
-<header>
-<h3>APX ULTRA SMART ENGINE</h3>
-</header>
-
-<div class="container">
+<h3>APX HYBRID SMART ENGINE</h3>
 
 <select id="pair">
 <option value="USDINR-otc">USDINR-OTC</option>
@@ -107,22 +34,20 @@ border-bottom:1px solid #222;
 
 <div id="output">Ready</div>
 
-</div>
-
 <script>
 
 const API="https://otcapi.mkapi009.workers.dev/?pair=";
 const TARGET=15;
 
-function smartDirection(candles){
+function analyze(candles){
 
-let recent=candles.slice(-30);
+let recent=candles.slice(-40);
 let score=0;
 
 for(let i=1;i<recent.length;i++){
 
 let c=recent[i];
-let prev=recent[i-1];
+let p=recent[i-1];
 
 let body=Math.abs(c.close-c.open);
 let range=c.high-c.low;
@@ -131,8 +56,8 @@ let strength=range?body/range:0.5;
 if(c.close>c.open) score+=strength;
 else score-=strength;
 
-if(c.close>prev.close) score+=0.3;
-else score-=0.3;
+if(c.close>p.close) score+=0.4;
+else score-=0.4;
 }
 
 return score>=0?"CALL":"PUT";
@@ -146,8 +71,16 @@ let pair=document.getElementById("pair").value;
 
 try{
 
-let res=await fetch(API+pair+"&tf=M1&limit=500");
-let json=await res.json();
+let response=await fetch(API+pair+"&tf=M1&limit=500");
+let raw=await response.text();
+
+let json;
+try{
+json=JSON.parse(raw);
+}catch{
+output.innerHTML="Invalid API JSON";
+return;
+}
 
 let candles=[];
 
@@ -155,14 +88,14 @@ if(Array.isArray(json)) candles=json;
 else if(json.data) candles=json.data;
 else if(json.candles) candles=json.candles;
 
-if(!candles || candles.length<20){
+if(!candles || candles.length<30){
 output.innerHTML="Not enough candle data";
 return;
 }
 
-let direction=smartDirection(candles);
+let direction=analyze(candles);
 
-/* TIME RANGE */
+/* TIME DISTRIBUTION */
 
 let s=document.getElementById("start").value;
 let e=document.getElementById("end").value;
@@ -199,7 +132,7 @@ output.innerHTML+=`
 });
 
 }catch(e){
-output.innerHTML="API error";
+output.innerHTML="API Fetch Failed";
 }
 
 }
