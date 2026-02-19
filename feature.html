@@ -8,10 +8,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
+:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; --hold:#888888; }
 body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
 header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 15px var(--neon); }
-.logo { font-family:'Orbitron'; color:var(--neon); font-size:20px; }
+.logo { font-family:'Orbitron'; color:var(--neon); font-size:24px; }
 .container { max-width:480px; margin:20px auto; padding:15px; }
 .panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
 .tabs { display:flex; gap:6px; margin-bottom:15px; }
@@ -20,24 +20,16 @@ header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); b
 select, input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
 .main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
 .tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
-#output { margin-top:20px; padding:5px; border:1px dashed var(--neon); border-radius:15px; }
-
-.loading{
-text-align:center;
-padding:25px;
-font-family:'Orbitron';
-color:var(--neon);
-animation:pulse 1s infinite alternate;
-}
-@keyframes pulse{
-from{opacity:0.4;}
-to{opacity:1;}
-}
-
-.sig-row { display:flex; justify-content:space-between; padding:15px; border-bottom:1px solid rgba(255,255,255,0.05); }
-.time { color:var(--gold); font-family:'Orbitron'; }
+#output { margin-top:20px; padding:10px; border:1px dashed var(--neon); border-radius:15px; min-height:200px; }
+.loading { text-align:center; padding:25px; font-family:'Orbitron'; color:var(--neon); animation:pulse 1s infinite alternate; }
+@keyframes pulse { from{opacity:0.4;} to{opacity:1;} }
+.sig-row { display:flex; justify-content:space-between; padding:12px 8px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:14px; }
+.time { color:var(--gold); font-family:'Orbitron'; min-width:60px; }
+.pair { min-width:100px; }
+.dir { font-weight:bold; }
 .CALL { color:var(--call); }
 .PUT { color:var(--put); }
+.HOLD { color:var(--hold); }
 </style>
 </head>
 
@@ -58,186 +50,226 @@ to{opacity:1;}
 </div>
 
 <select id="pairs" multiple size="6"></select>
-<input type="time" id="start" value="10:00">
-<input type="time" id="end" value="22:00">
+<input type="time" id="start" value="09:00">
+<input type="time" id="end" value="23:59">
 
 <button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
 <button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
 
-<div id="output">Ready</div>
+<div id="output">Ready – Select pairs & time range then click Generate</div>
 
 </div>
 </div>
 
 <script>
 
-// ===== PROXY API =====
+// ===== PROXY + API =====
 function buildAPI(pair){
-return "https://api.allorigins.win/raw?url=" +
-encodeURIComponent(`https://otcapi.mkapi009.workers.dev/?pair=${pair}&tf=M1&limit=500`);
+  return "https://api.allorigins.win/raw?url=" + 
+    encodeURIComponent(`https://otcapi.mkapi009.workers.dev/?pair=${pair}&tf=M1&limit=500`);
 }
 
-const TG="https://signal.mkapi009.workers.dev/send";
-const TARGET=15;
+const TG = "https://signal.mkapi009.workers.dev/send";
+const TARGET = 15; // kitne signals generate karne hain
 
-const LIST={
-OTC:["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc"],
-STOCK:["MSFSTK-OTC","AXPSTK-OTC"],
-CRYPTO:["BTCUSD-otc","ETHUSD-otc"]
+const LIST = {
+  OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc"],
+  STOCK: ["MSFSTK-OTC","AXPSTK-OTC"],
+  CRYPTO: ["BTCUSD-otc","ETHUSD-otc"]
 };
 
-let SIGNALS=[];
+let SIGNALS = [];
 
-// CLOCK
-setInterval(()=>{
-let d=new Date();
-d.setHours(d.getUTCHours()+6);
-clock.innerText="UTC+6 | "+d.toLocaleTimeString();
-},1000);
+// CLOCK (UTC+6)
+setInterval(() => {
+  let d = new Date();
+  d.setHours(d.getUTCHours() + 6);
+  clock.innerText = "UTC+6 | " + d.toLocaleTimeString('en-US', {hour12:false});
+}, 1000);
 
-// MARKET
-function setMarket(t,b){
-pairs.innerHTML="";
-document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-b.classList.add("active");
-LIST[t].forEach(p=>{
-let o=document.createElement("option");
-o.value=p;
-o.text=p.toUpperCase();
-pairs.add(o);
-});
+// MARKET TABS
+function setMarket(t, b){
+  pairs.innerHTML = "";
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  LIST[t].forEach(p => {
+    let o = document.createElement("option");
+    o.value = p;
+    o.text = p.toUpperCase();
+    pairs.add(o);
+  });
 }
-setMarket("OTC",document.querySelector(".tab"));
+setMarket("OTC", document.querySelector(".tab"));
 
-
-// SMART LOGIC ENGINE
-function analyze(candles){
-
-let score=0;
-let last=candles.slice(-25);
-
-last.forEach(c=>{
-let body=Math.abs(c.close-c.open);
-let range=Math.abs(c.high-c.low);
-let strength=range>0?body/range:0;
-
-if(c.close>c.open) score+=strength;
-else score-=strength;
-});
-
-return score>=0?"CALL":"PUT";
-}
-
-
-// ENGINE
-async function startEngine(){
-
-SIGNALS=[];
-let selected=[...pairs.selectedOptions].map(o=>o.value);
-if(!selected.length) return alert("Select pair");
-
-output.innerHTML=`<div class="loading">SCANNING MARKET DATA...</div>`;
-
-for(let asset of selected){
-
-let apiURL=buildAPI(asset);
-
-try{
-let res=await fetch(apiURL);
-let json=await res.json();
-let candles=json?.candles?.data || json?.data || [];
-
-if(!candles.length) continue;
-
-let direction=analyze(candles);
-distribute(asset,direction);
-
-}catch(e){
-console.log("Fetch error",e);
-}
+// ===== IMPROVED ANALYZE FUNCTION (RSI + Candle Strength) =====
+function calculateRSI(candles, period = 7) {
+  if (candles.length < period + 1) return 50;
+  
+  let gains = 0, losses = 0;
+  for (let i = candles.length - period; i < candles.length; i++) {
+    let diff = candles[i].close - candles[i-1].close;
+    if (diff > 0) gains += diff;
+    else losses += Math.abs(diff);
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+  
+  if (avgLoss === 0) return 100;
+  let rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
 }
 
-SIGNALS.sort((a,b)=>a.raw-b.raw);
-displaySignals();
+function analyze(candles) {
+  if (candles.length < 20) {
+    console.log("Not enough candles:", candles.length);
+    return "HOLD";
+  }
+
+  let rsi = calculateRSI(candles.slice(-15), 7); // last 15 candles → RSI(7)
+  let last = candles[candles.length - 1];
+  
+  let body = Math.abs(last.close - last.open);
+  let range = last.high - last.low || 0.0001;
+  let bodyRatio = body / range;
+
+  let direction = "HOLD";
+
+  // Strong CALL conditions
+  if (rsi < 38 && last.close > last.open && bodyRatio > 0.65) {
+    direction = "CALL";
+  }
+  // Strong PUT conditions
+  else if (rsi > 62 && last.close < last.open && bodyRatio > 0.65) {
+    direction = "PUT";
+  }
+
+  console.log(`Pair analyzed | RSI: ${rsi.toFixed(1)} | Last candle: ${last.close > last.open ? 'Bull' : 'Bear'} | Body%: ${(bodyRatio*100).toFixed(0)}% → ${direction}`);
+  
+  return direction;
 }
 
+// ===== ENGINE =====
+async function startEngine() {
+  SIGNALS = [];
+  let selected = [...pairs.selectedOptions].map(o => o.value);
+  if (!selected.length) return alert("Please select at least one pair");
 
-// DISTRIBUTE TIME SORTED
-function distribute(pair,dir){
+  output.innerHTML = `<div class="loading">SCANNING MARKET DATA...</div>`;
 
-let s=start.value;
-let e=end.value;
+  for (let asset of selected) {
+    let apiURL = buildAPI(asset);
+    try {
+      let res = await fetch(apiURL);
+      let json = await res.json();
+      let candles = json?.candles?.data || json?.data || [];
 
-let now=new Date();
-let sD=new Date(now.toDateString()+" "+s);
-let eD=new Date(now.toDateString()+" "+e);
-if(eD<=sD) eD.setDate(eD.getDate()+1);
+      if (!candles.length) {
+        console.log(`No candles for ${asset}`);
+        continue;
+      }
 
-let gap=(eD-sD)/TARGET;
+      let direction = analyze(candles);
+      if (direction !== "HOLD") {
+        distribute(asset, direction);
+      }
+    } catch (e) {
+      console.error("Fetch error for", asset, e);
+    }
+  }
 
-for(let i=0;i<TARGET;i++){
-let t=new Date(sD.getTime()+gap*i);
-SIGNALS.push({
-pair:pair.toUpperCase(),
-time:t.toTimeString().slice(0,5),
-raw:t.getTime(),
-dir:dir
-});
-}
-}
-
-
-// DISPLAY
-function displaySignals(){
-
-output.innerHTML="";
-if(!SIGNALS.length){
-output.innerHTML="No Signals Found";
-return;
+  SIGNALS.sort((a,b) => a.raw - b.raw);
+  displaySignals();
 }
 
-SIGNALS.forEach(s=>{
-output.innerHTML+=`
+// ===== DISTRIBUTE SIGNALS IN TIME RANGE =====
+function distribute(pair, dir) {
+  let s = start.value; // "09:00"
+  let e = end.value;   // "23:59"
+
+  let now = new Date();
+  let [sH, sM] = s.split(":").map(Number);
+  let [eH, eM] = e.split(":").map(Number);
+
+  let sD = new Date(now);
+  sD.setHours(sH, sM, 0, 0);
+  sD.setSeconds(0); sD.setMilliseconds(0);
+
+  let eD = new Date(now);
+  eD.setHours(eH, eM, 0, 0);
+  eD.setSeconds(0); eD.setMilliseconds(0);
+
+  if (eD <= sD) {
+    eD.setDate(eD.getDate() + 1);
+  }
+
+  let totalMs = eD - sD;
+  let gap = totalMs / TARGET;
+
+  for (let i = 0; i < TARGET; i++) {
+    let t = new Date(sD.getTime() + gap * i);
+    SIGNALS.push({
+      pair: pair.toUpperCase(),
+      time: t.toTimeString().slice(0, 5),
+      raw: t.getTime(),
+      dir: dir
+    });
+  }
+}
+
+// ===== DISPLAY =====
+function displaySignals() {
+  output.innerHTML = "";
+  if (!SIGNALS.length) {
+    output.innerHTML = "No strong signals found in current market conditions.";
+    return;
+  }
+
+  SIGNALS.forEach(s => {
+    output.innerHTML += `
 <div class="sig-row">
-<span class="time">${s.time}</span>
-<span>${s.pair}</span>
-<span class="${s.dir}">${s.dir}</span>
+  <span class="time">${s.time}</span>
+  <span class="pair">${s.pair}</span>
+  <span class="dir \( {s.dir}"> \){s.dir}</span>
 </div>`;
-});
+  });
 }
 
+// ===== TELEGRAM PUSH =====
+async function pushTG() {
+  if (!SIGNALS.length) return alert("Generate signals first!");
 
-// TELEGRAM
-async function pushTG(){
-
-if(!SIGNALS.length) return alert("Generate first");
-
-let msg=`✦═╡ APX SIGNAL FEED ╞═✦
+  let msg = `✦═╡ APX SMART SIGNALS ╞═✦
 
 UTC+6 Timezone
 Expiry: 1 Minute
-Money Management: 1 Step MTG
+Strategy: RSI + Momentum
+Money Management: 1 Step MTG (recommended)
 
 `;
 
-SIGNALS.forEach(s=>{
-msg+=`⟡ ${s.pair} │ ${s.time} │ ${s.dir}\n`;
-});
+  SIGNALS.forEach(s => {
+    msg += `⟡ ${s.pair} │ ${s.time} │ ${s.dir}\n`;
+  });
 
-msg+=`
+  msg += `
 
 ══════════════════
 TRADING RULES
 ══════════════════
-Trade only at signal time
-Use 1 Step Martingale
-Avoid high impact news
-Stop after 2 losses
+• Trade only at exact signal time
+• Use 1 Step Martingale if loss
+• Avoid high-impact news hours
+• Stop after 2 consecutive losses
 
 Powered by APX Elite Premium`;
 
-await fetch(TG,{method:"POST",body:msg});
-alert("Sent To Telegram");
+  try {
+    await fetch(TG, { method: "POST", body: msg });
+    alert("Signals sent to Telegram!");
+  } catch (e) {
+    alert("Telegram send failed. Check console.");
+    console.error(e);
+  }
 }
 
 </script>
