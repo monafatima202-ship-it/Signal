@@ -70,7 +70,7 @@ function buildAPI(pair){
 }
 
 const TG = "https://signal.mkapi009.workers.dev/send";
-const TARGET = 15; // kitne signals generate karne hain
+const TARGET = 15;
 
 const LIST = {
   OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc"],
@@ -101,7 +101,7 @@ function setMarket(t, b){
 }
 setMarket("OTC", document.querySelector(".tab"));
 
-// ===== IMPROVED ANALYZE FUNCTION (RSI + Candle Strength) =====
+// ===== RELAXED ANALYZE FUNCTION (zyada signals ke liye) =====
 function calculateRSI(candles, period = 7) {
   if (candles.length < period + 1) return 50;
   
@@ -112,38 +112,54 @@ function calculateRSI(candles, period = 7) {
     else losses += Math.abs(diff);
   }
   let avgGain = gains / period;
-  let avgLoss = losses / period;
+  let avgLoss = losses / period || 0.0001; // avoid divide by zero
   
-  if (avgLoss === 0) return 100;
   let rs = avgGain / avgLoss;
   return 100 - (100 / (1 + rs));
 }
 
 function analyze(candles) {
   if (candles.length < 20) {
-    console.log("Not enough candles:", candles.length);
+    console.log("Not enough candles");
     return "HOLD";
   }
 
-  let rsi = calculateRSI(candles.slice(-15), 7); // last 15 candles → RSI(7)
-  let last = candles[candles.length - 1];
+  let recent = candles.slice(-10); // last 10 min
+  let rsi = calculateRSI(recent, 7);
   
+  let last = recent[recent.length - 1];
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
   let bodyRatio = body / range;
 
+  // Count trend in last 5 candles
+  let upCount = 0, downCount = 0;
+  for (let i = 1; i < 6; i++) {
+    if (recent[recent.length - i].close > recent[recent.length - i - 1].close) upCount++;
+    else if (recent[recent.length - i].close < recent[recent.length - i - 1].close) downCount++;
+  }
+
   let direction = "HOLD";
 
-  // Strong CALL conditions
-  if (rsi < 38 && last.close > last.open && bodyRatio > 0.65) {
-    direction = "CALL";
+  // Relaxed CALL
+  if (rsi < 45 || upCount >= 4) {
+    if (last.close > last.open || bodyRatio > 0.5) {
+      direction = "CALL";
+    }
   }
-  // Strong PUT conditions
-  else if (rsi > 62 && last.close < last.open && bodyRatio > 0.65) {
-    direction = "PUT";
+  // Relaxed PUT
+  else if (rsi > 55 || downCount >= 4) {
+    if (last.close < last.open || bodyRatio > 0.5) {
+      direction = "PUT";
+    }
   }
 
-  console.log(`Pair analyzed | RSI: ${rsi.toFixed(1)} | Last candle: ${last.close > last.open ? 'Bull' : 'Bear'} | Body%: ${(bodyRatio*100).toFixed(0)}% → ${direction}`);
+  // Fallback: agar RSI neutral to last candle direction force
+  if (direction === "HOLD") {
+    direction = last.close > last.open ? "CALL" : "PUT";
+  }
+
+  console.log(`Analyzed ${recent.length} candles | RSI: ${rsi.toFixed(1)} | Up trend: ${upCount}/5 | Body%: ${(bodyRatio*100).toFixed(0)}% → ${direction}`);
   
   return direction;
 }
@@ -169,9 +185,8 @@ async function startEngine() {
       }
 
       let direction = analyze(candles);
-      if (direction !== "HOLD") {
-        distribute(asset, direction);
-      }
+      // Ab HOLD bhi distribute kar sakte ho agar chaho, lekin ab rare hai
+      distribute(asset, direction);
     } catch (e) {
       console.error("Fetch error for", asset, e);
     }
@@ -181,10 +196,10 @@ async function startEngine() {
   displaySignals();
 }
 
-// ===== DISTRIBUTE SIGNALS IN TIME RANGE =====
+// distribute, displaySignals, pushTG same as before (no change needed)
 function distribute(pair, dir) {
-  let s = start.value; // "09:00"
-  let e = end.value;   // "23:59"
+  let s = start.value;
+  let e = end.value;
 
   let now = new Date();
   let [sH, sM] = s.split(":").map(Number);
@@ -216,11 +231,10 @@ function distribute(pair, dir) {
   }
 }
 
-// ===== DISPLAY =====
 function displaySignals() {
   output.innerHTML = "";
   if (!SIGNALS.length) {
-    output.innerHTML = "No strong signals found in current market conditions.";
+    output.innerHTML = "No signals generated (check console for details). Try selecting more pairs or different time.";
     return;
   }
 
@@ -234,16 +248,13 @@ function displaySignals() {
   });
 }
 
-// ===== TELEGRAM PUSH =====
 async function pushTG() {
   if (!SIGNALS.length) return alert("Generate signals first!");
 
-  let msg = `✦═╡ APX SMART SIGNALS ╞═✦
+  let msg = `✦═╡ APX SMART SIGNALS (Relaxed Mode) ╞═✦
 
-UTC+6 Timezone
-Expiry: 1 Minute
-Strategy: RSI + Momentum
-Money Management: 1 Step MTG (recommended)
+UTC+6 Timezone | Expiry: 1 Minute
+Strategy: Relaxed RSI + Trend Momentum
 
 `;
 
@@ -253,21 +264,19 @@ Money Management: 1 Step MTG (recommended)
 
   msg += `
 
-══════════════════
-TRADING RULES
-══════════════════
-• Trade only at exact signal time
-• Use 1 Step Martingale if loss
-• Avoid high-impact news hours
-• Stop after 2 consecutive losses
+Rules:
+• Trade at exact time
+• 1 Step Martingale on loss
+• Avoid news
+• Stop @ 2 losses
 
-Powered by APX Elite Premium`;
+Powered by APX`;
 
   try {
     await fetch(TG, { method: "POST", body: msg });
-    alert("Signals sent to Telegram!");
+    alert("Sent to Telegram!");
   } catch (e) {
-    alert("Telegram send failed. Check console.");
+    alert("Send failed – check console");
     console.error(e);
   }
 }
