@@ -59,7 +59,6 @@ select,input { width:100%; padding:12px; background:#020617; color:white; border
 
 </div>
 </div>
-
 <script>
 
 const API="https://milongazi197.serv00.net/dx/signal_generator.php?action=pair&pair=";
@@ -76,7 +75,7 @@ clock.innerText="UTC+6 | "+d.toLocaleTimeString();
 
 const LIST={
 OTC:["USDPKR_otc","USDBDT_otc","USDCOP_otc","USDNGN_otc","USDINR_otc","USDBRL_otc"],
-STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc"],
+STOCK:["MSFT_otc","AXP_otc","PFE_otc"],
 CRYPTO:["BTCUSD_otc","ETHUSD_otc"]
 };
 
@@ -94,30 +93,60 @@ pairs.add(o);
 setMarket("OTC",document.querySelector(".tab"));
 
 
-// ===== CANDLE BRAIN LOGIC =====
-function analyzeCandles(candles){
+// ===== REAL CANDLE PARSER =====
+function parseCandles(text){
+
+let candles=[];
+
+// Try JSON first
+try{
+let json=JSON.parse(text);
+if(Array.isArray(json.data)){
+json.data.forEach(c=>{
+candles.push({
+open:Number(c.open),
+high:Number(c.high),
+low:Number(c.low),
+close:Number(c.close)
+});
+});
+return candles;
+}
+}catch(e){}
+
+// Fallback: Plain text table parse
+let lines=text.split("\n");
+lines.forEach(line=>{
+let parts=line.trim().split(/\s+/);
+if(parts.length>=6 && !isNaN(parts[1])){
+candles.push({
+open:Number(parts[1]),
+high:Number(parts[2]),
+low:Number(parts[3]),
+close:Number(parts[4])
+});
+}
+});
+
+return candles;
+}
+
+
+// ===== CANDLE BRAIN =====
+function analyze(candles){
+
+if(candles.length<20) return null;
 
 let score=0;
-let last=candles.slice(-25);
+let last=candles.slice(-20);
 
 last.forEach(c=>{
-let open=Number(c.Open||c.open);
-let close=Number(c.Close||c.close);
-let high=Number(c.High||c.high);
-let low=Number(c.Low||c.low);
-
-let body=Math.abs(close-open);
-let range=Math.abs(high-low);
+let body=Math.abs(c.close-c.open);
+let range=Math.abs(c.high-c.low);
 let power=range>0?body/range:0;
 
-if(close>open) score+=power;
+if(c.close>c.open) score+=power;
 else score-=power;
-
-let upper=high-Math.max(open,close);
-let lower=Math.min(open,close)-low;
-
-if(lower>body) score+=0.5;
-if(upper>body) score-=0.5;
 });
 
 return score>=0?"CALL":"PUT";
@@ -131,7 +160,7 @@ SIGNALS=[];
 let selected=[...pairs.selectedOptions].map(o=>o.value);
 if(!selected.length) return alert("Select pairs");
 
-output.innerHTML=`<div class="loading">SCANNING NEURAL PATTERNS...</div>`;
+output.innerHTML=`<div class="loading">SCANNING MARKET...</div>`;
 
 for(let asset of selected){
 
@@ -141,24 +170,18 @@ try{
 let res=await fetch(API+pairAPI);
 let text=await res.text();
 
-let rows=text.split("\n").slice(1);
-let candles=[];
+let candles=parseCandles(text);
 
-rows.forEach(r=>{
-let p=r.trim().split(/\s+/);
-if(p.length>=6){
-candles.push({
-Open:p[1],High:p[2],Low:p[3],Close:p[4]
-});
-}
-});
+let dir=analyze(candles);
 
-if(candles.length>20){
-let dir=analyzeCandles(candles);
-distributeSignals(pairAPI,dir);
+if(dir){
+distribute(pairAPI,dir);
 }
 
-}catch(e){}
+}catch(e){
+console.log("API error");
+}
+
 }
 
 SIGNALS.sort((a,b)=>a.raw-b.raw);
@@ -167,7 +190,7 @@ displaySignals();
 
 
 // ===== TIME DISTRIBUTION =====
-function distributeSignals(pair,dir){
+function distribute(pair,dir){
 
 let s=start.value||"10:00";
 let e=end.value||"22:00";
@@ -195,7 +218,11 @@ dir:dir
 function displaySignals(){
 
 output.innerHTML="";
-if(!SIGNALS.length){ output.innerHTML="No Signals Found"; return; }
+
+if(!SIGNALS.length){
+output.innerHTML="No Signals Found (API returned no valid candle data)";
+return;
+}
 
 SIGNALS.forEach(s=>{
 output.innerHTML+=`
@@ -211,7 +238,7 @@ output.innerHTML+=`
 // TELEGRAM
 async function pushTG(){
 
-if(!SIGNALS.length) return alert("Generate signals first");
+if(!SIGNALS.length) return alert("Generate first");
 
 let msg=`✦═╡ APX SIGNAL FEED ╞═✦
 
@@ -236,9 +263,7 @@ Stop after 2 losses
 Powered by APX Elite Premium`;
 
 await fetch(TG,{method:"POST",body:msg});
-alert("Signals Sent To Telegram");
+alert("Sent");
 }
 
-</script>
-</body>
-</html>
+     </script>
