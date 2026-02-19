@@ -1,40 +1,160 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>API Test</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA HYBRID FINAL</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{--neon:#00ffcc;--bg:#010409;--call:#00ff88;--put:#ff3366;--gold:#ffcc00;}
+body{margin:0;background:var(--bg);font-family:'Rajdhani';color:white;}
+header{padding:15px;text-align:center;border-bottom:2px solid var(--neon);background:black;}
+.logo{font-family:'Orbitron';color:var(--neon);}
+.container{max-width:450px;margin:20px auto;padding:10px;}
+.panel{background:#0d1117;border:1px solid rgba(0,255,204,0.3);border-radius:15px;padding:20px;}
+select,input{width:100%;padding:10px;background:#020617;color:white;border:1px solid #30363d;border-radius:8px;margin-bottom:10px;}
+button{width:100%;padding:14px;background:var(--neon);color:black;border:none;border-radius:10px;font-weight:bold;margin-top:8px;}
+#output{margin-top:20px;border-radius:10px;background:rgba(255,255,255,0.02);}
+.sig-row{display:grid;grid-template-columns:1fr 2fr 1fr;padding:10px;border-bottom:1px solid rgba(255,255,255,0.05);text-align:center;}
+.time{color:var(--gold);font-family:'Orbitron';}
+.CALL{color:var(--call);font-weight:bold;}
+.PUT{color:var(--put);font-weight:bold;}
+.loading{text-align:center;padding:25px;font-family:'Orbitron';color:var(--neon);animation:pulse 1s infinite alternate;}
+@keyframes pulse{from{opacity:.4}to{opacity:1}}
+</style>
 </head>
-<body style="background:black;color:lime;font-family:monospace">
 
-<h2>API TEST</h2>
+<body>
 
-<input id="pair" value="USDINR-otc">
-<button onclick="test()">TEST API</button>
+<header>
+<div class="logo">APX NEURAL ENGINE</div>
+<div id="clock"></div>
+</header>
 
-<div id="output">Waiting...</div>
+<div class="container">
+<div class="panel">
+
+<select id="pair">
+<option value="USDINR-otc">USDINR-OTC</option>
+<option value="USDPKR-otc">USDPKR-OTC</option>
+<option value="USDBDT-otc">USDBDT-OTC</option>
+<option value="USDCOP-otc">USDCOP-OTC</option>
+</select>
+
+<input type="time" id="start" value="10:00">
+<input type="time" id="end" value="20:00">
+
+<button onclick="generate()">GENERATE SIGNALS</button>
+
+<div id="output">Ready</div>
+
+</div>
+</div>
 
 <script>
 
-async function test(){
+const API="https://otcapi.mkapi009.workers.dev/?pair=";
+const LIMIT=200;
+const TARGET=15;
 
-document.getElementById("output").innerHTML="Fetching...";
+setInterval(()=>{
+let d=new Date();
+d.setHours(d.getUTCHours()+6);
+document.getElementById("clock").innerText="UTC+6 | "+d.toLocaleTimeString();
+},1000);
+
+function analyze(candles){
+
+let score=0;
+
+let recent=candles.slice(0,20); // latest candles first
+
+recent.forEach(c=>{
+let body=Math.abs(c.close-c.open);
+let range=Math.abs(c.high-c.low);
+let strength=range>0?body/range:0;
+
+if(c.close>c.open) score+=strength;
+else score-=strength;
+});
+
+return score>=0?"CALL":"PUT";
+}
+
+async function generate(){
+
+output.innerHTML='<div class="loading">SCANNING MARKET DATA...</div>';
+
+let pair=document.getElementById("pair").value;
 
 try{
 
-let res=await fetch("https://otcapi.mkapi009.workers.dev/?pair=USDINR-otc&tf=M1&limit=5");
+let res=await fetch(API+pair+"&tf=M1&limit="+LIMIT);
+let json=await res.json();
 
-let text=await res.text();
+let candles=json?.candles?.data;
 
-document.getElementById("output").innerText=text;
+if(!candles || candles.length<20){
+output.innerHTML="No Signals Found";
+return;
+}
 
-console.log(text);
+let direction=analyze(candles);
+
+buildSignals(pair,direction);
 
 }catch(e){
-document.getElementById("output").innerText="ERROR: "+e.message;
+output.innerHTML="API Fetch Failed";
 }
+
+}
+
+function buildSignals(pair,dir){
+
+let s=document.getElementById("start").value;
+let e=document.getElementById("end").value;
+
+let now=new Date();
+let sD=new Date(now.toDateString()+" "+s);
+let eD=new Date(now.toDateString()+" "+e);
+if(eD<=sD) eD.setDate(eD.getDate()+1);
+
+let gap=(eD-sD)/TARGET;
+
+let signals=[];
+
+for(let i=0;i<TARGET;i++){
+let t=new Date(sD.getTime()+gap*i);
+signals.push({
+time:t.toTimeString().slice(0,5),
+raw:t.getTime(),
+dir:dir
+});
+}
+
+signals.sort((a,b)=>a.raw-b.raw);
+
+display(pair,signals);
+
+}
+
+function display(pair,signals){
+
+output.innerHTML="";
+
+signals.forEach(s=>{
+output.innerHTML+=`
+<div class="sig-row">
+<span class="time">${s.time}</span>
+<span>${pair.toUpperCase()}</span>
+<span class="${s.dir}">${s.dir}</span>
+</div>`;
+});
 
 }
 
 </script>
-
 </body>
 </html>
