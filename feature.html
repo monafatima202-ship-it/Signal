@@ -48,23 +48,23 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
 </div>
 
-<select id="pairs" multiple size="8"></select>
+<select id="pairs" multiple size="10"></select>
 <input type="time" id="start" value="17:00">
 <input type="time" id="end" value="20:00">
 
 <button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
 <button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
 
-<div id="output">Ready – Pairs select karo (multiple bhi allowed), time set karo, Generate click!</div>
+<div id="output">Ready bhai – Pairs select karo, Generate daba do!</div>
 
 </div>
 </div>
 
 <script>
 
-// PROXY API
+// PROXY - corsproxy.io (working alternative, allorigins 503 de raha tha)
 function buildAPI(pair){
-  return "https://api.allorigins.win/raw?url=" + 
+  return "https://corsproxy.io/?" + 
     encodeURIComponent(`https://otcapi.mkapi009.workers.dev/?pair=${pair}&tf=M1&limit=500`);
 }
 
@@ -79,14 +79,14 @@ const LIST = {
 
 let SIGNALS = [];
 
-// CLOCK
+// CLOCK UTC+6 (PKT)
 setInterval(() => {
   let d = new Date();
   d.setHours(d.getUTCHours() + 6);
   clock.innerText = "UTC+6 | " + d.toLocaleTimeString('en-US', {hour12:false});
 }, 1000);
 
-// TABS
+// MARKET TABS
 function setMarket(t, b){
   pairs.innerHTML = "";
   document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
@@ -100,14 +100,14 @@ function setMarket(t, b){
 }
 setMarket("OTC", document.querySelector(".tab"));
 
-// SUPER SIMPLE ANALYZE - Ab har bar signal milega
+// SIMPLE ANALYZE - Trend based, har bar signal
 function analyze(candles) {
   if (candles.length < 5) {
-    console.log("Too few candles");
-    return "HOLD"; // rare
+    console.log("Too few candles for this pair");
+    return "HOLD";
   }
 
-  let recent = candles.slice(-6); // last 6 min
+  let recent = candles.slice(-6);
   let up = 0, down = 0;
 
   for (let i = 1; i < recent.length; i++) {
@@ -118,12 +118,9 @@ function analyze(candles) {
   let last = recent[recent.length-1];
   let isBull = last.close > last.open;
 
-  let dir = "PUT"; // default
-  if (up > down || isBull) {
-    dir = "CALL";
-  }
+  let dir = (up >= down || isBull) ? "CALL" : "PUT";
 
-  console.log(`Pair: ${candles[0]?.pair || 'unknown'} | Last 5 changes: Up ${up} Down ${down} | Last candle bull? ${isBull} → ${dir}`);
+  console.log(`Analyzed ${recent.length} candles | Up: ${up} Down: ${down} | Last bull? ${isBull} → ${dir}`);
 
   return dir;
 }
@@ -132,28 +129,28 @@ function analyze(candles) {
 async function startEngine() {
   SIGNALS = [];
   let selected = [...pairs.selectedOptions].map(o => o.value);
-  if (!selected.length) return alert("Koi pair select kar bhai!");
+  if (!selected.length) return alert("Bhai koi pair to select kar lo!");
 
-  output.innerHTML = `<div class="loading">MARKET SCAN HO RAHA HAI...</div>`;
+  output.innerHTML = `<div class="loading">MARKET SCAN HO RAHA HAI... (thoda wait)</div>`;
 
   for (let asset of selected) {
     let apiURL = buildAPI(asset);
     try {
       let res = await fetch(apiURL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       let json = await res.json();
       let candles = json?.candles?.data || json?.data || [];
 
-      if (candles.length < 5) {
-        console.log(`Kam candles: ${asset} → ${candles.length}`);
-        continue;
-      }
+      console.log(`${asset}: ${candles.length} candles fetched`);
+
+      if (candles.length < 5) continue;
 
       let direction = analyze(candles);
       if (direction !== "HOLD") {
         distribute(asset, direction);
       }
     } catch (e) {
-      console.error("Fetch fail:", asset, e);
+      console.error(`Error for ${asset}:`, e.message);
     }
   }
 
@@ -161,7 +158,7 @@ async function startEngine() {
   displaySignals();
 }
 
-// DISTRIBUTE
+// DISTRIBUTE SIGNALS
 function distribute(pair, dir) {
   let s = start.value || "17:00";
   let e = end.value || "20:00";
@@ -198,7 +195,7 @@ function distribute(pair, dir) {
 function displaySignals() {
   output.innerHTML = "";
   if (!SIGNALS.length) {
-    output.innerHTML = "Koi strong signal nahi mila (console check karo). Pairs ya time change kar ke try karo.";
+    output.innerHTML = "Abhi bhi koi signal nahi? Console check karo (F12) aur error copy-paste kar dena. Proxy ya API issue ho sakta hai.";
     return;
   }
 
@@ -214,26 +211,21 @@ function displaySignals() {
 
 // TELEGRAM
 async function pushTG() {
-  if (!SIGNALS.length) return alert("Pehle signals generate karo!");
+  if (!SIGNALS.length) return alert("Pehle signals banao bhai!");
 
-  let msg = `✦ APX SIGNALS ✦
-
-UTC+6 | 1 Min Expiry
-Simple Trend Logic
-
-`;
+  let msg = `✦ APX SIGNALS ✦\n\nUTC+6 | 1 Min Expiry\nSimple Trend Based\n\n`;
 
   SIGNALS.forEach(s => {
     msg += `⟡ ${s.pair} @ ${s.time} → ${s.dir}\n`;
   });
 
-  msg += `\nTrade smart | 1 Step MG | Stop @ 2 loss`;
+  msg += `\nTrade smart | 1 Step MG | Stop after 2 loss`;
 
   try {
     await fetch(TG, {method:"POST", body:msg});
     alert("Telegram pe bhej diya!");
   } catch(e) {
-    alert("Telegram fail – console dekho");
+    alert("Telegram send fail – console dekho");
   }
 }
 
