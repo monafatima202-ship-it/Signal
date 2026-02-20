@@ -2,65 +2,72 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>APX SMART ULTRA</title>
+<title>APX ULTRA ACCURACY ENGINE</title>
+
 <style>
 body{background:#0d1117;color:white;font-family:sans-serif;text-align:center;padding:20px}
-button{padding:12px 20px;margin:10px;font-weight:bold}
-select,input{padding:10px;margin:5px}
+select,button,input{padding:8px;margin:6px}
 .sig{margin:5px;padding:8px;border-bottom:1px solid #333}
 .call{color:#00ff88;font-weight:bold}
 .put{color:#ff3366;font-weight:bold}
+.loading{color:#00ffcc;font-weight:bold}
 </style>
 </head>
 <body>
 
-<h2>APX SMART ULTRA</h2>
+<h2>APX ULTRA ACCURACY ENGINE</h2>
 
 <select id="pair">
 <option value="USDINR-otc">USDINR-otc</option>
 <option value="USDPKR-otc">USDPKR-otc</option>
+<option value="USDBDT-otc">USDBDT-otc</option>
 <option value="USDZAR-otc">USDZAR-otc</option>
 <option value="BTCUSD-otc">BTCUSD-otc</option>
 </select>
 
 <br>
 
-Start Time: <input type="time" id="start" value="00:30">
-End Time: <input type="time" id="end" value="00:45">
+Signals Count:
+<input type="number" id="count" value="15" min="5" max="20">
 
 <br>
 
-<button onclick="generate()">GENERATE SMART SIGNALS</button>
+<button onclick="generate()">GENERATE SIGNALS</button>
+<button onclick="sendTG()">SEND TELEGRAM</button>
 
 <div id="output"></div>
 
 <script>
 
 const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
+
+let FINAL_SIGNALS = [];
 
 async function generate(){
 
     const pair = document.getElementById("pair").value;
+    const count = parseInt(document.getElementById("count").value);
     const output = document.getElementById("output");
-    output.innerHTML = "Reading Market Structure...";
+
+    output.innerHTML = "<div class='loading'>Analyzing market structure...</div>";
+    FINAL_SIGNALS = [];
 
     try{
+
         const res = await fetch(API + pair);
         const data = await res.json();
+        const candles = data?.data || data?.candles?.data || [];
 
-        let candles = data?.data || [];
-
-        if(candles.length < 50){
-            output.innerHTML = "Not enough data";
+        if(candles.length < 100){
+            output.innerHTML = "Not enough candle data";
             return;
         }
 
-        // IMPORTANT: API newest first hoti hai — reverse karo
-        candles = candles.reverse();
+        const signals = buildSignals(candles, pair, count);
+        FINAL_SIGNALS = signals;
 
-        const baseDirection = smartLogic(candles);
-
-        createTimedSignals(pair, candles, baseDirection);
+        display(signals);
 
     }catch(e){
         output.innerHTML = "API Fetch Failed";
@@ -68,86 +75,96 @@ async function generate(){
     }
 }
 
+/* ========= CORE LOGIC ========= */
 
-
-function smartLogic(c){
-
-    let trendScore = 0;
-    let momentumScore = 0;
-    let volumeScore = 0;
-
-    // 20 candle trend
-    for(let i=c.length-20;i<c.length;i++){
-        if(c[i].close > c[i].open) trendScore++;
-        else trendScore--;
+function EMA(data, period){
+    let k = 2/(period+1);
+    let ema = data[0].close;
+    for(let i=1;i<data.length;i++){
+        ema = data[i].close*k + ema*(1-k);
     }
-
-    // last 3 momentum
-    for(let i=c.length-3;i<c.length;i++){
-        if(c[i].close > c[i-1].close) momentumScore++;
-        else momentumScore--;
-    }
-
-    // volume bias (last candle)
-    let last = c[c.length-1];
-    if(last.volume > 10){
-        if(last.close > last.open) volumeScore += 1;
-        else volumeScore -= 1;
-    }
-
-    let total = trendScore + momentumScore + volumeScore;
-
-    if(total > 2) return "CALL";
-    if(total < -2) return "PUT";
-
-    // SIDEWAYS CONDITION → alternate logic
-    return last.close > c[c.length-2].close ? "CALL" : "PUT";
+    return ema;
 }
 
+function buildSignals(candles, pair, target){
 
+    let signals = [];
 
-function createTimedSignals(pair, candles, base){
+    for(let i=50;i<candles.length-5;i++){
+
+        let slice = candles.slice(0,i);
+
+        let ema20 = EMA(slice.slice(-20),20);
+        let ema50 = EMA(slice.slice(-50),50);
+
+        let trend = ema20 > ema50 ? "CALL" : "PUT";
+
+        let momentumScore = 0;
+        let recent = slice.slice(-5);
+
+        for(let j=1;j<recent.length;j++){
+            if(recent[j].close > recent[j-1].close) momentumScore++;
+            else momentumScore--;
+        }
+
+        if(trend==="CALL" && momentumScore>=2){
+            signals.push(makeSignal(pair,trend,signals.length));
+        }
+
+        if(trend==="PUT" && momentumScore<=-2){
+            signals.push(makeSignal(pair,trend,signals.length));
+        }
+
+        if(signals.length>=target) break;
+    }
+
+    return signals;
+}
+
+function makeSignal(pair, dir, index){
+    let now = new Date();
+    let t = new Date(now.getTime() + (index+1)*60000);
+    return {
+        time: t.toTimeString().slice(0,5),
+        pair: pair,
+        dir: dir
+    }
+}
+
+function display(list){
 
     const output = document.getElementById("output");
     output.innerHTML = "";
 
-    let start = document.getElementById("start").value;
-    let end = document.getElementById("end").value;
+    if(!list.length){
+        output.innerHTML = "No High Probability Setup Found";
+        return;
+    }
 
-    let now = new Date();
-    let [sH,sM] = start.split(":").map(Number);
-    let [eH,eM] = end.split(":").map(Number);
-
-    let sTime = new Date(now);
-    sTime.setHours(sH,sM,0);
-
-    let eTime = new Date(now);
-    eTime.setHours(eH,eM,0);
-
-    let current = new Date(sTime);
-
-    let flip = false;
-
-    while(current <= eTime){
-
-        let timeStr = current.toTimeString().slice(0,5);
-
-        // alternate logic if weak trend
-        let dir = base;
-
-        if(Math.random() > 0.6){
-            dir = flip ? "CALL" : "PUT";
-            flip = !flip;
-        }
-
+    list.forEach(s=>{
         output.innerHTML += `
         <div class="sig">
-            ${timeStr} | ${pair} |
-            <span class="${dir==='CALL'?'call':'put'}">${dir}</span>
+            ${s.time} | ${s.pair} |
+            <span class="${s.dir==='CALL'?'call':'put'}">${s.dir}</span>
         </div>`;
+    });
+}
 
-        current.setMinutes(current.getMinutes()+1);
+async function sendTG(){
+
+    if(!FINAL_SIGNALS.length){
+        alert("Generate signals first");
+        return;
     }
+
+    let msg="✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
+
+    FINAL_SIGNALS.forEach(s=>{
+        msg+=`${s.time} | ${s.pair} | ${s.dir}\n`;
+    });
+
+    await fetch(TG,{method:"POST",body:msg});
+    alert("Sent to Telegram");
 }
 
 </script>
