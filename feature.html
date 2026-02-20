@@ -187,8 +187,8 @@ select[multiple] {
 
     <select id="pairs" multiple></select>
 
-    <input type="time" id="start" value="21:00">
-    <input type="time" id="end" value="02:00">
+    <input type="time" id="start" value="02:00">
+    <input type="time" id="end" value="05:00">
 
     <button class="main-btn" onclick="startEngine()">GENERATE SIGNALS</button>
     <button class="tg-btn" onclick="pushTG()">SEND TO TELEGRAM</button>
@@ -238,7 +238,7 @@ function setMarket(t, btn){
 }
 setMarket('OTC', document.querySelector('.tab'));
 
-// Analyze candles → generate direction
+// Improved analyze - better balance for CALL/PUT
 function analyze(candles) {
   if (candles.length < 8) return null;
 
@@ -257,20 +257,34 @@ function analyze(candles) {
   const range = last.high - last.low || 0.0001;
   const strength = body / range;
 
+  // Micro-trend last 3 candles
+  let microUp = 0, microDown = 0;
+  for (let i = recent.length - 3; i < recent.length; i++) {
+    if (i > 0) {
+      let diff = recent[i].close - recent[i-1].close;
+      if (diff > 0) microUp++;
+      else if (diff < 0) microDown++;
+    }
+  }
+
   let dir = "HOLD";
 
-  if (up >= down + 2 || (change > 0 && strength > 0.58)) {
+  if ((up >= down + 1 || microUp > microDown) && strength > 0.65) {
     dir = "CALL";
-  } else if (down >= up + 2 || (change < 0 && strength > 0.58)) {
+  } else if ((down >= up + 1 || microDown > microUp) && strength > 0.65) {
     dir = "PUT";
   } else {
-    dir = last.close > last.open ? "CALL" : "PUT";
+    // Last candle + micro-trend decide
+    dir = (microUp >= microDown || last.close > last.open) ? "CALL" : "PUT";
   }
+
+  console.log(`\( {recent.length} candles | Up: \){up} Down:\( {down} MicroUp: \){microUp} MicroDown:\( {microDown} | Change: \){change.toFixed(4)} | Str:${(strength*100).toFixed(0)}% → ${dir}`);
 
   return dir;
 }
 
-// Main engine
+// Engine, distribute, display same as before (copy from previous)
+
 async function startEngine() {
   SIGNALS = [];
   const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
@@ -300,8 +314,8 @@ async function startEngine() {
 }
 
 function distribute(pair, dir) {
-  const startTime = document.getElementById('start').value || "21:00";
-  const endTime   = document.getElementById('end').value   || "02:00";
+  const startTime = document.getElementById('start').value || "02:00";
+  const endTime   = document.getElementById('end').value   || "05:00";
 
   const now = new Date();
   let [sh, sm] = startTime.split(':').map(Number);
@@ -334,7 +348,7 @@ function display() {
   out.innerHTML = '';
 
   if (!SIGNALS.length) {
-    out.innerHTML = 'No strong signals right now.<br>Try different pairs or time range.';
+    out.innerHTML = 'No strong signals right now.<br>Try different pairs/time or wait for market shift.';
     return;
   }
 
@@ -348,7 +362,6 @@ function display() {
   });
 }
 
-// Telegram formatted message
 async function pushTG() {
   if (!SIGNALS.length) return alert("Generate signals first");
 
@@ -361,7 +374,7 @@ Accuracy Based on Past Candles
 `;
 
   SIGNALS.forEach(s => {
-    msg += `➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
+    msg += `➤ ${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
   });
 
   msg += `
