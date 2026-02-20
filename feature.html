@@ -1,173 +1,245 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>APX ULTRA ACCURACY ENGINE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX ULTRA PREMIUM - Mona Signals</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-body{background:#0d1117;color:white;font-family:sans-serif;text-align:center;padding:20px}
-select,button,input{padding:8px;margin:6px}
-.sig{margin:5px;padding:8px;border-bottom:1px solid #333}
-.call{color:#00ff88;font-weight:bold}
-.put{color:#ff3366;font-weight:bold}
-.loading{color:#00ffcc;font-weight:bold}
+:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
+body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
+header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 15px var(--neon); }
+.logo { font-family:'Orbitron'; color:var(--neon); font-size:24px; }
+.container { max-width:480px; margin:20px auto; padding:15px; }
+.panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
+.tabs { display:flex; gap:6px; margin-bottom:15px; }
+.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
+.tab.active { background:var(--neon); color:black; }
+select, input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
+.main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
+.tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
+#output { margin-top:20px; padding:10px; border:1px dashed var(--neon); border-radius:15px; min-height:200px; }
+.loading { text-align:center; padding:25px; font-family:'Orbitron'; color:var(--neon); animation:pulse 1s infinite alternate; }
+@keyframes pulse { from{opacity:0.4;} to{opacity:1;} }
+.sig-row { display:flex; justify-content:space-between; padding:12px 8px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:14px; }
+.time { color:var(--gold); font-family:'Orbitron'; min-width:60px; }
+.pair { min-width:100px; }
+.dir { font-weight:bold; }
+.CALL { color:var(--call); }
+.PUT { color:var(--put); }
 </style>
 </head>
+
 <body>
 
-<h2>APX ULTRA ACCURACY ENGINE</h2>
+<header>
+<div class="logo">APX NEURAL ENGINE</div>
+<div id="clock">UTC+6</div>
+</header>
 
-<select id="pair">
-<option value="USDINR-otc">USDINR-otc</option>
-<option value="USDPKR-otc">USDPKR-otc</option>
-<option value="USDBDT-otc">USDBDT-otc</option>
-<option value="USDZAR-otc">USDZAR-otc</option>
-<option value="BTCUSD-otc">BTCUSD-otc</option>
-</select>
+<div class="container">
+<div class="panel">
 
-<br>
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+</div>
 
-Signals Count:
-<input type="number" id="count" value="15" min="5" max="20">
+<select id="pairs" multiple size="10"></select>
+<input type="time" id="start" value="21:00">
+<input type="time" id="end" value="00:00">
 
-<br>
+<button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
+<button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
 
-<button onclick="generate()">GENERATE SIGNALS</button>
-<button onclick="sendTG()">SEND TELEGRAM</button>
+<div id="output">Ready Mona bhai – Candles read kar ke signals bana raha hoon. Pairs select kar ke Generate daba!</div>
 
-<div id="output"></div>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script> <!-- Mobile pe console button ke liye -->
 
 <script>
 
 const API = "https://apx.mkapi009.workers.dev?pair=";
 const TG = "https://signal.mkapi009.workers.dev/send";
+const TARGET = 15;
 
-let FINAL_SIGNALS = [];
+const LIST = {
+  OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc","USDARS-otc","USDMXN-otc","USDZAR-otc","BRLUSD-otc","USDNGN-otc","USDTRY-otc","USDDZD-otc","USDEGP-otc"],
+  STOCK: ["MSFSTK-OTC","AXPSTK-OTC"],
+  CRYPTO: ["BTCUSD-otc","ETHUSD-otc"]
+};
 
-async function generate(){
+let SIGNALS = [];
 
-    const pair = document.getElementById("pair").value;
-    const count = parseInt(document.getElementById("count").value);
-    const output = document.getElementById("output");
+// CLOCK
+setInterval(() => {
+  let d = new Date();
+  d.setHours(d.getUTCHours() + 6);
+  clock.innerText = "UTC+6 | " + d.toLocaleTimeString('en-US', {hour12:false});
+}, 1000);
 
-    output.innerHTML = "<div class='loading'>Analyzing market structure...</div>";
-    FINAL_SIGNALS = [];
+// TABS
+function setMarket(t, b){
+  pairs.innerHTML = "";
+  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  LIST[t].forEach(p => {
+    let o = document.createElement("option");
+    o.value = p;
+    o.text = p.toUpperCase().replace('-OTC','');
+    pairs.add(o);
+  });
+}
+setMarket("OTC", document.querySelector(".tab"));
 
-    try{
+// Candles read kar ke apna logic se signal
+function analyze(candles) {
+  if (candles.length < 10) {
+    console.log("Kam candles: " + candles.length);
+    return "HOLD";
+  }
 
-        const res = await fetch(API + pair);
-        const data = await res.json();
-        const candles = data?.data || data?.candles?.data || [];
+  let recent = candles.slice(-10); // last 10 candles
+  let up = 0, down = 0;
+  let totalChange = 0;
 
-        if(candles.length < 100){
-            output.innerHTML = "Not enough candle data";
-            return;
-        }
+  for (let i = 1; i < recent.length; i++) {
+    let change = recent[i].close - recent[i-1].close;
+    totalChange += change;
+    if (change > 0) up++;
+    else if (change < 0) down++;
+  }
 
-        const signals = buildSignals(candles, pair, count);
-        FINAL_SIGNALS = signals;
+  let last = recent[recent.length - 1];
+  let body = Math.abs(last.close - last.open);
+  let range = (last.high - last.low) || 0.0001;
+  let strength = body / range;
 
-        display(signals);
+  let dir = "HOLD";
 
-    }catch(e){
-        output.innerHTML = "API Fetch Failed";
-        console.log(e);
-    }
+  // Strong trend ya last strong candle
+  if (up >= down + 3 || (totalChange > 0 && strength > 0.6)) {
+    dir = "CALL";
+  } else if (down >= up + 3 || (totalChange < 0 && strength > 0.6)) {
+    dir = "PUT";
+  } else {
+    // Neutral mein last candle decide
+    dir = (last.close > last.open) ? "CALL" : "PUT";
+  }
+
+  console.log(`\( {recent.length} candles read | Up: \){up} Down:\( {down} | Change: \){totalChange.toFixed(4)} | Strength:${(strength*100).toFixed(0)}% → ${dir}`);
+
+  return dir;
 }
 
-/* ========= CORE LOGIC ========= */
+// ENGINE
+async function startEngine() {
+  SIGNALS = [];
+  let selected = [...pairs.selectedOptions].map(o => o.value);
+  if (!selected.length) return alert("Pair select kar bhai!");
 
-function EMA(data, period){
-    let k = 2/(period+1);
-    let ema = data[0].close;
-    for(let i=1;i<data.length;i++){
-        ema = data[i].close*k + ema*(1-k);
+  output.innerHTML = `<div class="loading">Candles read kar raha hoon... (thoda wait)</div>`;
+
+  for (let asset of selected) {
+    let url = API + asset;
+    try {
+      let res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      let json = await res.json();
+      let candles = json?.data || [];
+
+      console.log(`${asset}: ${candles.length} candles aa gaye`);
+
+      if (candles.length < 10) continue;
+
+      let direction = analyze(candles);
+      if (direction !== "HOLD") {
+        distribute(asset, direction);
+      }
+    } catch (e) {
+      console.error(`Error ${asset}: ${e.message}`);
     }
-    return ema;
+  }
+
+  SIGNALS.sort((a,b) => a.raw - b.raw);
+  displaySignals();
 }
 
-function buildSignals(candles, pair, target){
+// DISTRIBUTE
+function distribute(pair, dir) {
+  let s = start.value || "21:00";
+  let e = end.value || "00:00";
 
-    let signals = [];
+  let now = new Date();
+  let [sH, sM] = s.split(":").map(Number);
+  let [eH, eM] = e.split(":").map(Number);
 
-    for(let i=50;i<candles.length-5;i++){
+  let sD = new Date(now);
+  sD.setHours(sH, sM, 0, 0);
+  sD.setSeconds(0); sD.setMilliseconds(0);
 
-        let slice = candles.slice(0,i);
+  let eD = new Date(now);
+  eD.setHours(eH, eM, 0, 0);
+  eD.setSeconds(0); eD.setMilliseconds(0);
 
-        let ema20 = EMA(slice.slice(-20),20);
-        let ema50 = EMA(slice.slice(-50),50);
+  if (eD <= sD) eD.setDate(eD.getDate() + 1);
 
-        let trend = ema20 > ema50 ? "CALL" : "PUT";
+  let totalMs = eD - sD;
+  let gap = totalMs / TARGET;
 
-        let momentumScore = 0;
-        let recent = slice.slice(-5);
-
-        for(let j=1;j<recent.length;j++){
-            if(recent[j].close > recent[j-1].close) momentumScore++;
-            else momentumScore--;
-        }
-
-        if(trend==="CALL" && momentumScore>=2){
-            signals.push(makeSignal(pair,trend,signals.length));
-        }
-
-        if(trend==="PUT" && momentumScore<=-2){
-            signals.push(makeSignal(pair,trend,signals.length));
-        }
-
-        if(signals.length>=target) break;
-    }
-
-    return signals;
-}
-
-function makeSignal(pair, dir, index){
-    let now = new Date();
-    let t = new Date(now.getTime() + (index+1)*60000);
-    return {
-        time: t.toTimeString().slice(0,5),
-        pair: pair,
-        dir: dir
-    }
-}
-
-function display(list){
-
-    const output = document.getElementById("output");
-    output.innerHTML = "";
-
-    if(!list.length){
-        output.innerHTML = "No High Probability Setup Found";
-        return;
-    }
-
-    list.forEach(s=>{
-        output.innerHTML += `
-        <div class="sig">
-            ${s.time} | ${s.pair} |
-            <span class="${s.dir==='CALL'?'call':'put'}">${s.dir}</span>
-        </div>`;
+  for (let i = 0; i < TARGET; i++) {
+    let t = new Date(sD.getTime() + gap * i);
+    SIGNALS.push({
+      pair: pair.toUpperCase(),
+      time: t.toTimeString().slice(0, 5),
+      raw: t.getTime(),
+      dir: dir
     });
+  }
 }
 
-async function sendTG(){
+function displaySignals() {
+  output.innerHTML = "";
+  if (!SIGNALS.length) {
+    output.innerHTML = "Koi signal nahi mila (console check kar – Eruda button se). Time range ya pairs change kar ke try.";
+    return;
+  }
 
-    if(!FINAL_SIGNALS.length){
-        alert("Generate signals first");
-        return;
-    }
+  SIGNALS.forEach(s => {
+    output.innerHTML += `
+<div class="sig-row">
+  <span class="time">${s.time}</span>
+  <span class="pair">${s.pair}</span>
+  <span class="dir \( {s.dir}"> \){s.dir}</span>
+</div>`;
+  });
+}
 
-    let msg="✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
+async function pushTG() {
+  if (!SIGNALS.length) return alert("Pehle generate kar!");
 
-    FINAL_SIGNALS.forEach(s=>{
-        msg+=`${s.time} | ${s.pair} | ${s.dir}\n`;
-    });
+  let msg = `✦ APX SIGNALS ✦\nUTC+6 | 1 Min Expiry\nCandles Based Trend\n\n`;
 
-    await fetch(TG,{method:"POST",body:msg});
-    alert("Sent to Telegram");
+  SIGNALS.forEach(s => {
+    msg += `⟡ ${s.pair} @ ${s.time} → ${s.dir}\n`;
+  });
+
+  msg += `\nTrade only at time | 1 Step MG | Stop 2 loss`;
+
+  try {
+    await fetch(TG, {method:"POST", body:msg});
+    alert("Telegram pe bhej diya!");
+  } catch(e) {
+    alert("TG fail – check console");
+  }
 }
 
 </script>
-
 </body>
 </html>
