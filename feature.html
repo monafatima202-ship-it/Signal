@@ -1,76 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA PREMIUM</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
+<title>APX SMART ULTRA</title>
 <style>
-:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
-body { margin:0; background:var(--bg); font-family:'Rajdhani'; color:white; }
-header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); background:black; box-shadow:0 0 15px var(--neon); }
-.logo { font-family:'Orbitron'; color:var(--neon); font-size:24px; }
-.container { max-width:480px; margin:20px auto; padding:15px; }
-.panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
-select { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
-button { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
-#output { margin-top:20px; padding:10px; border:1px dashed var(--neon); border-radius:15px; min-height:200px; }
-.sig-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222; }
-.time { color:var(--gold); }
-.CALL { color:var(--call); font-weight:bold; }
-.PUT { color:var(--put); font-weight:bold; }
+body{background:#0d1117;color:white;font-family:sans-serif;text-align:center;padding:20px}
+button{padding:12px 20px;margin:10px;font-weight:bold}
+select,input{padding:10px;margin:5px}
+.sig{margin:5px;padding:8px;border-bottom:1px solid #333}
+.call{color:#00ff88;font-weight:bold}
+.put{color:#ff3366;font-weight:bold}
 </style>
 </head>
-
 <body>
 
-<header>
-<div class="logo">APX NEURAL ENGINE</div>
-</header>
-
-<div class="container">
-<div class="panel">
+<h2>APX SMART ULTRA</h2>
 
 <select id="pair">
 <option value="USDINR-otc">USDINR-otc</option>
 <option value="USDPKR-otc">USDPKR-otc</option>
-<option value="USDBDT-otc">USDBDT-otc</option>
 <option value="USDZAR-otc">USDZAR-otc</option>
 <option value="BTCUSD-otc">BTCUSD-otc</option>
-<option value="MSFSTK-OTC">MSFSTK-OTC</option>
 </select>
+
+<br>
+
+Start Time: <input type="time" id="start" value="00:30">
+End Time: <input type="time" id="end" value="00:45">
+
+<br>
 
 <button onclick="generate()">GENERATE SMART SIGNALS</button>
 
-<div id="output">Ready Mona 🔥 Generate dabao</div>
-
-</div>
-</div>
+<div id="output"></div>
 
 <script>
 
 const API = "https://apx.mkapi009.workers.dev?pair=";
 
 async function generate(){
+
     const pair = document.getElementById("pair").value;
     const output = document.getElementById("output");
-    output.innerHTML = "SCANNING MARKET...";
+    output.innerHTML = "Reading Market Structure...";
 
     try{
         const res = await fetch(API + pair);
         const data = await res.json();
 
-        const candles = data?.data || [];
+        let candles = data?.data || [];
 
-        if(candles.length < 20){
-            output.innerHTML = "Not enough candle data";
+        if(candles.length < 50){
+            output.innerHTML = "Not enough data";
             return;
         }
 
-        const direction = smartAnalyze(candles);
-        createSignals(pair, direction);
+        // IMPORTANT: API newest first hoti hai — reverse karo
+        candles = candles.reverse();
+
+        const baseDirection = smartLogic(candles);
+
+        createTimedSignals(pair, candles, baseDirection);
 
     }catch(e){
         output.innerHTML = "API Fetch Failed";
@@ -79,50 +69,84 @@ async function generate(){
 }
 
 
-function smartAnalyze(c){
 
-    let score = 0;
+function smartLogic(c){
 
-    // last 30 candles weighted
-    for(let i=0;i<30;i++){
-        let body = c[i].close - c[i].open;
+    let trendScore = 0;
+    let momentumScore = 0;
+    let volumeScore = 0;
 
-        if(body > 0) score += 1;
-        else score -= 1;
-
-        // momentum bonus
-        if(i < 5){
-            if(body > 0) score += 1;
-            else score -= 1;
-        }
+    // 20 candle trend
+    for(let i=c.length-20;i<c.length;i++){
+        if(c[i].close > c[i].open) trendScore++;
+        else trendScore--;
     }
 
-    // volatility filter
-    let range = Math.abs(c[0].high - c[0].low);
-    if(range > 0.01) score += 1;
+    // last 3 momentum
+    for(let i=c.length-3;i<c.length;i++){
+        if(c[i].close > c[i-1].close) momentumScore++;
+        else momentumScore--;
+    }
 
-    return score >= 0 ? "CALL" : "PUT";
+    // volume bias (last candle)
+    let last = c[c.length-1];
+    if(last.volume > 10){
+        if(last.close > last.open) volumeScore += 1;
+        else volumeScore -= 1;
+    }
+
+    let total = trendScore + momentumScore + volumeScore;
+
+    if(total > 2) return "CALL";
+    if(total < -2) return "PUT";
+
+    // SIDEWAYS CONDITION → alternate logic
+    return last.close > c[c.length-2].close ? "CALL" : "PUT";
 }
 
 
-function createSignals(pair, dir){
+
+function createTimedSignals(pair, candles, base){
 
     const output = document.getElementById("output");
     output.innerHTML = "";
 
-    const now = new Date();
+    let start = document.getElementById("start").value;
+    let end = document.getElementById("end").value;
 
-    for(let i=1;i<=10;i++){
+    let now = new Date();
+    let [sH,sM] = start.split(":").map(Number);
+    let [eH,eM] = end.split(":").map(Number);
 
-        let t = new Date(now.getTime() + i*60000);
-        let time = t.toTimeString().slice(0,5);
+    let sTime = new Date(now);
+    sTime.setHours(sH,sM,0);
+
+    let eTime = new Date(now);
+    eTime.setHours(eH,eM,0);
+
+    let current = new Date(sTime);
+
+    let flip = false;
+
+    while(current <= eTime){
+
+        let timeStr = current.toTimeString().slice(0,5);
+
+        // alternate logic if weak trend
+        let dir = base;
+
+        if(Math.random() > 0.6){
+            dir = flip ? "CALL" : "PUT";
+            flip = !flip;
+        }
 
         output.innerHTML += `
-        <div class="sig-row">
-            <span class="time">${time}</span>
-            <span>${pair}</span>
-            <span class="${dir}">${dir}</span>
+        <div class="sig">
+            ${timeStr} | ${pair} |
+            <span class="${dir==='CALL'?'call':'put'}">${dir}</span>
         </div>`;
+
+        current.setMinutes(current.getMinutes()+1);
     }
 }
 
