@@ -1,222 +1,138 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA PREMIUM</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<title>APX HYBRID ENGINE FINAL</title>
 
 <style>
-:root { --neon:#00ffcc; --bg:#010409; --call:#00ff88; --put:#ff3366; --gold:#ffcc00; }
-
-body{margin:0;background:var(--bg);font-family:'Rajdhani';color:white;}
-header{padding:20px;text-align:center;border-bottom:2px solid var(--neon);background:black;box-shadow:0 0 15px var(--neon);}
-.logo{font-family:'Orbitron';color:var(--neon);font-size:24px;}
-.container{max-width:480px;margin:20px auto;padding:15px;}
-.panel{background:#0d1117;border:1px solid rgba(0,255,204,0.3);border-radius:20px;padding:20px;}
-.tabs{display:flex;gap:6px;margin-bottom:15px;}
-.tab{flex:1;padding:10px;border:1px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;font-size:11px;font-weight:bold;}
-.tab.active{background:var(--neon);color:black;}
-select,input{width:100%;padding:12px;background:#020617;color:white;border:1px solid #30363d;border-radius:10px;margin-bottom:15px;}
-.main-btn{width:100%;padding:16px;background:var(--neon);color:black;border:none;border-radius:12px;font-family:'Orbitron';font-weight:bold;cursor:pointer;}
-.tg-btn{width:100%;padding:12px;background:#0088cc;color:white;border:none;border-radius:12px;cursor:pointer;margin-top:10px;}
-#output{margin-top:20px;padding:10px;border:1px dashed var(--neon);border-radius:15px;min-height:200px;}
-.loading{text-align:center;padding:25px;font-family:'Orbitron';color:var(--neon);animation:pulse 1s infinite alternate;}
-@keyframes pulse{from{opacity:0.4;}to{opacity:1;}}
-.sig-row{display:flex;justify-content:space-between;padding:12px 8px;border-bottom:1px solid rgba(255,255,255,0.08);font-size:14px;}
-.time{color:var(--gold);font-family:'Orbitron';min-width:60px;}
-.pair{min-width:110px;}
-.dir{font-weight:bold;}
-.CALL{color:var(--call);}
-.PUT{color:var(--put);}
+body{background:#0b0f14;color:white;font-family:Arial;padding:20px}
+button{padding:12px 20px;margin:10px 0;background:#00ffcc;border:0;font-weight:bold;cursor:pointer}
+select{width:100%;padding:10px;margin:10px 0;background:#111;color:white}
+#output{margin-top:20px;border:1px solid #00ffcc;padding:15px}
+.CALL{color:#00ff88;font-weight:bold}
+.PUT{color:#ff3366;font-weight:bold}
+.loading{color:#00ffcc}
 </style>
 </head>
-
 <body>
 
-<header>
-<div class="logo">APX NEURAL ENGINE</div>
-<div id="clock">UTC+6</div>
-</header>
+<h2>APX HYBRID ENGINE</h2>
 
-<div class="container">
-<div class="panel">
+<select id="pair">
+<option value="USDINR-otc">USDINR</option>
+<option value="USDPKR-otc">USDPKR</option>
+<option value="USDBDT-otc">USDBDT</option>
+<option value="USDZAR-otc">USDZAR</option>
+<option value="BTCUSD-otc">BTCUSD</option>
+</select>
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-</div>
+<button onclick="generate()">GENERATE SIGNAL</button>
 
-<select id="pairs" multiple size="8"></select>
-<input type="time" id="start" value="17:00">
-<input type="time" id="end" value="21:00">
-
-<button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
-<button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
-
-<div id="output">Ready</div>
-
-</div>
-</div>
+<div id="output">Ready...</div>
 
 <script>
 
-const API_BASE="https://otcapi.mkapi009.workers.dev/?pair=";
-const TG="https://signal.mkapi009.workers.dev/send";
-const TARGET=12;
+const API_BASE = "https://otcapi.mkapi009.workers.dev/?pair=";
 
-const LIST={
-OTC:["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc","USDARS-otc","USDMXN-otc","USDZAR-otc","USDNGN-otc"],
-STOCK:["MSFSTK-OTC","AXPSTK-OTC"],
-CRYPTO:["BTCUSD-otc","ETHUSD-otc"]
-};
+async function generate(){
 
-let SIGNALS=[];
+output.innerHTML = "<div class='loading'>Reading candles...</div>";
 
-// CLOCK
-setInterval(()=>{
-let d=new Date();
-d.setHours(d.getUTCHours()+6);
-document.getElementById("clock").innerText="UTC+6 | "+d.toLocaleTimeString('en-GB');
-},1000);
+let pair = document.getElementById("pair").value;
 
-// MARKET SWITCH
-function setMarket(t,b){
-pairs.innerHTML="";
-document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
-b.classList.add("active");
-
-LIST[t].forEach(p=>{
-let o=document.createElement("option");
-o.value=p;
-o.text=p.toUpperCase();
-pairs.add(o);
-});
-}
-setMarket("OTC",document.querySelector(".tab"));
-
-// ANALYSIS
-function analyze(candles){
-if(!candles||candles.length<15)return null;
-
-candles=candles.slice().reverse();
-let recent=candles.slice(-10);
-
-let up=0,down=0;
-for(let i=1;i<recent.length;i++){
-if(recent[i].close>recent[i-1].close)up++;
-if(recent[i].close<recent[i-1].close)down++;
-}
-
-let last=recent[recent.length-1];
-let body=Math.abs(last.close-last.open);
-let range=last.high-last.low;
-let strength=range>0?body/range:0;
-
-if(up>down&&strength>0.4)return"CALL";
-if(down>up&&strength>0.4)return"PUT";
-return null;
-}
-
-// ENGINE
-async function startEngine(){
-SIGNALS=[];
-let selected=[...pairs.selectedOptions].map(o=>o.value);
-if(!selected.length)return alert("Select pair!");
-
-output.innerHTML=`<div class="loading">Analyzing Live Candles...</div>`;
-
-for(let asset of selected){
 try{
-let res=await fetch(API_BASE+asset+"&tf=M1&limit=300");
-let json=await res.json();
-let candles=json?.candles?.data;
-if(!candles)continue;
 
-let dir=analyze(candles);
-if(!dir)continue;
+let res = await fetch(API_BASE + pair + "&tf=M1&limit=500");
+let data = await res.json();
 
-distribute(asset.toUpperCase(),dir);
+let candles = data?.candles?.data;
 
-}catch(e){
-console.log("Fetch error:",asset);
-}
-}
-
-SIGNALS.sort((a,b)=>a.raw-b.raw);
-displaySignals();
-}
-
-// TIME DISTRIBUTION
-function distribute(pair,dir){
-let s=start.value||"17:00";
-let e=end.value||"21:00";
-let now=new Date();
-let sD=new Date(now.toDateString()+" "+s);
-let eD=new Date(now.toDateString()+" "+e);
-if(eD<=sD)eD.setDate(eD.getDate()+1);
-let gap=(eD-sD)/TARGET;
-
-for(let i=0;i<TARGET;i++){
-let t=new Date(sD.getTime()+gap*i);
-SIGNALS.push({
-pair:pair,
-time:t.toTimeString().slice(0,5),
-raw:t.getTime(),
-dir:dir
-});
-}
-}
-
-// DISPLAY
-function displaySignals(){
-output.innerHTML="";
-if(!SIGNALS.length){
-output.innerHTML="No Strong Trend Found.";
+if(!candles || candles.length < 50){
+output.innerHTML = "Not enough candle data.";
 return;
 }
-SIGNALS.forEach(s=>{
-output.innerHTML+=`
-<div class="sig-row">
-<span class="time">${s.time}</span>
-<span class="pair">${s.pair}</span>
-<span class="dir ${s.dir}">${s.dir}</span>
-</div>`;
-});
+
+let signal = analyze(candles);
+
+if(!signal){
+output.innerHTML = "Market unclear. Wait next setup.";
+return;
 }
 
-// TELEGRAM
-async function pushTG(){
-if(!SIGNALS.length)return alert("Generate first!");
-
-let msg=`✦═╡ APX SIGNAL FEED ╞═✦
-
-UTC+6 Timezone
-Expiry: 1 Minute
-Money Management: 1 Step MTG
-
-══════════════════
+output.innerHTML = `
+<div>
+PAIR: ${pair}<br><br>
+DIRECTION: <span class="${signal}">${signal}</span><br><br>
+Logic: Trend + Momentum + Pullback + Breakout
+</div>
 `;
 
-SIGNALS.forEach(s=>{
-msg+=`⟡ ${s.pair} │ ${s.time} │ ${s.dir}\n`;
-});
+}catch(e){
+output.innerHTML = "API Fetch Failed";
+}
 
-msg+=`
-══════════════════
-TRADING RULES
-Trade only at signal time
-Stop after 2 losses
-Follow trend direction
-Powered by APX Elite`;
+}
 
-await fetch(TG,{method:"POST",body:msg});
-alert("Sent To Telegram!");
+
+
+function analyze(c){
+
+c = c.slice().reverse();
+
+let recent = c.slice(-20);
+
+// Trend Count
+let up=0,down=0;
+for(let i=1;i<recent.length;i++){
+if(recent[i].close > recent[i-1].close) up++;
+if(recent[i].close < recent[i-1].close) down++;
+}
+
+// Momentum
+let last = recent[recent.length-1];
+let body = Math.abs(last.close-last.open);
+let range = last.high-last.low;
+let strength = range>0 ? body/range : 0;
+
+// Pullback check
+let prev1 = recent[recent.length-2];
+let prev2 = recent[recent.length-3];
+
+let pullbackUp = prev1.close < prev2.close && last.close > prev1.close;
+let pullbackDown = prev1.close > prev2.close && last.close < prev1.close;
+
+// Breakout check
+let highs = recent.map(x=>x.high);
+let lows = recent.map(x=>x.low);
+let maxHigh = Math.max(...highs.slice(0,-1));
+let minLow = Math.min(...lows.slice(0,-1));
+
+// Decision Brain
+
+if(up>down && strength>0.2)
+return "CALL";
+
+if(down>up && strength>0.2)
+return "PUT";
+
+if(pullbackUp)
+return "CALL";
+
+if(pullbackDown)
+return "PUT";
+
+if(last.close > maxHigh)
+return "CALL";
+
+if(last.close < minLow)
+return "PUT";
+
+// Soft bias fallback (NOT random)
+return up>=down ? "CALL" : "PUT";
+
 }
 
 </script>
-
 </body>
 </html>
