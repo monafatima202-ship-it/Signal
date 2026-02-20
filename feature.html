@@ -19,16 +19,14 @@ header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); b
 .tab.active { background:var(--neon); color:black; }
 select, input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
 .main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
-.tg-btn { width:100%; padding:12px; background:#0088cc; color:white; border:none; border-radius:12px; cursor:pointer; margin-top:10px; }
 #output { margin-top:20px; padding:10px; border:1px dashed var(--neon); border-radius:15px; min-height:200px; }
 .loading { text-align:center; padding:25px; font-family:'Orbitron'; color:var(--neon); animation:pulse 1s infinite alternate; }
 @keyframes pulse { from{opacity:0.4;} to{opacity:1;} }
 .sig-row { display:flex; justify-content:space-between; padding:12px 8px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:14px; }
 .time { color:var(--gold); font-family:'Orbitron'; min-width:60px; }
 .pair { min-width:100px; }
-.dir { font-weight:bold; }
-.CALL { color:var(--call); }
-.PUT { color:var(--put); }
+.CALL { color:var(--call); font-weight:bold; }
+.PUT { color:var(--put); font-weight:bold; }
 </style>
 </head>
 
@@ -42,208 +40,111 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 <div class="container">
 <div class="panel">
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-</div>
-
-<select id="pairs" multiple size="10"></select>
-<input type="time" id="start" value="21:00">
-<input type="time" id="end" value="00:00">
+<select id="pair">
+<option value="USDINR-otc">USDINR-otc</option>
+<option value="USDPKR-otc">USDPKR-otc</option>
+<option value="USDBDT-otc">USDBDT-otc</option>
+<option value="USDZAR-otc">USDZAR-otc</option>
+<option value="BTCUSD-otc">BTCUSD-otc</option>
+</select>
 
 <button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
-<button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
 
-<div id="output">Ready bhai – Naya API chal raha hai. Pairs select kar ke Generate daba! (Console check karna)</div>
+<div id="output">Ready</div>
 
 </div>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>  <!-- Mobile pe console ke liye (bottom button) -->
 
 <script>
 
-// NAYA API direct
+// CORS PROXY BUILT-IN
 function buildAPI(pair){
-  return `https://milongazi197.serv00.net/otc.php?pair=${pair}&tf=M1&limit=500`;
+  return "https://api.codetabs.com/v1/proxy?quest=" + 
+    encodeURIComponent(`https://milongazi197.serv00.net/otc.php?pair=${pair}&tf=M1&limit=200`);
 }
 
-const TG = "https://signal.mkapi009.workers.dev/send";
-const TARGET = 15;
+setInterval(()=>{
+  let d=new Date();
+  d.setHours(d.getUTCHours()+6);
+  clock.innerText="UTC+6 | "+d.toLocaleTimeString();
+},1000);
 
-const LIST = {
-  OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc","USDARS-otc","USDMXN-otc","USDZAR-otc","BRLUSD-otc","USDNGN-otc","USDTRY-otc","USDDZD-otc","USDEGP-otc"],
-  STOCK: ["MSFSTK-OTC","AXPSTK-OTC"],
-  CRYPTO: ["BTCUSD-otc","ETHUSD-otc"]
-};
+async function startEngine(){
 
-let SIGNALS = [];
+  const pair=document.getElementById("pair").value;
+  const output=document.getElementById("output");
 
-// CLOCK
-setInterval(() => {
-  let d = new Date();
-  d.setHours(d.getUTCHours() + 6);
-  clock.innerText = "UTC+6 | " + d.toLocaleTimeString('en-US', {hour12:false});
-}, 1000);
+  output.innerHTML=`<div class="loading">SCANNING MARKET...</div>`;
 
-// TABS
-function setMarket(t, b){
-  pairs.innerHTML = "";
-  document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
-  b.classList.add("active");
-  LIST[t].forEach(p => {
-    let o = document.createElement("option");
-    o.value = p;
-    o.text = p.toUpperCase().replace('-OTC','');
-    pairs.add(o);
-  });
-}
-setMarket("OTC", document.querySelector(".tab"));
+  try{
 
-// APNA DEMAGH LOGIC - Past candles read kar ke CALL/PUT decide
-function analyze(candles) {
-  if (candles.length < 10) {
-    console.log("Kam candles: " + candles.length);
-    return "HOLD";
+    const res=await fetch(buildAPI(pair));
+    const json=await res.json();
+    const candles=json?.data || [];
+
+    if(candles.length<10){
+      output.innerHTML="Not enough data.";
+      return;
+    }
+
+    // Reverse so latest last
+    candles.reverse();
+
+    const direction=analyzeSmart(candles);
+    createSignals(pair,direction);
+
+  }catch(e){
+    output.innerHTML="API Fetch Failed";
+    console.log(e);
   }
-
-  let recent = candles.slice(-10); // last 10 min
-  let upCount = 0, downCount = 0;
-  let totalChange = 0;
-
-  for (let i = 1; i < recent.length; i++) {
-    let change = recent[i].c - recent[i-1].c;
-    totalChange += change;
-    if (change > 0) upCount++;
-    else if (change < 0) downCount++;
-  }
-
-  let last = recent[recent.length - 1];
-  let lastBody = Math.abs(last.c - last.o);
-  let lastRange = last.h - last.l || 0.0001;
-  let bodyStrength = lastBody / lastRange;
-
-  let dir = "HOLD";
-
-  // Logic: recent trend + last candle strength
-  if (upCount >= downCount + 2 || (totalChange > 0 && bodyStrength > 0.5)) {
-    dir = "CALL";
-  } else if (downCount >= upCount + 2 || (totalChange < 0 && bodyStrength > 0.5)) {
-    dir = "PUT";
-  } else {
-    // Neutral mein last candle force
-    dir = last.c > last.o ? "CALL" : "PUT";
-  }
-
-  console.log(`Analyzed ${recent.length} candles | Up: ${upCount} Down: ${downCount} | Total change: ${totalChange.toFixed(4)} | Last body strength: ${(bodyStrength*100).toFixed(0)}% → ${dir}`);
-
-  return dir;
 }
 
-// ENGINE
-async function startEngine() {
-  SIGNALS = [];
-  let selected = [...pairs.selectedOptions].map(o => o.value);
-  if (!selected.length) return alert("Bhai pair select kar lo!");
 
-  output.innerHTML = `<div class="loading">Candles read kar raha hoon... wait kar</div>`;
+// SMART FLEXIBLE LOGIC
+function analyzeSmart(c){
 
-  for (let asset of selected) {
-    let apiURL = buildAPI(asset);
-    try {
-      let res = await fetch(apiURL);
-      if (!res.ok) {
-        console.error(`HTTP error ${res.status} for ${asset}`);
-        continue;
-      }
-      let json = await res.json();
-      let candles = json?.data || [];  // Direct "data" array
+  let score=0;
+  let recent=c.slice(-20);
 
-      console.log(`${asset}: ${candles.length} candles fetched`);
+  for(let i=0;i<recent.length;i++){
 
-      if (candles.length < 10) continue;
+    let body=Math.abs(recent[i].close-recent[i].open);
+    let range=recent[i].high-recent[i].low;
 
-      let direction = analyze(candles);
-      if (direction !== "HOLD") {
-        distribute(asset, direction);
-      }
-    } catch (e) {
-      console.error(`Fetch fail ${asset}: ${e.message}`);
+    if(range===0) continue;
+
+    let strength=body/range;
+
+    if(recent[i].close>recent[i].open){
+      score+=strength;
+    }else{
+      score-=strength;
     }
   }
 
-  SIGNALS.sort((a,b) => a.raw - b.raw);
-  displaySignals();
+  return score>=0 ? "CALL" : "PUT";
 }
 
-// DISTRIBUTE
-function distribute(pair, dir) {
-  let s = start.value || "21:00";
-  let e = end.value || "00:00";
 
-  let now = new Date();
-  let [sH, sM] = s.split(":").map(Number);
-  let [eH, eM] = e.split(":").map(Number);
+// SIGNAL DISTRIBUTION
+function createSignals(pair,dir){
 
-  let sD = new Date(now);
-  sD.setHours(sH, sM, 0, 0);
-  sD.setSeconds(0); sD.setMilliseconds(0);
+  const output=document.getElementById("output");
+  output.innerHTML="";
 
-  let eD = new Date(now);
-  eD.setHours(eH, eM, 0, 0);
-  eD.setSeconds(0); eD.setMilliseconds(0);
+  const now=new Date();
 
-  if (eD <= sD) eD.setDate(eD.getDate() + 1);
+  for(let i=1;i<=10;i++){
 
-  let totalMs = eD - sD;
-  let gap = totalMs / TARGET;
+    let t=new Date(now.getTime()+i*60000);
+    let time=t.toTimeString().slice(0,5);
 
-  for (let i = 0; i < TARGET; i++) {
-    let t = new Date(sD.getTime() + gap * i);
-    SIGNALS.push({
-      pair: pair.toUpperCase(),
-      time: t.toTimeString().slice(0, 5),
-      raw: t.getTime(),
-      dir: dir
-    });
-  }
-}
-
-function displaySignals() {
-  output.innerHTML = "";
-  if (!SIGNALS.length) {
-    output.innerHTML = "Koi signal nahi mila (console check kar – Eruda button se). Pairs change kar ke try kar.";
-    return;
-  }
-
-  SIGNALS.forEach(s => {
-    output.innerHTML += `
-<div class="sig-row">
-  <span class="time">${s.time}</span>
-  <span class="pair">${s.pair}</span>
-  <span class="dir \( {s.dir}"> \){s.dir}</span>
-</div>`;
-  });
-}
-
-async function pushTG() {
-  if (!SIGNALS.length) return alert("Generate kar pehle!");
-
-  let msg = `✦ APX SIGNALS ✦\nUTC+6 | 1 Min\n\n`;
-
-  SIGNALS.forEach(s => {
-    msg += `⟡ ${s.pair} @ ${s.time} → ${s.dir}\n`;
-  });
-
-  msg += `\n1 Step MG | Stop 2 loss`;
-
-  try {
-    await fetch(TG, {method:"POST", body:msg});
-    alert("Telegram pe bhej diya!");
-  } catch(e) {
-    alert("TG fail");
+    output.innerHTML+=`
+    <div class="sig-row">
+      <span class="time">${time}</span>
+      <span class="pair">${pair}</span>
+      <span class="${dir}">${dir}</span>
+    </div>`;
   }
 }
 
