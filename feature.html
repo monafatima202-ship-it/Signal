@@ -50,21 +50,21 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 
 <select id="pairs" multiple size="10"></select>
 <input type="time" id="start" value="17:00">
-<input type="time" id="end" value="20:00">
+<input type="time" id="end" value="21:00">
 
 <button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
 <button class="tg-btn" onclick="pushTG()">SEND TELEGRAM</button>
 
-<div id="output">Ready bhai – Pairs select karo, Generate daba do!</div>
+<div id="output">Ready Mona bhai – Pairs select kar (multiple OK), Generate click kar! Console (F12) check karna mat bhoolna.</div>
 
 </div>
 </div>
 
 <script>
 
-// PROXY - corsproxy.io (working alternative, allorigins 503 de raha tha)
+// NEW PROXY - codetabs.com (2026 mein working & reliable free CORS proxy)
 function buildAPI(pair){
-  return "https://corsproxy.io/?" + 
+  return "https://api.codetabs.com/v1/proxy?quest=" + 
     encodeURIComponent(`https://otcapi.mkapi009.workers.dev/?pair=${pair}&tf=M1&limit=500`);
 }
 
@@ -79,14 +79,14 @@ const LIST = {
 
 let SIGNALS = [];
 
-// CLOCK UTC+6 (PKT)
+// CLOCK
 setInterval(() => {
   let d = new Date();
   d.setHours(d.getUTCHours() + 6);
   clock.innerText = "UTC+6 | " + d.toLocaleTimeString('en-US', {hour12:false});
 }, 1000);
 
-// MARKET TABS
+// TABS
 function setMarket(t, b){
   pairs.innerHTML = "";
   document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
@@ -100,10 +100,10 @@ function setMarket(t, b){
 }
 setMarket("OTC", document.querySelector(".tab"));
 
-// SIMPLE ANALYZE - Trend based, har bar signal
+// SIMPLE ANALYZE
 function analyze(candles) {
   if (candles.length < 5) {
-    console.log("Too few candles for this pair");
+    console.log("Too few candles");
     return "HOLD";
   }
 
@@ -120,7 +120,7 @@ function analyze(candles) {
 
   let dir = (up >= down || isBull) ? "CALL" : "PUT";
 
-  console.log(`Analyzed ${recent.length} candles | Up: ${up} Down: ${down} | Last bull? ${isBull} → ${dir}`);
+  console.log(`Pair analyzed | Up: ${up} Down: ${down} | Last bull? ${isBull} → ${dir}`);
 
   return dir;
 }
@@ -129,9 +129,9 @@ function analyze(candles) {
 async function startEngine() {
   SIGNALS = [];
   let selected = [...pairs.selectedOptions].map(o => o.value);
-  if (!selected.length) return alert("Bhai koi pair to select kar lo!");
+  if (!selected.length) return alert("Koi pair select kar bhai!");
 
-  output.innerHTML = `<div class="loading">MARKET SCAN HO RAHA HAI... (thoda wait)</div>`;
+  output.innerHTML = `<div class="loading">SCANNING... thoda sabr (Jason ko bata dena wait karo 😄)</div>`;
 
   for (let asset of selected) {
     let apiURL = buildAPI(asset);
@@ -141,16 +141,14 @@ async function startEngine() {
       let json = await res.json();
       let candles = json?.candles?.data || json?.data || [];
 
-      console.log(`${asset}: ${candles.length} candles fetched`);
+      console.log(`${asset}: ${candles.length} candles aa gaye!`);
 
       if (candles.length < 5) continue;
 
       let direction = analyze(candles);
-      if (direction !== "HOLD") {
-        distribute(asset, direction);
-      }
+      distribute(asset, direction);
     } catch (e) {
-      console.error(`Error for ${asset}:`, e.message);
+      console.error(`Issue with ${asset}: ${e.message}`);
     }
   }
 
@@ -158,10 +156,10 @@ async function startEngine() {
   displaySignals();
 }
 
-// DISTRIBUTE SIGNALS
+// DISTRIBUTE, DISPLAY, PUSH TG same as before
 function distribute(pair, dir) {
   let s = start.value || "17:00";
-  let e = end.value || "20:00";
+  let e = end.value || "21:00";
 
   let now = new Date();
   let [sH, sM] = s.split(":").map(Number);
@@ -191,11 +189,10 @@ function distribute(pair, dir) {
   }
 }
 
-// DISPLAY
 function displaySignals() {
   output.innerHTML = "";
   if (!SIGNALS.length) {
-    output.innerHTML = "Abhi bhi koi signal nahi? Console check karo (F12) aur error copy-paste kar dena. Proxy ya API issue ho sakta hai.";
+    output.innerHTML = "Ab bhi blank? Console (F12) khol ke error ya logs copy kar ke bata dena. Jason ko bhi dikha dena console 😆";
     return;
   }
 
@@ -209,23 +206,22 @@ function displaySignals() {
   });
 }
 
-// TELEGRAM
 async function pushTG() {
-  if (!SIGNALS.length) return alert("Pehle signals banao bhai!");
+  if (!SIGNALS.length) return alert("Signals bana pehle!");
 
-  let msg = `✦ APX SIGNALS ✦\n\nUTC+6 | 1 Min Expiry\nSimple Trend Based\n\n`;
+  let msg = `✦ APX SIGNALS ✦\nUTC+6 | 1 Min\nTrend Based\n\n`;
 
   SIGNALS.forEach(s => {
     msg += `⟡ ${s.pair} @ ${s.time} → ${s.dir}\n`;
   });
 
-  msg += `\nTrade smart | 1 Step MG | Stop after 2 loss`;
+  msg += `\n1 Step MG | Stop 2 loss`;
 
   try {
     await fetch(TG, {method:"POST", body:msg});
-    alert("Telegram pe bhej diya!");
+    alert("Telegram pe pahunch gaya!");
   } catch(e) {
-    alert("Telegram send fail – console dekho");
+    alert("TG fail – console check");
   }
 }
 
