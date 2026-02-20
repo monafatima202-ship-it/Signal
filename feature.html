@@ -14,17 +14,11 @@ header { padding:20px; text-align:center; border-bottom:2px solid var(--neon); b
 .logo { font-family:'Orbitron'; color:var(--neon); font-size:24px; }
 .container { max-width:480px; margin:20px auto; padding:15px; }
 .panel { background:#0d1117; border:1px solid rgba(0,255,204,0.3); border-radius:20px; padding:20px; }
-.tabs { display:flex; gap:6px; margin-bottom:15px; }
-.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; cursor:pointer; font-size:11px; font-weight:bold; }
-.tab.active { background:var(--neon); color:black; }
-select, input { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
-.main-btn { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
+select { width:100%; padding:12px; background:#020617; color:white; border:1px solid #30363d; border-radius:10px; margin-bottom:15px; }
+button { width:100%; padding:16px; background:var(--neon); color:black; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
 #output { margin-top:20px; padding:10px; border:1px dashed var(--neon); border-radius:15px; min-height:200px; }
-.loading { text-align:center; padding:25px; font-family:'Orbitron'; color:var(--neon); animation:pulse 1s infinite alternate; }
-@keyframes pulse { from{opacity:0.4;} to{opacity:1;} }
-.sig-row { display:flex; justify-content:space-between; padding:12px 8px; border-bottom:1px solid rgba(255,255,255,0.08); font-size:14px; }
-.time { color:var(--gold); font-family:'Orbitron'; min-width:60px; }
-.pair { min-width:100px; }
+.sig-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222; }
+.time { color:var(--gold); }
 .CALL { color:var(--call); font-weight:bold; }
 .PUT { color:var(--put); font-weight:bold; }
 </style>
@@ -34,7 +28,6 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 
 <header>
 <div class="logo">APX NEURAL ENGINE</div>
-<div id="clock">UTC+6</div>
 </header>
 
 <div class="container">
@@ -46,108 +39,94 @@ select, input { width:100%; padding:12px; background:#020617; color:white; borde
 <option value="USDBDT-otc">USDBDT-otc</option>
 <option value="USDZAR-otc">USDZAR-otc</option>
 <option value="BTCUSD-otc">BTCUSD-otc</option>
+<option value="MSFSTK-OTC">MSFSTK-OTC</option>
 </select>
 
-<button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
+<button onclick="generate()">GENERATE SMART SIGNALS</button>
 
-<div id="output">Ready</div>
+<div id="output">Ready Mona 🔥 Generate dabao</div>
 
 </div>
 </div>
 
 <script>
 
-// CORS PROXY BUILT-IN
-function buildAPI(pair){
-  return "https://api.codetabs.com/v1/proxy?quest=" + 
-    encodeURIComponent(`https://milongazi197.serv00.net/otc.php?pair=${pair}&tf=M1&limit=200`);
+const API = "https://apx.mkapi009.workers.dev?pair=";
+
+async function generate(){
+    const pair = document.getElementById("pair").value;
+    const output = document.getElementById("output");
+    output.innerHTML = "SCANNING MARKET...";
+
+    try{
+        const res = await fetch(API + pair);
+        const data = await res.json();
+
+        const candles = data?.data || [];
+
+        if(candles.length < 20){
+            output.innerHTML = "Not enough candle data";
+            return;
+        }
+
+        const direction = smartAnalyze(candles);
+        createSignals(pair, direction);
+
+    }catch(e){
+        output.innerHTML = "API Fetch Failed";
+        console.log(e);
+    }
 }
 
-setInterval(()=>{
-  let d=new Date();
-  d.setHours(d.getUTCHours()+6);
-  clock.innerText="UTC+6 | "+d.toLocaleTimeString();
-},1000);
 
-async function startEngine(){
+function smartAnalyze(c){
 
-  const pair=document.getElementById("pair").value;
-  const output=document.getElementById("output");
+    let score = 0;
 
-  output.innerHTML=`<div class="loading">SCANNING MARKET...</div>`;
+    // last 30 candles weighted
+    for(let i=0;i<30;i++){
+        let body = c[i].close - c[i].open;
 
-  try{
+        if(body > 0) score += 1;
+        else score -= 1;
 
-    const res=await fetch(buildAPI(pair));
-    const json=await res.json();
-    const candles=json?.data || [];
-
-    if(candles.length<10){
-      output.innerHTML="Not enough data.";
-      return;
+        // momentum bonus
+        if(i < 5){
+            if(body > 0) score += 1;
+            else score -= 1;
+        }
     }
 
-    // Reverse so latest last
-    candles.reverse();
+    // volatility filter
+    let range = Math.abs(c[0].high - c[0].low);
+    if(range > 0.01) score += 1;
 
-    const direction=analyzeSmart(candles);
-    createSignals(pair,direction);
-
-  }catch(e){
-    output.innerHTML="API Fetch Failed";
-    console.log(e);
-  }
+    return score >= 0 ? "CALL" : "PUT";
 }
 
 
-// SMART FLEXIBLE LOGIC
-function analyzeSmart(c){
+function createSignals(pair, dir){
 
-  let score=0;
-  let recent=c.slice(-20);
+    const output = document.getElementById("output");
+    output.innerHTML = "";
 
-  for(let i=0;i<recent.length;i++){
+    const now = new Date();
 
-    let body=Math.abs(recent[i].close-recent[i].open);
-    let range=recent[i].high-recent[i].low;
+    for(let i=1;i<=10;i++){
 
-    if(range===0) continue;
+        let t = new Date(now.getTime() + i*60000);
+        let time = t.toTimeString().slice(0,5);
 
-    let strength=body/range;
-
-    if(recent[i].close>recent[i].open){
-      score+=strength;
-    }else{
-      score-=strength;
+        output.innerHTML += `
+        <div class="sig-row">
+            <span class="time">${time}</span>
+            <span>${pair}</span>
+            <span class="${dir}">${dir}</span>
+        </div>`;
     }
-  }
-
-  return score>=0 ? "CALL" : "PUT";
-}
-
-
-// SIGNAL DISTRIBUTION
-function createSignals(pair,dir){
-
-  const output=document.getElementById("output");
-  output.innerHTML="";
-
-  const now=new Date();
-
-  for(let i=1;i<=10;i++){
-
-    let t=new Date(now.getTime()+i*60000);
-    let time=t.toTimeString().slice(0,5);
-
-    output.innerHTML+=`
-    <div class="sig-row">
-      <span class="time">${time}</span>
-      <span class="pair">${pair}</span>
-      <span class="${dir}">${dir}</span>
-    </div>`;
-  }
 }
 
 </script>
+
 </body>
 </html>
