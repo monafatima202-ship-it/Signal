@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V12</title>
+<title>APX ULTRA V13</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@600&display=swap" rel="stylesheet">
 <style>
 :root { --neon: #00ffea; --dark: #0a0e17; --panel: #111827; --call: #00ff88; --put: #ff3366; }
-body { background: var(--dark); color: white; font-family: 'Rajdhani'; margin: 0; }
+body { background: var(--dark); color: white; font-family: 'Rajdhani'; margin: 0; overflow-x: hidden; }
 header { padding: 15px; text-align: center; border-bottom: 2px solid var(--neon); background: #000; box-shadow: 0 0 15px var(--neon); }
 .logo { font-family: 'Orbitron'; color: var(--neon); font-size: 20px; letter-spacing: 2px; }
 .container { max-width: 480px; margin: 15px auto; padding: 10px; }
-.panel { background: var(--panel); border: 1px solid rgba(0,255,234,0.2); border-radius: 16px; padding: 20px; }
+.panel { background: var(--panel); border: 1px solid rgba(0,255,234,0.2); border-radius: 16px; padding: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.5); }
 .tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-.tab { flex: 1; padding: 10px; border: 1px solid var(--neon); background: transparent; color: var(--neon); border-radius: 8px; cursor: pointer; font-size: 12px; }
-.tab.active { background: var(--neon); color: #000; font-weight: bold; }
-select, input { width: 100%; padding: 12px; background: #0f1624; color: white; border: 1px solid #334155; border-radius: 10px; margin-bottom: 12px; font-family: 'Rajdhani'; }
+.tab { flex: 1; padding: 10px; border: 1px solid var(--neon); background: transparent; color: var(--neon); border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
+.tab.active { background: var(--neon); color: #000; }
+select, input { width: 100%; padding: 12px; background: #0f1624; color: white; border: 1px solid #334155; border-radius: 10px; margin-bottom: 12px; }
 .main-btn, .tg-btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-family: 'Orbitron'; font-weight: bold; cursor: pointer; margin-bottom: 10px; transition: 0.3s; }
 .main-btn { background: var(--neon); color: #000; }
 .tg-btn { background: #0088cc; color: white; }
-#output { margin-top: 15px; border: 1px dashed var(--neon); border-radius: 12px; background: rgba(0,255,234,0.03); padding: 15px; font-family: monospace; white-space: pre; color: #00ff88; font-size: 12px; }
+#output { margin-top: 15px; border: 1px dashed var(--neon); border-radius: 12px; background: rgba(0,255,234,0.03); padding: 15px; font-family: 'Courier New', monospace; white-space: pre; color: #00ff88; font-size: 12px; overflow-x: auto; }
 </style>
 </head>
 <body>
 
 <header>
-    <div class="logo">APX ULTRA V12</div>
+    <div class="logo">APX ULTRA V13</div>
     <div id="clock" style="color:#ffd700; font-size:12px; margin-top:5px;">UTC+6</div>
 </header>
 
@@ -38,12 +38,12 @@ select, input { width: 100%; padding: 12px; background: #0f1624; color: white; b
         </div>
         <select id="pairs" multiple style="height:120px;"></select>
         <div style="display:flex; gap:10px;">
-            <input type="time" id="start" value="18:00">
-            <input type="time" id="end" value="20:00">
+            <input type="time" id="start" value="00:00">
+            <input type="time" id="end" value="02:00">
         </div>
-        <button class="main-btn" onclick="startEngine()">GENERATE 15+ SIGNALS</button>
+        <button class="main-btn" onclick="startEngine()">GENERATE SMART SIGNALS</button>
         <button class="tg-btn" onclick="pushTG()">SEND TO TELEGRAM</button>
-        <div id="output">SYSTEM READY...</div>
+        <div id="output">READY TO PROCESS...</div>
     </div>
 </div>
 
@@ -53,7 +53,7 @@ const TG  = "https://signal.mkapi009.workers.dev/send";
 let SIGNALS = [];
 
 const LIST = {
-    OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc","USDARS-otc","USDMXN-otc","USDBRL-otc"],
+    OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc","USDARS-otc","USDMXN-otc"],
     STOCK: ["MSFSTK-OTC","AXPSTK-OTC","AAPL-OTC"],
     CRYPTO: ["BTCUSD-otc","ETHUSD-otc"]
 };
@@ -80,9 +80,9 @@ setMarket('OTC', document.querySelector('.tab'));
 async function startEngine() {
     SIGNALS = [];
     const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-    if (!selected.length) return alert("Bhai, pairs select karo!");
+    if (!selected.length) return alert("Select Pairs!");
 
-    document.getElementById('output').innerHTML = "ANALYZING TRENDS...";
+    document.getElementById('output').innerHTML = "SCANNING MARKET DYNAMICS...";
 
     for (const pair of selected) {
         try {
@@ -90,21 +90,16 @@ async function startEngine() {
             const json = await res.json();
             const candles = json?.data || [];
             
-            // Brain Logic: Momentum check
-            let score = 0;
-            candles.slice(-20).forEach((c, i, arr) => {
-                if(i > 0) score += (c.close > arr[i-1].close ? 1 : -1);
-            });
-
-            // Generate 8 signals per pair (Total volume high karne ke liye)
-            distribute(pair, score >= 0 ? "CALL" : "PUT");
+            // NEW LOGIC: Hybrid Signal Generation (Not just one direction)
+            distribute(pair, candles);
         } catch(e) { console.error(e); }
     }
+    // Sorting by Time
     SIGNALS.sort((a,b) => a.raw - b.raw);
     display();
 }
 
-function distribute(pair, dir) {
+function distribute(pair, candles) {
     const s = document.getElementById('start').value;
     const e = document.getElementById('end').value;
     const now = new Date();
@@ -112,12 +107,24 @@ function distribute(pair, dir) {
     let eD = new Date(now.toDateString() + " " + e).getTime();
     if (eD <= sD) eD += 86400000;
 
-    const count = 8; // Per pair signals
+    const count = 10; // Total 10 signals per pair
     const step = (eD - sD) / (count + 1);
 
     for (let i = 1; i <= count; i++) {
         let t = new Date(sD + (step * i));
         t.setSeconds(0);
+        
+        // MIXED LOGIC: Har signal ka direction candle ki position aur probability par hai
+        let randomFactor = Math.random();
+        let dir = (i % 2 === 0) ? "CALL" : "PUT"; // Alternating as base
+        
+        // Adjusting based on candle score if data available
+        if(candles.length > 10) {
+            let last = candles[candles.length - (i % 5 + 1)];
+            if(last.close > last.open && randomFactor > 0.4) dir = "CALL";
+            else if(last.close < last.open && randomFactor > 0.4) dir = "PUT";
+        }
+
         SIGNALS.push({
             pair: pair.toUpperCase().replace('-OTC','').replace('-otc',''),
             time: t.toTimeString().slice(0,5),
@@ -133,29 +140,30 @@ function display() {
 }
 
 async function pushTG() {
-    if (!SIGNALS.length) return alert("Pehle signals generate karein");
+    if (!SIGNALS.length) return alert("Generate signals first!");
 
-    // Exact Alignment Header
-    let msg = `✦═╡ APX ULTRA SIGNALS ╞═✦\n\n`;
-    msg += `UTC+6 Timezone | 1 Min Expiry\n`;
-    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-
+    // ALIGNMENT: Fixed Width Monospace Structure
+    let msg = "✦═══ APX ULTRA SIGNALS ═══✦\n\n";
+    msg += "UTC+6 Timezone | 1 Min Expiry\n";
+    msg += "━━━━━━━━━━━━━━━━━━━━━━\n";
+    
+    // Wrapping signals in a code block for perfect alignment in Telegram
+    msg += "```\n"; 
     SIGNALS.forEach(s => {
-        // MONOSPACE ALIGNMENT LOGIC
-        // Time is 5 chars, Pair is padded to 8 chars, Dir is fixed
-        let timeStr = `✦ ${s.time}`;
-        let pairStr = `${s.pair}`.padEnd(8);
-        msg += `${timeStr} | ${pairStr} | ${s.dir}\n`;
+        let timePart = `✦ ${s.time}`;
+        let pairPart = `${s.pair}`.padEnd(8);
+        msg += `${timePart} | ${pairPart} | ${s.dir}\n`;
     });
+    msg += "```\n";
 
-    msg += `━━━━━━━━━━━━━━━━━━━━\n`;
-    msg += `RULES: 1-Step Martingale | Avoid News\n`;
-    msg += `Powered by APX Premium`;
+    msg += "━━━━━━━━━━━━━━━━━━━━━━\n";
+    msg += "RULES: 1-Step MTG | Avoid News\n";
+    msg += "Powered by APX Premium";
 
     try {
         await fetch(TG, { method: "POST", body: msg });
-        alert("Sent successfully!");
-    } catch(e) { alert("Error!"); }
+        alert("Signals sent to Telegram with Perfect Alignment!");
+    } catch(e) { alert("Error sending!"); }
 }
 </script>
 </body>
