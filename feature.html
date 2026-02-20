@@ -19,13 +19,13 @@
   --text: #e0f7ff;
 }
 
-* { box-sizing:border-box; margin:0; padding:0; }
 body {
   background: var(--dark);
   color: var(--text);
   font-family: 'Rajdhani', sans-serif;
-  min-height: 100vh;
-  background-image: radial-gradient(circle at 10% 20%, rgba(0,255,234,0.08) 0%, transparent 50%);
+  margin:0;
+  padding:0;
+  min-height:100vh;
 }
 
 header {
@@ -37,19 +37,18 @@ header {
 }
 
 .logo {
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Orbitron';
   font-size: 2.2rem;
   font-weight: 900;
   color: var(--neon);
   text-shadow: var(--neon-glow);
-  letter-spacing: 4px;
+  letter-spacing: 3px;
 }
 
 .clock {
   font-size: 1.1rem;
   color: var(--gold);
-  margin-top: 8px;
-  font-weight: 500;
+  margin-top: 6px;
 }
 
 .container {
@@ -63,12 +62,12 @@ header {
   border: 1px solid rgba(0,255,234,0.25);
   border-radius: 16px;
   padding: 24px 18px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.6), inset 0 0 15px rgba(0,255,234,0.08);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
 }
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3,1fr);
   gap: 8px;
   margin-bottom: 20px;
 }
@@ -82,7 +81,6 @@ header {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
-  font-size: 0.95rem;
 }
 
 .tab.active {
@@ -102,17 +100,15 @@ select, input[type="time"] {
   font-size: 1rem;
 }
 
-select[multiple] {
-  height: 140px;
-}
+select[multiple] { height: 140px; }
 
 .main-btn, .tg-btn {
   width: 100%;
   padding: 16px;
-  margin: 12px 0 8px;
+  margin: 12px 0;
   border: none;
   border-radius: 12px;
-  font-family: 'Orbitron', sans-serif;
+  font-family: 'Orbitron';
   font-weight: 700;
   cursor: pointer;
   transition: all 0.3s;
@@ -124,12 +120,9 @@ select[multiple] {
   box-shadow: var(--neon-glow);
 }
 
-.main-btn:hover { transform: translateY(-2px); box-shadow: 0 0 25px #00ffea; }
+.main-btn:hover { box-shadow: 0 0 25px #00ffea; }
 
-.tg-btn {
-  background: #0088cc;
-  color: white;
-}
+.tg-btn { background: #0088cc; color: white; }
 
 #output {
   margin-top: 24px;
@@ -138,24 +131,10 @@ select[multiple] {
   border-radius: 12px;
   background: rgba(0,255,234,0.03);
   min-height: 220px;
-}
-
-.sig-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 10px;
-  border-bottom: 1px solid rgba(0,255,234,0.12);
+  white-space: pre-wrap;
+  font-family: monospace;
   font-size: 1.05rem;
 }
-
-.sig-row:last-child { border-bottom: none; }
-
-.time { color: var(--gold); font-weight: 600; min-width: 70px; }
-.pair { flex: 1; padding: 0 12px; font-weight: 500; }
-.dir { font-weight: 700; min-width: 60px; text-align: right; }
-.CALL { color: var(--call); text-shadow: 0 0 8px var(--call); }
-.PUT  { color: var(--put);  text-shadow: 0 0 8px var(--put); }
 
 .loading {
   text-align: center;
@@ -187,80 +166,89 @@ select[multiple] {
 
     <select id="pairs" multiple></select>
 
-    <input type="time" id="start" value="21:00">
-    <input type="time" id="end" value="02:00">
+    <input type="time" id="start" value="01:00">
+    <input type="time" id="end" value="05:00">
 
     <button class="main-btn" onclick="startEngine()">GENERATE SIGNALS</button>
     <button class="tg-btn" onclick="pushTG()">SEND TO TELEGRAM</button>
 
-    <div id="output">Select pairs & time range<br>Then click GENERATE SIGNALS</div>
+    <div id="output">Select pairs & time range then click GENERATE SIGNALS</div>
 
   </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
+
 <script>
 
 const API = "https://apx.mkapi009.workers.dev?pair=";
 const TG  = "https://signal.mkapi009.workers.dev/send";
 let SIGNALS = [];
-let LOCKED = false; // Prevent regeneration
+let LOCKED = false;
 
-/* ===== EMA FUNCTION ===== */
+// EMA calculation
 function EMA(data, period){
-    let k = 2/(period+1);
-    let ema = data[data.length-period].close;
-    for(let i=data.length-period+1;i<data.length;i++){
-        ema = data[i].close*k + ema*(1-k);
+    if(data.length < period) return null;
+    let k = 2 / (period + 1);
+    let ema = data[data.length - period].close;
+    for(let i = data.length - period + 1; i < data.length; i++){
+        ema = data[i].close * k + ema * (1 - k);
     }
     return ema;
 }
 
-/* ===== TREND + MOMENTUM LOGIC ===== */
+// Trend + Momentum Logic
 function analyze(candles){
-
     if(candles.length < 60) return null;
 
-    let ema20 = EMA(candles,20);
-    let ema50 = EMA(candles,50);
+    let ema20 = EMA(candles, 20);
+    let ema50 = EMA(candles, 50);
+
+    if(ema20 === null || ema50 === null) return null;
 
     let trend = ema20 > ema50 ? "CALL" : "PUT";
 
-    // Momentum (last 5 candles)
+    // Momentum last 5 candles
     let momentum = 0;
     let recent = candles.slice(-5);
-
-    for(let i=1;i<recent.length;i++){
+    for(let i=1; i<recent.length; i++){
         if(recent[i].close > recent[i-1].close) momentum++;
         else momentum--;
     }
 
-    // Candle strength
+    // Last candle strength
     let last = candles[candles.length-1];
     let body = Math.abs(last.close - last.open);
-    let range = last.high - last.low;
+    let range = last.high - last.low || 0.0001;
     let strength = body / range;
 
-    if(strength < 0.4) return null; // weak candle ignore
+    if(strength < 0.4) return null; // weak → skip
 
     if(trend === "CALL" && momentum >= 2) return "CALL";
     if(trend === "PUT"  && momentum <= -2) return "PUT";
 
-    return null;
+    return null; // no strong signal
 }
 
-/* ===== ENGINE ===== */
+// Engine
 async function startEngine(){
-
     if(LOCKED){
         alert("Signals already generated. Refresh page to regenerate.");
         return;
     }
 
     SIGNALS = [];
+    LOCKED = true;
 
     const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-    if (!selected.length) return alert("Select Pairs!");
+    if(!selected.length) {
+        alert("Select Pairs!");
+        LOCKED = false;
+        return;
+    }
 
-    document.getElementById('output').innerText = "Analyzing Professional Structure...";
+    document.getElementById('output').innerHTML = '<div class="loading">Analyzing Professional Structure...</div>';
 
     const s = document.getElementById('start').value;
     const e = document.getElementById('end').value;
@@ -268,47 +256,43 @@ async function startEngine(){
     const now = new Date();
     let sD = new Date(now.toDateString() + " " + s).getTime();
     let eD = new Date(now.toDateString() + " " + e).getTime();
-    if(eD <= sD) eD += 86400000;
+    if(eD <= sD) eD += 86400000; // next day
 
-    const totalSignals = 15;
-    const step = (eD - sD) / totalSignals;
+    const totalSignalsPerPair = 15;
+    const step = (eD - sD) / totalSignalsPerPair;
 
-    for(let i=0;i<totalSignals;i++){
+    for(const pair of selected){
+        try{
+            const res = await fetch(API + pair);
+            const json = await res.json();
+            const candles = json?.data || [];
 
-        let timeObj = new Date(sD + step*i);
-        timeObj.setSeconds(0);
-        let timeStr = timeObj.toTimeString().slice(0,5);
+            let dir = analyze(candles);
 
-        for(const pair of selected){
+            if(dir){
+                for(let i=0; i<totalSignalsPerPair; i++){
+                    let timeObj = new Date(sD + step * i);
+                    timeObj.setSeconds(0);
+                    let timeStr = timeObj.toTimeString().slice(0,5);
 
-            try{
-                const res = await fetch(API + pair);
-                const json = await res.json();
-                const candles = json?.data || [];
-
-                let dir = analyze(candles);
-
-                if(dir){
                     SIGNALS.push({
                         time: timeStr,
                         pair: pair.replace('-otc','').replace('-OTC',''),
                         dir: dir
                     });
                 }
-
-            }catch(e){
-                console.log("API error",pair);
             }
+
+        }catch(e){
+            console.log("API error", pair, e);
         }
     }
 
-    LOCKED = true;
     display();
 }
 
-/* ===== DISPLAY ===== */
+// Display
 function display(){
-
     const out = document.getElementById('output');
 
     if(!SIGNALS.length){
@@ -317,17 +301,15 @@ function display(){
     }
 
     let text = "";
-
-    SIGNALS.forEach(s=>{
+    SIGNALS.forEach(s => {
         text += `${s.time} | ${s.pair.padEnd(8)} | ${s.dir}\n`;
     });
 
     out.innerText = text;
 }
 
-/* ===== TELEGRAM ALIGNMENT ===== */
+// Telegram
 async function pushTG(){
-
     if(!SIGNALS.length) return alert("Generate first!");
 
     let msg = "✦═══ APX ULTRA SIGNALS ═══✦\n";
@@ -335,18 +317,53 @@ async function pushTG(){
     msg += "━━━━━━━━━━━━━━━━━━━━━━\n";
     msg += "```\n";
 
-    SIGNALS.forEach(s=>{
-        let pairFormatted = s.pair.padEnd(8," ");
+    SIGNALS.forEach(s => {
+        let pairFormatted = s.pair.padEnd(8, " ");
         msg += `${s.time} | ${pairFormatted} | ${s.dir}\n`;
     });
 
     msg += "```\n";
     msg += "━━━━━━━━━━━━━━━━━━━━━━\n";
-    msg += "1 Step MG | Avoid News";
+    msg += "1 Step MG | Avoid News | Stop after 2L";
 
-    await fetch(TG,{method:"POST",body:msg});
-
-    alert("Professional aligned signals sent!");
+    try {
+        await fetch(TG, {method:"POST", body:msg});
+        alert("Professional aligned signals sent!");
+    } catch(e){
+        alert("Telegram send failed.");
+        console.error(e);
+    }
 }
 
+// Tabs & init
+function setMarket(t, btn){
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const sel = document.getElementById('pairs');
+  sel.innerHTML = '';
+  const LIST = {
+    OTC: ["USDINR-otc","USDPKR-otc","USDBDT-otc","USDCOP-otc","USDARS-otc","USDMXN-otc","USDZAR-otc","BRLUSD-otc","USDNGN-otc","USDTRY-otc"],
+    STOCK: ["MSFSTK-OTC","AXPSTK-OTC"],
+    CRYPTO: ["BTCUSD-otc","ETHUSD-otc"]
+  };
+
+  LIST[t].forEach(p => {
+    let opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p.replace('-otc','').replace('-OTC','');
+    sel.appendChild(opt);
+  });
+}
+setMarket('OTC', document.querySelector('.tab'));
+
+// Clock
+setInterval(() => {
+  let d = new Date();
+  d.setHours(d.getUTCHours() + 6);
+  document.getElementById('clock').innerText = "UTC+6 | " + d.toLocaleTimeString('en-GB', {hour12:false});
+}, 1000);
+
 </script>
+</body>
+</html>
