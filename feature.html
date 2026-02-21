@@ -144,18 +144,18 @@ function setMarket(type,btn){
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// EMA fixed
+// EMA
 function EMA(data, period) {
   if (data.length < period) return null;
   let k = 2 / (period + 1);
-  let ema = data[data.length - period].close; // start from oldest in window
+  let ema = data[data.length - period].close;
   for (let i = data.length - period + 1; i < data.length; i++) {
     ema = data[i].close * k + ema * (1 - k);
   }
   return ema;
 }
 
-// Better high accuracy logic
+// High accuracy + balanced logic
 function analyze(c) {
   if (c.length < 60) return null;
 
@@ -189,7 +189,7 @@ function analyze(c) {
   if (score >= 3.5) return "CALL";
   if (score <= -3.5) return "PUT";
 
-  // Relaxed force
+  // Force last candle if close
   return last.close > last.open ? "CALL" : "PUT";
 }
 
@@ -244,13 +244,12 @@ function distribute(pool) {
   const baseGap = (endMs - startMs) / totalSignals;
   let current = startMs;
 
-  // Shuffle pool for variety
   pool.sort(() => Math.random() - 0.5);
 
   let pairUsage = {};
 
   for (let i = 0; i < totalSignals; i++) {
-    let randomGap = baseGap * (0.8 + Math.random() * 0.6); // 80-140% variation
+    let randomGap = baseGap * (0.8 + Math.random() * 0.6);
     current += randomGap;
 
     if (current >= endMs) break;
@@ -258,7 +257,7 @@ function distribute(pool) {
     let obj = pool[i % pool.length];
     pairUsage[obj.pair] = (pairUsage[obj.pair] || 0) + 1;
 
-    if (pairUsage[obj.pair] > 5) continue; // max 5 per pair
+    if (pairUsage[obj.pair] > 5) continue;
 
     FINAL.push({
       time: new Date(current).toTimeString().slice(0,5),
@@ -294,7 +293,7 @@ async function sendTG() {
 
   setTimeout(async () => {
     let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
-    msg += "UTC+6 | 1 Min Expiry\n";
+    msg += "UTC+6 Timezone | 1 Min Expiry\n";
     msg += "━━━━━━━━━━━━━━━━━━\n";
     msg += "```\n";
 
@@ -313,7 +312,7 @@ async function sendTG() {
 
     await fetch(TG, {method:"POST", body:msg});
     alert("High Quality Signals Sent!");
-  }, 3200);
+  }, 3500); // 3.5 sec delay
 }
 
 </script>
