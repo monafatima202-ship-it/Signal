@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V32 - Strong Setup</title>
+<title>APX ULTRA V33 - Medium Strong</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -34,7 +34,7 @@ button { width:100%; padding:14px; margin-top:8px; border:none; border-radius:12
 <body>
 
 <header>
-<div class="logo">APX ULTRA V32</div>
+<div class="logo">APX ULTRA V33</div>
 </header>
 
 <div class="container">
@@ -53,7 +53,7 @@ button { width:100%; padding:14px; margin-top:8px; border:none; border-radius:12
 <input type="time" id="end" value="17:00">
 </div>
 
-<button class="generate" onclick="generate()">GENERATE STRONG SETUPS</button>
+<button class="generate" onclick="generate()">GENERATE MEDIUM STRONG</button>
 <button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
 
 <div id="output">READY...</div>
@@ -98,40 +98,38 @@ function EMA(data, period) {
   return ema;
 }
 
-/* 🔥 STRONG HIGH ACCURACY ENGINE */
+/* 🔥 MEDIUM STRONG ENGINE */
 function analyze(c) {
-  if (c.length < 120) return null;
+  if (c.length < 90) return null;
 
-  let recent = c.slice(-120);
+  let recent = c.slice(-90);
 
   let ema20 = EMA(recent, 20);
   let ema50 = EMA(recent, 50);
-  let ema100 = EMA(recent, 100);
-  if (!ema20 || !ema50 || !ema100) return null;
+  if (!ema20 || !ema50) return null;
 
-  let trendUp = ema20 > ema50 && ema50 > ema100;
-  let trendDown = ema20 < ema50 && ema50 < ema100;
+  let trendUp = ema20 > ema50;
+  let trendDown = ema20 < ema50;
 
   let momentum = 0;
-  for (let i = recent.length - 15; i < recent.length; i++) {
+  for (let i = recent.length - 10; i < recent.length; i++) {
     let diff = recent[i].close - recent[i-1].close;
     if (diff > 0) momentum++;
     if (diff < 0) momentum--;
   }
 
   let last = recent[recent.length - 1];
-  let high = Math.max(...recent.slice(-20).map(x => x.high));
-  let low = Math.min(...recent.slice(-20).map(x => x.low));
-
-  let breakoutUp = last.close > high;
-  let breakoutDown = last.close < low;
-
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
-  let strongCandle = (body / range) > 0.65;
+  let strength = body / range;
 
-  if (trendUp && momentum >= 8 && breakoutUp && strongCandle) return "CALL";
-  if (trendDown && momentum <= -8 && breakoutDown && strongCandle) return "PUT";
+  if (trendUp && momentum >= 4 && last.close > ema20 && strength > 0.45) {
+    return "CALL";
+  }
+
+  if (trendDown && momentum <= -4 && last.close < ema20 && strength > 0.45) {
+    return "PUT";
+  }
 
   return null;
 }
@@ -140,7 +138,7 @@ async function generate() {
   if (LOCK) return alert("Already Generated. Refresh to rescan.");
   LOCK = true;
   FINAL = [];
-  output.innerHTML = `<div class="loader">SCANNING STRONG SETUPS...</div>`;
+  output.innerHTML = `<div class="loader">SCANNING MARKET...</div>`;
 
   const selected = [...pairs.selectedOptions].map(o => o.value);
   if (!selected.length) {
@@ -161,7 +159,7 @@ async function generate() {
   }
 
   if (!pool.length) {
-    output.innerText = "No Strong Setup Found. Market not trending.";
+    output.innerText = "Market weak — try again shortly.";
     LOCK = false;
     return;
   }
@@ -177,7 +175,7 @@ function distribute(pool) {
   let endMs = new Date(now.toDateString() + " " + e).getTime();
   if (endMs <= startMs) endMs += 86400000;
 
-  const totalSignals = 12;
+  const totalSignals = 15;
   const gap = (endMs - startMs) / totalSignals;
   let current = startMs;
 
@@ -194,27 +192,25 @@ function distribute(pool) {
 }
 
 function display() {
-  let txt = "APX ULTRA STRONG SETUPS\n";
+  let txt = "APX ULTRA MEDIUM STRONG\n";
   txt += "━━━━━━━━━━━━━━━━━━━━━━\n";
-  txt += "UTC+6 | 1 Min Expiry\n";
-  txt += "Logic: EMA(20/50/100) + Momentum + Breakout\n\n";
+  txt += "UTC+6 | 1 Min Expiry\n\n";
   FINAL.forEach(s => {
     txt += `➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
   });
-  txt += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  txt += "• Trade exact time\n• 1 Step Martingale\n• Avoid News\n• Stop after 2 losses\n";
+  txt += "\n━━━━━━━━━━━━━━━━━━━━━━\nTrade Smart.";
   document.getElementById('output').innerText = txt;
 }
 
 async function sendTG() {
   if (!FINAL.length) return alert("Generate first!");
-  let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\nUTC+6 Timezone | 1 Min Expiry\n━━━━━━━━━━━━━━━━━━\n```text\n";
+  let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\nUTC+6 | 1 Min Expiry\n━━━━━━━━━━━━━━━━━━\n```text\n";
   FINAL.forEach(s => {
     msg += `✦ ${s.time}   ${s.pair.padEnd(10)}   ${s.dir}\n`;
   });
-  msg += "```\n━━━━━━━━━━━━━━━━━━\nStrong Setup Engine Enabled";
+  msg += "```\n━━━━━━━━━━━━━━━━━━\nMedium Strong Engine";
   await fetch(TG, {method:"POST", body:msg});
-  alert("Signals Sent Successfully!");
+  alert("Signals Sent!");
 }
 
 </script>
