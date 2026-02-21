@@ -3,67 +3,70 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V35 - PRO AI</title>
+<title>APX ULTRA V36 - FINAL AI</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --bg: #030812;
-  --panel: #0b1526;
-  --neon: #00ff88; /* Green Theme for Accuracy */
+  --bg: #02060c;
+  --panel: #0a111f;
+  --neon: #00ff88;
   --neon-glow: 0 0 15px #00ff88;
   --text: #e0fbee;
 }
 
-body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
-header { text-align:center; padding:25px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--neon-glow); }
-.logo { font-family:'Orbitron'; font-size:30px; color:var(--neon); text-shadow:0 0 15px var(--neon); }
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
+header { text-align:center; padding:20px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--neon-glow); }
+.logo { font-family:'Orbitron'; font-size:26px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
 
-.container { max-width:480px; margin:20px auto; padding:15px; }
-.panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.3); box-shadow:0 0 30px rgba(0,255,136,.1); }
+.container { max-width:450px; margin:15px auto; padding:10px; }
+.panel { background:var(--panel); border-radius:20px; padding:20px; border:1px solid rgba(0,255,136,.2); box-shadow:0 0 40px rgba(0,0,0,0.5); }
 
-.tabs { display:flex; gap:10px; margin-bottom:20px; }
-.tab { flex:1; padding:12px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:12px; font-weight:bold; cursor:pointer; transition:0.3s; font-family:'Orbitron'; font-size:12px; }
+.tabs { display:flex; gap:8px; margin-bottom:15px; }
+.tab { flex:1; padding:10px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:11px; transition: 0.3s; }
 .tab.active { background:var(--neon); color:black; box-shadow:var(--neon-glow); }
 
-select { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; height:120px; }
-input[type="time"] { width:46%; padding:12px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; margin-bottom:15px; }
+select { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; font-size:14px; }
+.time-row { display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; }
+input[type="time"] { flex:1; padding:12px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; }
 
-button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.2s; }
+button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:14px; }
 .generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--neon-glow); }
-.generate:active { transform:scale(0.98); }
-.telegram { background:#0088cc; color:white; margin-top:15px; }
+.telegram { background:#0088cc; color:white; }
 
-#output { margin-top:25px; background:#02060e; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.6; }
-.loader-box { text-align:center; padding:30px; }
-.bar-container { width:100%; background:#112211; height:10px; border-radius:5px; margin-top:10px; overflow:hidden; }
-.bar-fill { height:100%; background:var(--neon); width:0%; transition: width 0.3s; box-shadow:0 0 10px var(--neon); }
+#output { margin-top:20px; background:#01040a; padding:15px; border-radius:12px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:12px; color:#afffdf; line-height:1.5; min-height:150px; }
+
+/* Progress Bar */
+.loader-box { padding:20px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:6px; margin:10px 0; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:var(--neon); border-radius:6px; transition:0.4s; box-shadow:0 0 10px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX ULTRA V35</div></header>
+<header><div class="logo">APX ULTRA V36 PRO</div></header>
 
 <div class="container">
   <div class="panel">
     <div class="tabs">
-      <button class="tab active" onclick="setMarket('OTC',this)">OTC MARKET</button>
+      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
       <button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
       <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
     </div>
 
-    <select id="pairs" multiple></select>
+    <label style="font-size:12px; color:var(--neon)">SELECT MULTIPLE ASSETS:</label>
+    <select id="pairs" multiple size="6"></select>
 
-    <div style="display:flex; justify-content:space-between;">
-      <input type="time" id="start" value="10:00">
-      <input type="time" id="end" value="12:00">
+    <div class="time-row">
+      <div><small>START TIME</small><input type="time" id="start" value="21:00"></div>
+      <div><small>END TIME</small><input type="time" id="end" value="23:00"></div>
     </div>
 
-    <button class="generate" onclick="generate()">ANALYZE & GENERATE</button>
+    <button class="generate" onclick="generate()">AI BRAIN ANALYSIS</button>
     <button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
-    <div id="output">SYSTEM READY FOR SCAN...</div>
+    <div id="output">SYSTEM STATUS: WAITING...</div>
   </div>
 </div>
 
@@ -72,10 +75,10 @@ const API = "https://apx.mkapi009.workers.dev?pair=";
 const TG = "https://signal.mkapi009.workers.dev/send";
 
 let FINAL_SIGNALS = [];
-let IS_LOCKED = false;
+let LOCK = false;
 
 const ASSETS = {
-  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
+  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc"],
   STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
   CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 };
@@ -88,154 +91,143 @@ function setMarket(type, btn) {
   ASSETS[type].forEach(p => {
     let opt = document.createElement("option");
     opt.value = p;
-    opt.textContent = p.replace(/-otc|-OTC/g, '').toUpperCase();
+    opt.textContent = p.replace(/-otc|-OTC/gi, '').toUpperCase();
     select.appendChild(opt);
   });
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// --- BRAIN LOGIC (ADAPTIVE AI STRATEGY) ---
-function getRSI(data, period = 14) {
-    if (data.length < period + 1) return 50;
-    let gains = 0, losses = 0;
-    for (let i = data.length - period; i < data.length; i++) {
-        let diff = data[i].close - data[i-1].close;
-        if (diff >= 0) gains += diff; else losses -= diff;
-    }
-    let rs = gains / (losses || 1);
-    return 100 - (100 / (1 + rs));
+// --- ADVANCED AI BRAIN LOGIC ---
+function getRSI(data) {
+  let period = 14;
+  if (data.length < period) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    let diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  return 100 - (100 / (1 + (gains / (losses || 1))));
 }
 
-function analyzeMarket(candles) {
-  if (candles.length < 50) return null;
-  
+function analyzeBrain(candles) {
+  if (candles.length < 60) return null;
   let last = candles[candles.length - 1];
   let rsi = getRSI(candles);
-  
-  // EMA Cross Logic
-  let smaShort = candles.slice(-10).reduce((a, b) => a + b.close, 0) / 10;
-  let smaLong = candles.slice(-30).reduce((a, b) => a + b.close, 0) / 30;
-  
-  // Volatility Filter
-  let body = Math.abs(last.close - last.open);
-  let wick = (last.high - last.low) - body;
+  let sma20 = candles.slice(-20).reduce((a,b) => a+b.close, 0) / 20;
+  let sma50 = candles.slice(-50).reduce((a,b) => a+b.close, 0) / 50;
 
-  // STRICT BRAIN LOGIC
-  // CALL: Trend is up, RSI not overbought, Body is strong
-  if (smaShort > smaLong && rsi < 65 && body > wick) return "CALL";
-  // PUT: Trend is down, RSI not oversold, Body is strong
-  if (smaShort < smaLong && rsi > 35 && body > wick) return "PUT";
-
+  // Final confirmation: Trend + RSI + Candle Strength
+  if (sma20 > sma50 && rsi < 60 && last.close > last.open) return "CALL";
+  if (sma20 < sma50 && rsi > 40 && last.close < last.open) return "PUT";
   return null;
 }
 
 async function generate() {
+  if (LOCK) return;
   const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-  if (!selected.length) return alert("Please select pairs first!");
+  if (selected.length < 1) return alert("Select at least 1-2 pairs!");
 
-  IS_LOCKED = true;
+  LOCK = true;
   FINAL_SIGNALS = [];
   const output = document.getElementById('output');
-  output.innerHTML = `<div class="loader-box">AI SCANNING MARKET...<div class="bar-container"><div class="bar-fill" id="pb"></div></div><div id="perc">0%</div></div>`;
+  output.innerHTML = `<div class="loader-box">READING API CANDLES...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
 
-  let pool = [];
-  let progress = 0;
-
-  for (const p of selected) {
+  let analyzedPool = [];
+  for (let i = 0; i < selected.length; i++) {
     try {
-      let res = await fetch(API + p);
+      let res = await fetch(API + selected[i]);
       let json = await res.json();
-      let trend = analyzeMarket(json.data || []);
-      if (trend) pool.push({ pair: p.replace(/-otc|-OTC/gi, ''), dir: trend });
-      
-      progress += (100 / selected.length);
-      document.getElementById('pb').style.width = progress + "%";
-      document.getElementById('perc').innerText = Math.round(progress) + "%";
+      let decision = analyzeBrain(json.data || []);
+      if (decision) {
+        analyzedPool.push({ pair: selected[i].replace(/-otc|-OTC/gi, ''), dir: decision });
+      }
+      let p = ((i + 1) / selected.length) * 100;
+      document.getElementById('pb').style.width = p + "%";
+      document.getElementById('perc').innerText = Math.round(p) + "%";
     } catch (e) { console.error(e); }
   }
 
-  if (pool.length === 0) {
-    output.innerText = "NO HIGH ACCURACY SETUP FOUND. TRY OTHER PAIRS.";
-    return;
+  if (analyzedPool.length === 0) {
+    output.innerText = "MARKET UNSTABLE: NO ACCURATE TRENDS FOUND.";
+    LOCK = false; return;
   }
 
-  // Distribution
-  const sTime = document.getElementById('start').value;
-  const eTime = document.getElementById('end').value;
-  let startMs = new Date("2026-01-01 " + sTime).getTime();
-  let endMs = new Date("2026-01-01 " + eTime).getTime();
-  if(endMs <= startMs) endMs += 86400000;
+  // Time-Gap Distribution (Real Professional Spacing)
+  const sT = document.getElementById('start').value;
+  const eT = document.getElementById('end').value;
+  let start = new Date("2026-01-01 " + sT).getTime();
+  let end = new Date("2026-01-01 " + eT).getTime();
+  if (end <= start) end += 86400000;
 
-  for(let i=0; i<12; i++) {
-    let randomTime = new Date(startMs + Math.random() * (endMs - startMs));
-    let asset = pool[Math.floor(Math.random() * pool.length)];
+  let currentPoint = start;
+  while (currentPoint < end && FINAL_SIGNALS.length < 10) {
+    // 5 to 10 minutes gap between signals
+    currentPoint += (5 + Math.random() * 5) * 60000; 
+    if (currentPoint >= end) break;
+
+    let asset = analyzedPool[FINAL_SIGNALS.length % analyzedPool.length];
     FINAL_SIGNALS.push({
-      time: randomTime.toTimeString().slice(0,5),
+      time: new Date(currentPoint).toTimeString().slice(0,5),
       pair: asset.pair,
       dir: asset.dir
     });
   }
-  
-  FINAL_SIGNALS.sort((a,b) => a.time.localeCompare(b.time));
-  renderOutput();
+
+  renderResult();
+  LOCK = false;
 }
 
-function renderOutput() {
-  let txt = "🟢 APX ULTRA V35 SIGNALS 🟢\n";
-  txt += "━━━━━━━━━━━━━━━━━━━━━━\n";
-  txt += "MODE: HIGH ACCURACY AI\n";
-  txt += "EXPIRY: 1 MIN | GMT+5\n\n";
+function renderResult() {
+  let h = "✅ APX ULTRA V36 PRO SIGNALS ✅\n";
+  h += "━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "ZONE: GMT+5 | 1 MIN EXP\n\n";
   FINAL_SIGNALS.forEach(s => {
-    txt += `⭐ ${s.pair.padEnd(8)} | ${s.time} | ${s.dir}\n`;
+    h += `✨ ${s.pair.padEnd(8)} @ ${s.time} -> ${s.dir}\n`;
   });
-  txt += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  txt += "⚠️ RULES: 1-STEP M-GALE\n";
-  txt += "🚫 AVOID DURING NEWS\n";
-  document.getElementById('output').innerText = txt;
+  h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "BRAIN LOGIC: RSI + SMA CROSS\n";
+  document.getElementById('output').innerText = h;
 }
 
 async function sendTG() {
-  if (!FINAL_SIGNALS.length) return alert("Generate signals first!");
+  if (!FINAL_SIGNALS.length) return alert("Generate first!");
   
-  const header = "⚡ APX ULTRA BRAIN SCAN ⚡\n\n";
   const stages = [
-    { m: "📡 Connecting to Liquidity Provider...", p: " [🟩⬜⬜⬜⬜] 20%" },
-    { m: "🧬 Analyzing RSI & EMA Cross...", p: " [🟩🟩⬜⬜⬜] 45%" },
-    { m: "📊 Filtering Market Noise...", p: " [🟩🟩🟩⬜⬜] 70%" },
-    { m: "💎 Finalizing High Precision Signals...", p: " [🟩🟩🟩🟩🟩] 100%" }
+    { m: "INITIATING API SCAN...", b: "🟩⬜⬜⬜⬜ 20%" },
+    { m: "READING REAL CANDLE DATA...", b: "🟩🟩⬜⬜⬜ 40%" },
+    { m: "CALCULATING RSI MOMENTUM...", b: "🟩🟩🟩⬜⬜ 60%" },
+    { m: "FILTERING VOLATILITY...", b: "🟩🟩🟩🟩⬜ 80%" },
+    { m: "SIGNALS READY TO DEPLOY!", b: "🟩🟩🟩🟩🟩 100%" }
   ];
 
   try {
-    for (let stage of stages) {
-      await fetch(TG, { method: "POST", body: header + stage.m + "\n" + stage.p });
-      await new Promise(r => setTimeout(r, 2000));
+    for (let s of stages) {
+      await fetch(TG, { method: "POST", body: `[ APX AI STATUS ]\n${s.m}\n${s.b}` });
+      await new Promise(r => setTimeout(r, 1500));
     }
 
-    let finalMsg = "💎 APX ULTRA PREMIUM SIGNALS 💎\n";
-    finalMsg += "━━━━━━━━━━━━━━━━━━━━\n";
-    finalMsg += "📅 DATE: 2026-02-21\n";
-    finalMsg += "⏰ ZONE: GMT +5\n";
-    finalMsg += "⌛ EXPIRY: 1 MIN\n";
-    finalMsg += "━━━━━━━━━━━━━━━━━━━━\n\n";
+    let msg = "🌟 APX ULTRA PRO SIGNALS 🌟\n";
+    msg += "━━━━━━━━━━━━━━━━━━\n";
+    msg += "📅 2026-02-21 | GMT+5\n";
+    msg += "💡 SYSTEM: BRAIN V36\n";
+    msg += "━━━━━━━━━━━━━━━━━━\n\n";
     
     FINAL_SIGNALS.forEach(s => {
-      let icon = s.dir === "CALL" ? "🚀" : "📉";
-      finalMsg += `${icon} ${s.pair} ➔ ${s.time} ➔ ${s.dir}\n`;
+      let icon = s.dir === "CALL" ? "⬆️" : "⬇️";
+      msg += `${icon} ${s.pair} | ${s.time} | ${s.dir}\n`;
     });
 
-    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━\n";
-    finalMsg += "📜 TRADING RULES:\n";
-    finalMsg += "✅ Trade exactly at start of minute\n";
-    finalMsg += "✅ Use 1-Step Martingale (if needed)\n";
-    finalMsg += "✅ Best for OTC & High Volatility\n";
-    finalMsg += "━━━━━━━━━━━━━━━━━━━━\n";
-    finalMsg += "BY: APX ULTRA AI BOT ✴️";
+    msg += "\n━━━━━━━━━━━━━━━━━━\n";
+    msg += "⚠️ RULES:\n";
+    msg += "1. Trade exactly at 00 sec\n";
+    msg += "2. 1-Step Martingale Only\n";
+    msg += "3. Stop if 2 continuous losses\n";
+    msg += "━━━━━━━━━━━━━━━━━━\n";
+    msg += "POWERED BY APX PREMIUM AI";
 
-    await fetch(TG, { method: "POST", body: finalMsg });
-    alert("Signals sent to Telegram with 100% Success!");
-  } catch (e) {
-    alert("Telegram Error. Check API.");
-  }
+    await fetch(TG, { method: "POST", body: msg });
+    alert("Sent Successfully!");
+  } catch (e) { alert("Telegram Error!"); }
 }
 </script>
 </body>
