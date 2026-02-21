@@ -1,50 +1,35 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V18</title>
+<title>APX ULTRA V21</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
---bg:#060c18;
---panel:#0f172a;
---neon:#00ffe5;
+--bg:#070f1f;
+--panel:#111a2f;
+--neon:#00ffe7;
 --call:#00ff88;
 --put:#ff3b6b;
 }
-body{
-background:var(--bg);
-font-family:'Rajdhani';
-color:white;
-margin:0;
-}
+body{margin:0;background:var(--bg);color:white;font-family:'Rajdhani'}
 header{
 text-align:center;
 padding:15px;
-border-bottom:2px solid var(--neon);
-box-shadow:0 0 15px var(--neon);
 font-family:'Orbitron';
-letter-spacing:2px;
+border-bottom:2px solid var(--neon);
+box-shadow:0 0 20px var(--neon);
 }
-.container{
-max-width:480px;
-margin:20px auto;
-padding:10px;
-}
+.container{max-width:480px;margin:20px auto;padding:10px}
 .panel{
 background:var(--panel);
 padding:20px;
-border-radius:18px;
-border:1px solid rgba(0,255,229,0.3);
-box-shadow:0 0 25px rgba(0,255,229,0.15);
+border-radius:20px;
+border:1px solid rgba(0,255,231,0.3);
+box-shadow:0 0 25px rgba(0,255,231,0.15);
 }
-.tabs{
-display:flex;
-gap:10px;
-margin-bottom:15px;
-}
+.tabs{display:flex;gap:10px;margin-bottom:15px}
 .tab{
 flex:1;
 padding:10px;
@@ -55,18 +40,15 @@ color:var(--neon);
 cursor:pointer;
 font-weight:bold;
 }
-.tab.active{
-background:var(--neon);
-color:#000;
-}
+.tab.active{background:var(--neon);color:#000}
 select,input{
 width:100%;
 padding:10px;
+margin-bottom:12px;
 background:#0b1325;
 border:1px solid #334155;
 border-radius:10px;
 color:white;
-margin-bottom:12px;
 }
 button{
 width:100%;
@@ -78,24 +60,18 @@ font-weight:bold;
 cursor:pointer;
 margin-bottom:10px;
 }
-.generate{
-background:var(--neon);
-color:#000;
-}
-.telegram{
-background:#0088cc;
-color:white;
-}
+.generate{background:var(--neon);color:#000}
+.telegram{background:#0088cc;color:white}
 #output{
 margin-top:10px;
 background:#0b1325;
+padding:15px;
 border-radius:12px;
-padding:12px;
-font-family:monospace;
-white-space:pre;
-font-size:12px;
 border:1px dashed var(--neon);
-min-height:150px;
+white-space:pre;
+font-family:monospace;
+font-size:12px;
+min-height:180px;
 }
 .loader{
 text-align:center;
@@ -104,17 +80,15 @@ color:var(--neon);
 animation:pulse 1s infinite alternate;
 }
 @keyframes pulse{
-from{opacity:0.4;}
-to{opacity:1;}
+from{opacity:0.4}
+to{opacity:1}
 }
-.call{color:var(--call);}
-.put{color:var(--put);}
 </style>
 </head>
 
 <body>
 
-<header>APX ULTRA V18 ENGINE</header>
+<header>APX ULTRA V21 ENGINE</header>
 
 <div class="container">
 <div class="panel">
@@ -127,7 +101,7 @@ to{opacity:1;}
 
 <select id="pairs" multiple size="8"></select>
 
-<div style="display:flex; gap:8px;">
+<div style="display:flex;gap:8px;">
 <input type="time" id="start" value="00:00">
 <input type="time" id="end" value="02:00">
 </div>
@@ -136,7 +110,7 @@ Signals Count:
 <input type="number" id="count" value="15" min="5" max="20">
 
 <button class="generate" onclick="generate()">GENERATE SIGNALS</button>
-<button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
+<button class="telegram" onclick="manualTG()">SEND TELEGRAM</button>
 
 <div id="output">READY...</div>
 
@@ -145,15 +119,13 @@ Signals Count:
 
 <script>
 
-const API = "https://apx.mkapi009.workers.dev?pair=";
-const TG  = "https://signal.mkapi009.workers.dev/send";
+const API="https://apx.mkapi009.workers.dev?pair=";
+const TG="https://signal.mkapi009.workers.dev/send";
 
-let FINAL = [];
-let LOCK = false;
+let FINAL=[];
+let LOCK=false;
 
-/* ===== PAIRS ===== */
-
-const LIST = {
+const LIST={
 OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
 STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc","FABSTK-otc","BOISTK-otc"],
 CRYPTO:["XAUUSD-otc","BTCUSD"]
@@ -162,21 +134,20 @@ CRYPTO:["XAUUSD-otc","BTCUSD"]
 function setMarket(type,btn){
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
 btn.classList.add("active");
-const sel=document.getElementById("pairs");
-sel.innerHTML="";
+pairs.innerHTML="";
 LIST[type].forEach(p=>{
 let o=document.createElement("option");
 o.value=p;
 o.textContent=p;
-sel.appendChild(o);
+pairs.appendChild(o);
 });
 }
 setMarket("OTC",document.querySelector(".tab"));
 
-/* ===== INDICATORS ===== */
+/* ========= ANALYSIS LOGIC ========= */
 
-function EMA(data,period){
-let k=2/(period+1);
+function EMA(data,p){
+let k=2/(p+1);
 let ema=data[0].close;
 for(let i=1;i<data.length;i++){
 ema=data[i].close*k+ema*(1-k);
@@ -185,21 +156,19 @@ return ema;
 }
 
 function analyze(c){
-if(c.length<120) return null;
+if(c.length<150) return null;
 
 let recent=c.slice(-120);
-
 let ema20=EMA(recent.slice(-20),20);
 let ema50=EMA(recent.slice(-50),50);
 
 let score=0;
+if(ema20>ema50) score+=3;
+else score-=3;
 
-if(ema20>ema50) score+=2;
-else score-=2;
-
-let m=recent.slice(-5);
-for(let i=1;i<m.length;i++){
-if(m[i].close>m[i-1].close) score++;
+let mom=recent.slice(-5);
+for(let i=1;i<mom.length;i++){
+if(mom[i].close>mom[i-1].close) score++;
 else score--;
 }
 
@@ -210,109 +179,117 @@ let low=Math.min(...recent.slice(-15,-1).map(x=>x.low));
 if(last.close>high) score+=2;
 if(last.close<low) score-=2;
 
-if(score>=3) return "CALL";
-if(score<=-3) return "PUT";
-
+if(score>=5) return "CALL";
+if(score<=-5) return "PUT";
 return null;
 }
 
-/* ===== GENERATE ===== */
+/* ========= GENERATE ========= */
 
 async function generate(){
 
 if(LOCK){
-alert("Already generated. Refresh to regenerate.");
+alert("Signals already generated. Refresh to regenerate.");
 return;
 }
 
 FINAL=[];
-document.getElementById("output").innerHTML="<div class='loader'>APX ENGINE SCANNING...<br>▓▓▓▓░░░░░</div>";
-
-await new Promise(r=>setTimeout(r,2000));
+output.innerHTML="<div class='loader'>APX ENGINE SCANNING...\n▓▓▓▓▓░░░░░</div>";
 
 const selected=[...pairs.selectedOptions].map(o=>o.value);
-const count=parseInt(document.getElementById("count").value);
-const start=document.getElementById("start").value;
-const end=document.getElementById("end").value;
+const count=parseInt(count.value);
+const startVal=start.value;
+const endVal=end.value;
+
+let pool=[];
 
 for(const pair of selected){
-
 try{
 const res=await fetch(API+pair);
 const json=await res.json();
 const candles=json?.data||[];
 const dir=analyze(candles);
-if(dir){
-FINAL.push({pair,dir});
-}
+if(dir) pool.push({pair,dir});
 }catch(e){}
 }
 
-if(!FINAL.length){
-document.getElementById("output").innerText="No High Probability Setups Found.";
+if(!pool.length){
+output.innerText="No High Probability Setups Found.";
 return;
 }
 
-distribute(count,start,end);
-
+distribute(pool,count,startVal,endVal);
 display();
-
 LOCK=true;
-
-setTimeout(sendTG,3000);
 }
 
-/* ===== TIME DISTRIBUTE ===== */
+/* ========= DISTRIBUTION ========= */
 
-function distribute(count,start,end){
+function distribute(pool,count,start,end){
 
 let now=new Date();
 let s=new Date(now.toDateString()+" "+start).getTime();
 let e=new Date(now.toDateString()+" "+end).getTime();
 if(e<=s) e+=86400000;
 
-let gap=(e-s)/count;
+let gap=(e-s)/(count);
 
-FINAL=FINAL.slice(0,count);
-
-FINAL.forEach((sig,i)=>{
+for(let i=0;i<count;i++){
 let t=new Date(s+gap*i);
 t.setSeconds(0);
-sig.time=t.toTimeString().slice(0,5);
+let obj=pool[i%pool.length];
+FINAL.push({
+pair:obj.pair,
+dir:obj.dir,
+time:t.toTimeString().slice(0,5)
 });
 }
+}
 
-/* ===== DISPLAY ===== */
+/* ========= DISPLAY ========= */
 
 function display(){
 
 let txt="APX Premium Signals\n";
-txt+="━━━━━━━━━━━━━━━━━━━\n";
-txt+="UTC+6 | 1 Min Expiry\n";
-txt+="Accuracy: Structure + Trend + Momentum\n\n";
+txt+="━━━━━━━━━━━━━━━━━━━━━━\n";
+txt+="UTC+6 Timezone | 1 Min Expiry\n";
+txt+="Accuracy: EMA + Breakout + Momentum\n\n";
 
 FINAL.forEach(s=>{
 txt+=`➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
 });
 
-txt+="\n━━━━━━━━━━━━━━━━━━━\n";
-txt+="RULES:\n";
-txt+="• Trade exact time\n";
-txt+="• 1 Step Martingale\n";
-txt+="• Avoid News\n";
-txt+="• Stop after 2 losses\n";
+txt+="\n━━━━━━━━━━━━━━━━━━━━━━\n";
+txt+="TRADING RULES\n";
+txt+="• Trade only at exact signal time\n";
+txt+="• Use 1 Step Martingale on loss\n";
+txt+="• Avoid high impact news\n";
+txt+="• Stop after 2 consecutive losses\n";
+txt+="• Risk only 1-2% per trade\n\n";
+txt+="Powered by ✴️ APX Premium";
 
-document.getElementById("output").innerText=txt;
+output.innerText=txt;
 }
 
-/* ===== TELEGRAM ===== */
+/* ========= TELEGRAM ========= */
 
-async function sendTG(){
+async function manualTG(){
 
-if(!FINAL.length) return;
+if(!FINAL.length){
+alert("Generate first.");
+return;
+}
 
-let msg="✦══ APX ULTRA SIGNALS ══✦\n\n";
-msg+="UTC+6 | 1 Min Expiry\n";
+/* Fancy Loading Telegram */
+await fetch(TG,{
+method:"POST",
+body:"⚡ APX ENGINE SCANNING...\n▓▓▓▓▓▓░░░░\nPreparing Premium Signals..."
+});
+
+setTimeout(async()=>{
+
+let msg="✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
+msg+="UTC+6 Timezone | 1 Min Expiry\n";
 msg+="━━━━━━━━━━━━━━━━━━\n";
 msg+="```\n";
 
@@ -322,9 +299,16 @@ msg+=`${s.time} | ${s.pair.padEnd(12)} | ${s.dir}\n`;
 
 msg+="```\n";
 msg+="━━━━━━━━━━━━━━━━━━\n";
-msg+="Trade Smart.";
+msg+="TRADING RULES\n";
+msg+="• Trade exact time\n";
+msg+="• 1 Step Martingale\n";
+msg+="• Avoid News\n";
+msg+="• Stop after 2 losses\n\n";
+msg+="Powered by ✴️ APX Premium";
 
 await fetch(TG,{method:"POST",body:msg});
+
+},3000);
 }
 
 </script>
