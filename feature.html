@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V27 - Colorful & Balanced</title>
+<title>APX ULTRA V27 - Fixed All</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -11,7 +11,7 @@
   --bg: #050b17;
   --panel: #0f1a2e;
   --neon: #00ffe7;
-  --neon-glow: 0 0 12px #00ffe7, 0 0 24px #00ffe7, 0 0 36px #00ffe7;
+  --neon-glow: 0 0 12px #00ffe7, 0 0 24px #00ffe7;
   --call: #00ff88;
   --put: #ff3b6b;
 }
@@ -56,7 +56,7 @@ button {
   font-family:'Orbitron'; font-weight:bold; cursor:pointer;
 }
 
-.generate { background:linear-gradient(135deg,#00ffe7,#ff00aa,#00c4ff); color:black; box-shadow:var(--neon-glow); }
+.generate { background:linear-gradient(135deg,#00ffe7,#00c4ff); color:black; box-shadow:var(--neon-glow); }
 
 .telegram { background:#0088cc; color:white; }
 
@@ -78,13 +78,11 @@ button {
 
 .progress-fill {
   width:0%; height:100%;
-  background:linear-gradient(90deg, #00ffe7, #ff00aa, #00c4ff, #ff3b6b, #00ffe7);
-  background-size: 400% 100%;
-  animation:loading 4s linear forwards, gradientMove 5s linear infinite;
+  background:linear-gradient(90deg, #00ffe7, #00c4ff, #ff00aa);
+  animation:loading 3.5s linear forwards;
 }
 
 @keyframes loading { 0% {width:0%} 100% {width:100%} }
-@keyframes gradientMove { 0% {background-position:0% 50%} 100% {background-position:400% 50%} }
 @keyframes pulse { from{opacity:.4} to{opacity:1} }
 </style>
 </head>
@@ -92,7 +90,7 @@ button {
 <body>
 
 <header>
-<div class="logo">APX ULTRA V26</div>
+<div class="logo">APX ULTRA V27</div>
 </header>
 
 <div class="container">
@@ -157,60 +155,41 @@ function EMA(data, period) {
   return ema;
 }
 
-// RSI
-function RSI(data, period = 14) {
-  if (data.length < period + 1) return 50;
-  let gains = 0, losses = 0;
-  for (let i = data.length - period; i < data.length; i++) {
-    let change = data[i].close - data[i-1].close;
-    if (change > 0) gains += change;
-    else losses += Math.abs(change);
-  }
-  let avgGain = gains / period;
-  let avgLoss = losses / period || 0.0001;
-  let rs = avgGain / avgLoss;
-  return 100 - (100 / (1 + rs));
-}
-
-// High accuracy logic - 80% feel (balanced & strong only)
+// High accuracy logic (balanced & strong)
 function analyze(c) {
-  if (c.length < 80) return null;
+  if (c.length < 60) return null;
 
-  let recent = c.slice(-80);
+  let recent = c.slice(-60);
   let ema20 = EMA(recent, 20);
   let ema50 = EMA(recent, 50);
   if (!ema20 || !ema50) return null;
 
-  let rsi = RSI(recent);
-
   let trend = ema20 > ema50 ? 1 : -1;
 
   let momentum = 0;
-  let weight = 1;
   for (let i = 1; i < recent.length; i++) {
     let d = recent[i].close - recent[i-1].close;
-    momentum += d > 0 ? weight : (d < 0 ? -weight : 0);
-    weight += 0.015;
+    momentum += d > 0 ? 1 : (d < 0 ? -1 : 0);
   }
 
   let last = recent[recent.length - 1];
-  let high = Math.max(...recent.slice(-15).map(x => x.high));
-  let low = Math.min(...recent.slice(-15).map(x => x.low));
+  let high = Math.max(...recent.slice(-12).map(x => x.high));
+  let low = Math.min(...recent.slice(-12).map(x => x.low));
 
   let breakout = 0;
-  if (last.close > high) breakout = 3;
-  if (last.close < low) breakout = -3;
+  if (last.close > high) breakout = 2;
+  if (last.close < low) breakout = -2;
 
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
   let strength = body / range;
 
-  let score = trend * 4 + momentum * 0.08 + breakout + (strength > 0.65 ? 3 : 0) + (rsi < 35 ? 5 : (rsi > 65 ? -5 : 0));
+  let score = trend * 4 + momentum * 0.1 + breakout + (strength > 0.6 ? 2.5 : 0);
 
-  if (score >= 6) return "CALL";
-  if (score <= -6) return "PUT";
+  if (score >= 5) return "CALL";
+  if (score <= -5) return "PUT";
 
-  // Relaxed but quality - force only if strong candle
+  // Force only if strong candle
   if (strength > 0.7) return last.close > last.open ? "CALL" : "PUT";
 
   return null; // weak skip
@@ -248,7 +227,7 @@ async function generate() {
   }
 
   if (!pool.length) {
-    output.innerText = "No High Quality Setup Found (Market not strong enough - try later or different pairs).";
+    output.innerText = "No High Quality Setup Found (Market not strong enough - try different time/pairs or wait for shift).";
     return;
   }
 
@@ -267,10 +246,9 @@ function distribute(pool) {
   const baseGap = (endMs - startMs) / totalSignals;
   let current = startMs;
 
-  pool.sort(() => Math.random() - 0.5);
-
+  // No skip - all strong pairs use karo
   for (let i = 0; i < totalSignals; i++) {
-    let randomGap = baseGap * (0.8 + Math.random() * 0.6);
+    let randomGap = baseGap * (0.9 + Math.random() * 0.4);
     current += randomGap;
 
     if (current >= endMs) break;
@@ -289,7 +267,7 @@ function display() {
   let txt = "APX ULTRA HIGH QUALITY\n";
   txt += "━━━━━━━━━━━━━━━━━━━━━━\n";
   txt += "UTC+6 | 1 Min Expiry\n";
-  txt += "Logic: EMA + RSI + Momentum + Breakout\n\n";
+  txt += "Logic: EMA + Momentum + Breakout\n\n";
 
   FINAL.forEach(s => {
     txt += `➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
@@ -304,15 +282,12 @@ async function sendTG() {
   if (!FINAL.length) return alert("Generate first!");
 
   try {
-    // Step 1: 35%
     await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\nScanning...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting Server...`});
     await new Promise(r => setTimeout(r, 20000));
 
-    // Step 2: 70%
     await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\n[▓▓▓▓▓▓▓░░░ 70%]\n🧬 Scanning Patterns...`});
     await new Promise(r => setTimeout(r, 20000));
 
-    // Step 3: 100% + signals
     setTimeout(async () => {
       let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
       msg += "UTC+6 Timezone | 1 Min Expiry\n";
@@ -331,7 +306,7 @@ async function sendTG() {
       msg += "Powered by ✴️ APX Premium";
 
       await fetch(TG, {method:"POST", body:msg});
-      alert("High Accuracy Signals Sent with Fancy Loading!");
+      alert("Signals Sent with Fancy Loading!");
     }, 20000);
   } catch (e) {
     alert("Telegram send failed – check console.");
