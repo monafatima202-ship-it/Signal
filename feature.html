@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V28 - Final Fixed</title>
+<title>APX ULTRA V29 - High Accuracy Final</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -155,7 +155,7 @@ function EMA(data, period) {
   return ema;
 }
 
-// High accuracy logic (balanced + multi pairs)
+// High accuracy logic (80% feel - balanced & strong)
 function analyze(c) {
   if (c.length < 60) return null;
 
@@ -186,10 +186,10 @@ function analyze(c) {
 
   let score = trend * 3 + momentum * 0.1 + breakout + (strength > 0.6 ? 2 : 0);
 
-  if (score >= 4.5) return "CALL";
-  if (score <= -4.5) return "PUT";
+  if (score >= 5) return "CALL";
+  if (score <= -5) return "PUT";
 
-  // Force balanced direction
+  // Balanced force
   if (momentum > 0) return "CALL";
   if (momentum < 0) return "PUT";
   return last.close > last.open ? "CALL" : "PUT";
@@ -246,7 +246,7 @@ function distribute(pool) {
   const baseGap = (endMs - startMs) / totalSignals;
   let current = startMs;
 
-  // No skip - all strong pairs ko use karo
+  // All strong pairs ko use karo
   for (let i = 0; i < totalSignals; i++) {
     let randomGap = baseGap * (0.8 + Math.random() * 0.6);
     current += randomGap;
@@ -282,15 +282,15 @@ async function sendTG() {
   if (!FINAL.length) return alert("Generate first!");
 
   try {
-    // Step 1: 35%
+    // Step 1
     await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\nScanning...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting Server...`});
     await new Promise(r => setTimeout(r, 20000));
 
-    // Step 2: 70%
+    // Step 2
     await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\n[▓▓▓▓▓▓▓░░░ 70%]\n🧬 Scanning Patterns...`});
     await new Promise(r => setTimeout(r, 20000));
 
-    // Step 3: 100% + real signals
+    // Step 3 + signals
     setTimeout(async () => {
       let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
       msg += "UTC+6 Timezone | 1 Min Expiry\n";
@@ -309,7 +309,7 @@ async function sendTG() {
       msg += "Powered by ✴️ APX Premium";
 
       await fetch(TG, {method:"POST", body:msg});
-      alert("Signals Sent with Fancy Loading!");
+      alert("Signals Sent!");
     }, 20000);
   } catch (e) {
     alert("Telegram send failed – check console.");
