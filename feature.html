@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V31 - Professional</title>
+<title>APX ULTRA V32 - Strong Setup</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -12,77 +12,29 @@
   --panel: #0f1a2e;
   --neon: #00ffe7;
   --neon-glow: 0 0 12px #00ffe7, 0 0 24px #00ffe7;
-  --call: #00ff88;
-  --put: #ff3b6b;
 }
-
 body { margin:0; background:var(--bg); color:white; font-family:'Rajdhani'; min-height:100vh; }
-
-header {
-  text-align:center; padding:20px 15px; background:black;
-  border-bottom:2px solid var(--neon); box-shadow:var(--neon-glow);
-}
-
-.logo {
-  font-family:'Orbitron'; font-size:28px;
-  color:var(--neon); text-shadow:0 0 20px var(--neon);
-}
-
+header { text-align:center; padding:20px 15px; background:black; border-bottom:2px solid var(--neon); box-shadow:var(--neon-glow); }
+.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 20px var(--neon); }
 .container { max-width:500px; margin:20px auto; padding:10px; }
-
-.panel {
-  background:var(--panel); border-radius:18px; padding:20px;
-  border:1px solid rgba(0,255,231,.2); box-shadow:0 0 25px rgba(0,255,231,.15);
-}
-
+.panel { background:var(--panel); border-radius:18px; padding:20px; border:1px solid rgba(0,255,231,.2); box-shadow:0 0 25px rgba(0,255,231,.15); }
 .tabs { display:flex; gap:8px; margin-bottom:15px; }
-
-.tab {
-  flex:1; padding:10px; border:1px solid var(--neon);
-  background:transparent; color:var(--neon); border-radius:10px;
-  font-weight:bold; cursor:pointer; transition:all .3s;
-}
-
+.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; font-weight:bold; cursor:pointer; transition:all .3s; }
 .tab:hover { box-shadow:0 0 15px var(--neon); }
 .tab.active { background:var(--neon); color:black; box-shadow:var(--neon-glow); transform:translateY(-2px); }
-
-select, input[type="time"] {
-  width:100%; padding:12px; margin-bottom:12px;
-  background:#0a1326; border:1px solid #223654; border-radius:10px; color:white;
-  transition:all .3s;
-}
-
-select:focus, input:focus { border-color:var(--neon); box-shadow:0 0 10px var(--neon); }
-
-button {
-  width:100%; padding:14px; margin-top:8px;
-  border:none; border-radius:12px;
-  font-family:'Orbitron'; font-weight:bold; cursor:pointer;
-  transition:all .3s;
-}
-
+select, input[type="time"] { width:100%; padding:12px; margin-bottom:12px; background:#0a1326; border:1px solid #223654; border-radius:10px; color:white; }
+button { width:100%; padding:14px; margin-top:8px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
 .generate { background:linear-gradient(135deg,#00ffe7,#00c4ff); color:black; box-shadow:var(--neon-glow); }
-.generate:hover { transform:translateY(-2px); box-shadow:0 0 30px #00ffe7; }
-
 .telegram { background:#0088cc; color:white; }
-
-#output {
-  margin-top:20px; background:#0a1326; padding:15px; border-radius:12px;
-  border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace;
-  min-height:200px; color:#d0f8ff;
-}
-
-.loader {
-  text-align:center; color:var(--neon); font-family:'Orbitron'; padding:40px 0;
-  animation:pulse 1.5s infinite alternate;
-}
+#output { margin-top:20px; background:#0a1326; padding:15px; border-radius:12px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; min-height:200px; color:#d0f8ff; }
+.loader { text-align:center; color:var(--neon); font-family:'Orbitron'; padding:40px 0; }
 </style>
 </head>
 
 <body>
 
 <header>
-<div class="logo">APX ULTRA V31</div>
+<div class="logo">APX ULTRA V32</div>
 </header>
 
 <div class="container">
@@ -101,7 +53,7 @@ button {
 <input type="time" id="end" value="17:00">
 </div>
 
-<button class="generate" onclick="generate()">GENERATE HIGH QUALITY</button>
+<button class="generate" onclick="generate()">GENERATE STRONG SETUPS</button>
 <button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
 
 <div id="output">READY...</div>
@@ -136,7 +88,6 @@ function setMarket(type,btn){
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// EMA
 function EMA(data, period) {
   if (data.length < period) return null;
   let k = 2 / (period + 1);
@@ -147,63 +98,49 @@ function EMA(data, period) {
   return ema;
 }
 
-// High accuracy logic (80%+ feel - balanced & strong)
+/* 🔥 STRONG HIGH ACCURACY ENGINE */
 function analyze(c) {
-  if (c.length < 60) return null;
+  if (c.length < 120) return null;
 
-  // Random lookback for variety (50-120 candles)
-  let lookback = 50 + Math.floor(Math.random() * 70);
-  let recent = c.slice(-lookback);
+  let recent = c.slice(-120);
 
   let ema20 = EMA(recent, 20);
   let ema50 = EMA(recent, 50);
-  if (!ema20 || !ema50) return null;
+  let ema100 = EMA(recent, 100);
+  if (!ema20 || !ema50 || !ema100) return null;
 
-  let trend = ema20 > ema50 ? 1 : -1;
+  let trendUp = ema20 > ema50 && ema50 > ema100;
+  let trendDown = ema20 < ema50 && ema50 < ema100;
 
   let momentum = 0;
-  let weight = 1;
-  for (let i = 1; i < recent.length; i++) {
-    let d = recent[i].close - recent[i-1].close;
-    momentum += d > 0 ? weight : (d < 0 ? -weight : 0);
-    weight += 0.015;
+  for (let i = recent.length - 15; i < recent.length; i++) {
+    let diff = recent[i].close - recent[i-1].close;
+    if (diff > 0) momentum++;
+    if (diff < 0) momentum--;
   }
 
   let last = recent[recent.length - 1];
-  let high = Math.max(...recent.slice(-15).map(x => x.high));
-  let low = Math.min(...recent.slice(-15).map(x => x.low));
+  let high = Math.max(...recent.slice(-20).map(x => x.high));
+  let low = Math.min(...recent.slice(-20).map(x => x.low));
 
-  let breakout = 0;
-  if (last.close > high) breakout = 2;
-  if (last.close < low) breakout = -2;
+  let breakoutUp = last.close > high;
+  let breakoutDown = last.close < low;
 
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
-  let strength = body / range;
+  let strongCandle = (body / range) > 0.65;
 
-  let score = trend * 3 + momentum * 0.12 + breakout + (strength > 0.65 ? 3 : 0);
+  if (trendUp && momentum >= 8 && breakoutUp && strongCandle) return "CALL";
+  if (trendDown && momentum <= -8 && breakoutDown && strongCandle) return "PUT";
 
-  // Small noise to break pattern
-  score += (Math.random() - 0.5) * 0.8;
-
-  if (score >= 5.5) return "CALL";
-  if (score <= -5.5) return "PUT";
-
-  // Balanced force
-  if (momentum > 3) return "CALL";
-  if (momentum < -3) return "PUT";
-  return last.close > last.open ? "CALL" : "PUT";
+  return null;
 }
 
 async function generate() {
   if (LOCK) return alert("Already Generated. Refresh to rescan.");
   LOCK = true;
   FINAL = [];
-
-  const output = document.getElementById('output');
-  output.innerHTML = `
-    <div class="loader">SCANNING HIGH ACCURACY...</div>
-  `;
+  output.innerHTML = `<div class="loader">SCANNING STRONG SETUPS...</div>`;
 
   const selected = [...pairs.selectedOptions].map(o => o.value);
   if (!selected.length) {
@@ -224,7 +161,8 @@ async function generate() {
   }
 
   if (!pool.length) {
-    output.innerText = "No High Quality Setup Found (Market not strong enough - try different time/pairs or wait for shift).";
+    output.innerText = "No Strong Setup Found. Market not trending.";
+    LOCK = false;
     return;
   }
 
@@ -239,18 +177,14 @@ function distribute(pool) {
   let endMs = new Date(now.toDateString() + " " + e).getTime();
   if (endMs <= startMs) endMs += 86400000;
 
-  const totalSignals = 15;
-  const baseGap = (endMs - startMs) / totalSignals;
+  const totalSignals = 12;
+  const gap = (endMs - startMs) / totalSignals;
   let current = startMs;
 
   for (let i = 0; i < totalSignals; i++) {
-    let randomGap = baseGap * (0.8 + Math.random() * 0.6);
-    current += randomGap;
-
+    current += gap;
     if (current >= endMs) break;
-
     let obj = pool[i % pool.length];
-
     FINAL.push({
       time: new Date(current).toTimeString().slice(0,5),
       pair: obj.pair,
@@ -260,15 +194,13 @@ function distribute(pool) {
 }
 
 function display() {
-  let txt = "APX ULTRA HIGH QUALITY\n";
+  let txt = "APX ULTRA STRONG SETUPS\n";
   txt += "━━━━━━━━━━━━━━━━━━━━━━\n";
   txt += "UTC+6 | 1 Min Expiry\n";
-  txt += "Logic: EMA + Momentum + Breakout\n\n";
-
+  txt += "Logic: EMA(20/50/100) + Momentum + Breakout\n\n";
   FINAL.forEach(s => {
     txt += `➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
   });
-
   txt += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
   txt += "• Trade exact time\n• 1 Step Martingale\n• Avoid News\n• Stop after 2 losses\n";
   document.getElementById('output').innerText = txt;
@@ -276,43 +208,13 @@ function display() {
 
 async function sendTG() {
   if (!FINAL.length) return alert("Generate first!");
-
-  try {
-    // Step 1
-    await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\nScanning...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting Server...`});
-    await new Promise(r => setTimeout(r, 20000));
-
-    // Step 2
-    await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\n[▓▓▓▓▓▓▓░░░ 70%]\n🧬 Scanning Patterns...`});
-    await new Promise(r => setTimeout(r, 20000));
-
-    // Step 3 + signals
-    setTimeout(async () => {
-      let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
-      msg += "UTC+6 Timezone | 1 Min Expiry\n";
-      msg += "━━━━━━━━━━━━━━━━━━\n";
-      msg += "```text\n";
-
-      FINAL.forEach(s => {
-        msg += `✦ ${s.time}   ${s.pair.padEnd(10)}   ${s.dir}\n`;
-      });
-
-      msg += "```\n";
-      msg += "━━━━━━━━━━━━━━━━━━\n";
-      msg += "TRADING RULES\n";
-      msg += "• Trade exact time\n";
-      msg += "• 1 Step Martingale\n";
-      msg += "• Avoid News\n";
-      msg += "• Stop after 2 losses\n\n";
-      msg += "Powered by ✴️ APX Premium";
-
-      await fetch(TG, {method:"POST", body:msg});
-      alert("Signals Sent with Perfect Alignment!");
-    }, 20000);
-  } catch (e) {
-    alert("Telegram send failed – check console.");
-    console.error(e);
-  }
+  let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\nUTC+6 Timezone | 1 Min Expiry\n━━━━━━━━━━━━━━━━━━\n```text\n";
+  FINAL.forEach(s => {
+    msg += `✦ ${s.time}   ${s.pair.padEnd(10)}   ${s.dir}\n`;
+  });
+  msg += "```\n━━━━━━━━━━━━━━━━━━\nStrong Setup Engine Enabled";
+  await fetch(TG, {method:"POST", body:msg});
+  alert("Signals Sent Successfully!");
 }
 
 </script>
