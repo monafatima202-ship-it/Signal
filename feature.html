@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V38 - Multi Pairs & Balanced</title>
+<title>APX ULTRA V39 - Multi & Balanced</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:14px; margin-top:8px; border:none; border-radius:12
 <body>
 
 <header>
-<div class="logo">APX ULTRA V38</div>
+<div class="logo">APX ULTRA V39</div>
 </header>
 
 <div class="container">
@@ -175,8 +175,13 @@ async function generate() {
       let j = await r.json();
       let candles = j?.data || [];
       let dir = analyze(candles);
-      pool.push({pair: p.replace(/-otc|-OTC/,''), dir: dir || "HOLD"}); // All pairs include karo, even if HOLD
+      if (dir) pool.push({pair: p.replace(/-otc|-OTC/,''), dir});
     } catch {}
+  }
+
+  if (!pool.length) {
+    output.innerText = "No High Quality Setup Found (Market not strong enough - try different time/pairs or wait for shift).";
+    return;
   }
 
   distribute(pool);
@@ -194,6 +199,9 @@ function distribute(pool) {
   const baseGap = (endMs - startMs) / totalSignals;
   let current = startMs;
 
+  // Shuffle pool for variety
+  pool.sort(() => Math.random() - 0.5);
+
   for (let i = 0; i < totalSignals; i++) {
     let randomGap = baseGap * (0.8 + Math.random() * 0.6);
     current += randomGap;
@@ -201,8 +209,6 @@ function distribute(pool) {
     if (current >= endMs) break;
 
     let obj = pool[i % pool.length];
-
-    if (obj.dir === "HOLD") continue; // Skip weak ones
 
     FINAL.push({
       time: new Date(current).toTimeString().slice(0,5),
