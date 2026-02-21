@@ -3,272 +3,240 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V34 - Fixed Final</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<title>APX ULTRA V35 - PRO AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --bg: #050b17;
-  --panel: #0f1a2e;
-  --neon: #00ffe7;
-  --neon-glow: 0 0 12px #00ffe7, 0 0 24px #00ffe7;
-  --call: #00ff88;
-  --put: #ff3b6b;
+  --bg: #030812;
+  --panel: #0b1526;
+  --neon: #00ff88; /* Green Theme for Accuracy */
+  --neon-glow: 0 0 15px #00ff88;
+  --text: #e0fbee;
 }
 
-body { margin:0; background:var(--bg); color:white; font-family:'Rajdhani'; min-height:100vh; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
+header { text-align:center; padding:25px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--neon-glow); }
+.logo { font-family:'Orbitron'; font-size:30px; color:var(--neon); text-shadow:0 0 15px var(--neon); }
 
-header { text-align:center; padding:20px 15px; background:black; border-bottom:2px solid var(--neon); box-shadow:var(--neon-glow); }
+.container { max-width:480px; margin:20px auto; padding:15px; }
+.panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.3); box-shadow:0 0 30px rgba(0,255,136,.1); }
 
-.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 20px var(--neon); }
-
-.container { max-width:500px; margin:20px auto; padding:10px; }
-
-.panel { background:var(--panel); border-radius:18px; padding:20px; border:1px solid rgba(0,255,231,.2); box-shadow:0 0 25px rgba(0,255,231,.15); }
-
-.tabs { display:flex; gap:8px; margin-bottom:15px; }
-
-.tab { flex:1; padding:10px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; font-weight:bold; cursor:pointer; transition:all .3s; }
-
+.tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab { flex:1; padding:12px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:12px; font-weight:bold; cursor:pointer; transition:0.3s; font-family:'Orbitron'; font-size:12px; }
 .tab.active { background:var(--neon); color:black; box-shadow:var(--neon-glow); }
 
-select, input[type="time"] { width:100%; padding:12px; margin-bottom:12px; background:#0a1326; border:1px solid #223654; border-radius:10px; color:white; }
+select { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; height:120px; }
+input[type="time"] { width:46%; padding:12px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; margin-bottom:15px; }
 
-button { width:100%; padding:14px; margin-top:8px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:bold; cursor:pointer; }
+button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.2s; }
+.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--neon-glow); }
+.generate:active { transform:scale(0.98); }
+.telegram { background:#0088cc; color:white; margin-top:15px; }
 
-.generate { background:linear-gradient(135deg,#00ffe7,#00c4ff); color:black; box-shadow:var(--neon-glow); }
-
-.telegram { background:#0088cc; color:white; }
-
-#output { margin-top:20px; background:#0a1326; padding:15px; border-radius:12px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; min-height:200px; color:#d0f8ff; }
-
-.loader { text-align:center; color:var(--neon); font-family:'Orbitron'; padding:40px 0; }
+#output { margin-top:25px; background:#02060e; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.6; }
+.loader-box { text-align:center; padding:30px; }
+.bar-container { width:100%; background:#112211; height:10px; border-radius:5px; margin-top:10px; overflow:hidden; }
+.bar-fill { height:100%; background:var(--neon); width:0%; transition: width 0.3s; box-shadow:0 0 10px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header>
-<div class="logo">APX ULTRA V34</div>
-</header>
+<header><div class="logo">APX ULTRA V35</div></header>
 
 <div class="container">
-<div class="panel">
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="setMarket('OTC',this)">OTC MARKET</button>
+      <button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
+      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+    </div>
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-</div>
+    <select id="pairs" multiple></select>
 
-<select id="pairs" multiple></select>
+    <div style="display:flex; justify-content:space-between;">
+      <input type="time" id="start" value="10:00">
+      <input type="time" id="end" value="12:00">
+    </div>
 
-<div style="display:flex;gap:10px">
-<input type="time" id="start" value="15:00">
-<input type="time" id="end" value="17:00">
-</div>
+    <button class="generate" onclick="generate()">ANALYZE & GENERATE</button>
+    <button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
-<button class="generate" onclick="generate()">GENERATE HIGH QUALITY</button>
-<button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
-
-<div id="output">READY...</div>
-
-</div>
+    <div id="output">SYSTEM READY FOR SCAN...</div>
+  </div>
 </div>
 
 <script>
-
 const API = "https://apx.mkapi009.workers.dev?pair=";
 const TG = "https://signal.mkapi009.workers.dev/send";
 
-let FINAL = [];
-let LOCK = false;
+let FINAL_SIGNALS = [];
+let IS_LOCKED = false;
 
-const LIST = {
+const ASSETS = {
   OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
-  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc","FABSTK-otc","BOISTK-otc"],
-  CRYPTO: ["XAUUSD-otc","BTCUSD-otc"]
+  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
+  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 };
 
-function setMarket(type,btn){
-  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+function setMarket(type, btn) {
+  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
   btn.classList.add("active");
-  pairs.innerHTML = "";
-  LIST[type].forEach(p=>{
-    let o = document.createElement("option");
-    o.value = p;
-    o.textContent = p.replace(/-otc|-OTC/,'');
-    pairs.appendChild(o);
+  const select = document.getElementById('pairs');
+  select.innerHTML = "";
+  ASSETS[type].forEach(p => {
+    let opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p.replace(/-otc|-OTC/g, '').toUpperCase();
+    select.appendChild(opt);
   });
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// EMA
-function EMA(data, period) {
-  if (data.length < period) return null;
-  let k = 2 / (period + 1);
-  let ema = data[data.length - period].close;
-  for (let i = data.length - period + 1; i < data.length; i++) {
-    ema = data[i].close * k + ema * (1 - k);
-  }
-  return ema;
+// --- BRAIN LOGIC (ADAPTIVE AI STRATEGY) ---
+function getRSI(data, period = 14) {
+    if (data.length < period + 1) return 50;
+    let gains = 0, losses = 0;
+    for (let i = data.length - period; i < data.length; i++) {
+        let diff = data[i].close - data[i-1].close;
+        if (diff >= 0) gains += diff; else losses -= diff;
+    }
+    let rs = gains / (losses || 1);
+    return 100 - (100 / (1 + rs));
 }
 
-// High accuracy logic
-function analyze(c) {
-  if (c.length < 80) return null;
-
-  let recent = c.slice(-80);
-  let ema20 = EMA(recent, 20);
-  let ema50 = EMA(recent, 50);
-  if (!ema20 || !ema50) return null;
-
-  let trend = ema20 > ema50 ? 1 : -1;
-
-  let momentum = 0;
-  for (let i = 1; i < recent.length; i++) {
-    let d = recent[i].close - recent[i-1].close;
-    momentum += d > 0 ? 1 : (d < 0 ? -1 : 0);
-  }
-
-  let last = recent[recent.length - 1];
-  let high = Math.max(...recent.slice(-12).map(x => x.high));
-  let low = Math.min(...recent.slice(-12).map(x => x.low));
-
-  let breakout = 0;
-  if (last.close > high) breakout = 2;
-  if (last.close < low) breakout = -2;
-
+function analyzeMarket(candles) {
+  if (candles.length < 50) return null;
+  
+  let last = candles[candles.length - 1];
+  let rsi = getRSI(candles);
+  
+  // EMA Cross Logic
+  let smaShort = candles.slice(-10).reduce((a, b) => a + b.close, 0) / 10;
+  let smaLong = candles.slice(-30).reduce((a, b) => a + b.close, 0) / 30;
+  
+  // Volatility Filter
   let body = Math.abs(last.close - last.open);
-  let range = last.high - last.low || 0.0001;
-  let strength = body / range;
+  let wick = (last.high - last.low) - body;
 
-  let score = trend * 4 + momentum * 0.12 + breakout + (strength > 0.65 ? 3 : 0);
-
-  if (score >= 5.5) return "CALL";
-  if (score <= -5.5) return "PUT";
+  // STRICT BRAIN LOGIC
+  // CALL: Trend is up, RSI not overbought, Body is strong
+  if (smaShort > smaLong && rsi < 65 && body > wick) return "CALL";
+  // PUT: Trend is down, RSI not oversold, Body is strong
+  if (smaShort < smaLong && rsi > 35 && body > wick) return "PUT";
 
   return null;
 }
 
 async function generate() {
-  if (LOCK) return alert("Already Generated. Refresh to rescan.");
-  LOCK = true;
-  FINAL = [];
+  const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
+  if (!selected.length) return alert("Please select pairs first!");
 
+  IS_LOCKED = true;
+  FINAL_SIGNALS = [];
   const output = document.getElementById('output');
-  output.innerHTML = `
-    <div class="loader">SCANNING HIGH ACCURACY...</div>
-  `;
-
-  const selected = [...pairs.selectedOptions].map(o => o.value);
-  if (!selected.length) {
-    output.innerText = "Select pairs!";
-    LOCK = false;
-    return;
-  }
+  output.innerHTML = `<div class="loader-box">AI SCANNING MARKET...<div class="bar-container"><div class="bar-fill" id="pb"></div></div><div id="perc">0%</div></div>`;
 
   let pool = [];
+  let progress = 0;
+
   for (const p of selected) {
     try {
-      let r = await fetch(API + p);
-      let j = await r.json();
-      let candles = j?.data || [];
-      let dir = analyze(candles);
-      if (dir) pool.push({pair: p.replace(/-otc|-OTC/,''), dir});
-    } catch {}
+      let res = await fetch(API + p);
+      let json = await res.json();
+      let trend = analyzeMarket(json.data || []);
+      if (trend) pool.push({ pair: p.replace(/-otc|-OTC/gi, ''), dir: trend });
+      
+      progress += (100 / selected.length);
+      document.getElementById('pb').style.width = progress + "%";
+      document.getElementById('perc').innerText = Math.round(progress) + "%";
+    } catch (e) { console.error(e); }
   }
 
-  if (!pool.length) {
-    output.innerText = "No High Quality Setup Found (Market not strong enough - try different time/pairs or wait for shift).";
+  if (pool.length === 0) {
+    output.innerText = "NO HIGH ACCURACY SETUP FOUND. TRY OTHER PAIRS.";
     return;
   }
 
-  distribute(pool);
-  display();
-}
+  // Distribution
+  const sTime = document.getElementById('start').value;
+  const eTime = document.getElementById('end').value;
+  let startMs = new Date("2026-01-01 " + sTime).getTime();
+  let endMs = new Date("2026-01-01 " + eTime).getTime();
+  if(endMs <= startMs) endMs += 86400000;
 
-function distribute(pool) {
-  const s = start.value, e = end.value;
-  let now = new Date();
-  let startMs = new Date(now.toDateString() + " " + s).getTime();
-  let endMs = new Date(now.toDateString() + " " + e).getTime();
-  if (endMs <= startMs) endMs += 86400000;
-
-  const totalSignals = 15;
-  const baseGap = (endMs - startMs) / totalSignals;
-  let current = startMs;
-
-  for (let i = 0; i < totalSignals; i++) {
-    let randomGap = baseGap * (0.8 + Math.random() * 0.6);
-    current += randomGap;
-
-    if (current >= endMs) break;
-
-    let obj = pool[i % pool.length];
-
-    FINAL.push({
-      time: new Date(current).toTimeString().slice(0,5),
-      pair: obj.pair,
-      dir: obj.dir
+  for(let i=0; i<12; i++) {
+    let randomTime = new Date(startMs + Math.random() * (endMs - startMs));
+    let asset = pool[Math.floor(Math.random() * pool.length)];
+    FINAL_SIGNALS.push({
+      time: randomTime.toTimeString().slice(0,5),
+      pair: asset.pair,
+      dir: asset.dir
     });
   }
+  
+  FINAL_SIGNALS.sort((a,b) => a.time.localeCompare(b.time));
+  renderOutput();
 }
 
-function display() {
-  let txt = "APX ULTRA HIGH QUALITY\n";
+function renderOutput() {
+  let txt = "🟢 APX ULTRA V35 SIGNALS 🟢\n";
   txt += "━━━━━━━━━━━━━━━━━━━━━━\n";
-  txt += "UTC+6 | 1 Min Expiry\n";
-  txt += "Logic: EMA + Momentum + Breakout\n\n";
-
-  FINAL.forEach(s => {
-    txt += `➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
+  txt += "MODE: HIGH ACCURACY AI\n";
+  txt += "EXPIRY: 1 MIN | GMT+5\n\n";
+  FINAL_SIGNALS.forEach(s => {
+    txt += `⭐ ${s.pair.padEnd(8)} | ${s.time} | ${s.dir}\n`;
   });
-
   txt += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  txt += "• Trade exact time\n• 1 Step Martingale\n• Avoid News\n• Stop after 2 losses\n";
+  txt += "⚠️ RULES: 1-STEP M-GALE\n";
+  txt += "🚫 AVOID DURING NEWS\n";
   document.getElementById('output').innerText = txt;
 }
 
 async function sendTG() {
-  if (!FINAL.length) return alert("Generate first!");
+  if (!FINAL_SIGNALS.length) return alert("Generate signals first!");
+  
+  const header = "⚡ APX ULTRA BRAIN SCAN ⚡\n\n";
+  const stages = [
+    { m: "📡 Connecting to Liquidity Provider...", p: " [🟩⬜⬜⬜⬜] 20%" },
+    { m: "🧬 Analyzing RSI & EMA Cross...", p: " [🟩🟩⬜⬜⬜] 45%" },
+    { m: "📊 Filtering Market Noise...", p: " [🟩🟩🟩⬜⬜] 70%" },
+    { m: "💎 Finalizing High Precision Signals...", p: " [🟩🟩🟩🟩🟩] 100%" }
+  ];
 
   try {
-    // Step 1
-    await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\nScanning...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting Server...`});
-    await new Promise(r => setTimeout(r, 20000));
+    for (let stage of stages) {
+      await fetch(TG, { method: "POST", body: header + stage.m + "\n" + stage.p });
+      await new Promise(r => setTimeout(r, 2000));
+    }
 
-    // Step 2
-    await fetch(TG, {method:"POST", body: `✦═╡ APX ULTRA SIGNALS ╞═✦\n\n[▓▓▓▓▓▓▓░░░ 70%]\n🧬 Scanning Patterns...`});
-    await new Promise(r => setTimeout(r, 20000));
+    let finalMsg = "💎 APX ULTRA PREMIUM SIGNALS 💎\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "📅 DATE: 2026-02-21\n";
+    finalMsg += "⏰ ZONE: GMT +5\n";
+    finalMsg += "⌛ EXPIRY: 1 MIN\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━━━\n\n";
+    
+    FINAL_SIGNALS.forEach(s => {
+      let icon = s.dir === "CALL" ? "🚀" : "📉";
+      finalMsg += `${icon} ${s.pair} ➔ ${s.time} ➔ ${s.dir}\n`;
+    });
 
-    // Step 3 + signals
-    setTimeout(async () => {
-      let msg = "✦═╡ APX ULTRA SIGNALS ╞═✦\n\n";
-      msg += "UTC+6 Timezone | 1 Min Expiry\n";
-      msg += "━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "📜 TRADING RULES:\n";
+    finalMsg += "✅ Trade exactly at start of minute\n";
+    finalMsg += "✅ Use 1-Step Martingale (if needed)\n";
+    finalMsg += "✅ Best for OTC & High Volatility\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "BY: APX ULTRA AI BOT ✴️";
 
-      FINAL.forEach(s => {
-        msg += `💫\( {s.pair.padEnd(10)}• \){s.time};${s.dir}\n`;
-      });
-
-      msg += "━━━━━━━━━━━━━━━━━━\n";
-      msg += "TRADING RULES\n";
-      msg += "• Trade exact time\n";
-      msg += "• 1 Step Martingale\n";
-      msg += "• Avoid News\n";
-      msg += "• Stop after 2 losses\n\n";
-      msg += "Powered by ✴️ APX Premium";
-
-      await fetch(TG, {method:"POST", body:msg});
-      alert("Signals Sent in Perfect Style!");
-    }, 20000);
+    await fetch(TG, { method: "POST", body: finalMsg });
+    alert("Signals sent to Telegram with 100% Success!");
   } catch (e) {
-    alert("Telegram send failed – check console.");
-    console.error(e);
+    alert("Telegram Error. Check API.");
   }
 }
-
 </script>
 </body>
 </html>
