@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V40 - Highest Accuracy</title>
+<title>APX ULTRA FINAL - PRO AI</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -11,36 +11,41 @@
   --bg: #02060c;
   --panel: #0a111f;
   --neon: #00ff88;
-  --neon-glow: 0 0 15px #00ff88;
+  --glow: 0 0 15px #00ff88;
   --text: #e0fbee;
 }
 
 body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
-header { text-align:center; padding:20px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--neon-glow); }
+header { text-align:center; padding:20px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--glow); }
 .logo { font-family:'Orbitron'; font-size:26px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
 
 .container { max-width:450px; margin:15px auto; padding:10px; }
 .panel { background:var(--panel); border-radius:20px; padding:20px; border:1px solid rgba(0,255,136,.2); box-shadow:0 0 40px rgba(0,0,0,0.5); }
 
 .tabs { display:flex; gap:8px; margin-bottom:15px; }
-.tab { flex:1; padding:10px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:11px; transition: 0.3s; }
-.tab.active { background:var(--neon); color:black; box-shadow:var(--neon-glow); }
+.tab { flex:1; padding:10px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:11px; transition:0.3s; }
+.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); }
 
 select { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; font-size:14px; }
 .time-row { display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; }
 input[type="time"] { flex:1; padding:12px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; }
 
-button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:14px; }
-.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--neon-glow); }
+button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:14px; transition:0.3s; }
+.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
 .telegram { background:#0088cc; color:white; }
 
 #output { margin-top:20px; background:#01040a; padding:15px; border-radius:12px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:12px; color:#afffdf; line-height:1.5; min-height:150px; }
+
+/* Progress Bar */
+.loader-box { padding:20px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:6px; margin:10px 0; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:var(--neon); border-radius:6px; transition:0.4s; box-shadow:0 0 10px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX ULTRA V40 - Highest Accuracy</div></header>
+<header><div class="logo">APX ULTRA FINAL PRO</div></header>
 
 <div class="container">
   <div class="panel">
@@ -118,14 +123,14 @@ function analyzeBrain(candles) {
   if (!ema20 || !ema50 || !ema100 || !ema200) return null;
 
   let trendScore = 0;
-  if (ema20 > ema50 && ema50 > ema100 && ema100 > ema200) trendScore = 4;   // very strong up
-  else if (ema20 < ema50 && ema50 < ema100 && ema100 < ema200) trendScore = -4; // very strong down
+  if (ema20 > ema50 && ema50 > ema100 && ema100 > ema200) trendScore = 5;   // very strong up
+  else if (ema20 < ema50 && ema50 < ema100 && ema100 < ema200) trendScore = -5; // very strong down
   else if (ema20 > ema50 && ema50 > ema100) trendScore = 3;
   else if (ema20 < ema50 && ema50 < ema100) trendScore = -3;
   else if (ema20 > ema50) trendScore = 1;
   else if (ema20 < ema50) trendScore = -1;
 
-  // RSI filter (avoid overbought/oversold extremes)
+  // RSI filter
   let rsi = getRSI(candles);
   let rsiScore = 0;
   if (rsi < 35) rsiScore = 3;    // oversold → CALL boost
@@ -175,7 +180,7 @@ async function generate() {
 
   const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
   if (selected.length < 1) {
-    output.innerText = "Select at least 1-2 pairs!";
+    output.innerText = "Select at least 2-3 pairs!";
     LOCK = false;
     return;
   }
