@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V35 - Stable Engine</title>
+<title>APX ULTRA V36 - 500 Candle Pro</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --bg: #050b17;
-  --panel: #0f1a2e;
-  --neon: #00ffe7;
-  --neon-glow: 0 0 12px #00ffe7, 0 0 24px #00ffe7;
+  --bg:#050b17;
+  --panel:#0f1a2e;
+  --neon:#00ffe7;
+  --neon-glow:0 0 12px #00ffe7,0 0 24px #00ffe7;
 }
 body{margin:0;background:var(--bg);color:white;font-family:'Rajdhani';min-height:100vh;}
 header{text-align:center;padding:20px;background:black;border-bottom:2px solid var(--neon);box-shadow:var(--neon-glow);}
@@ -31,10 +31,7 @@ button{width:100%;padding:14px;margin-top:8px;border:none;border-radius:12px;fon
 </head>
 
 <body>
-
-<header>
-<div class="logo">APX ULTRA V35</div>
-</header>
+<header><div class="logo">APX ULTRA V36</div></header>
 
 <div class="container">
 <div class="panel">
@@ -97,54 +94,60 @@ ema=data[i].close*k+ema*(1-k);
 return ema;
 }
 
-/* BALANCED STABLE ENGINE */
+/* 500 Candle Pattern Engine */
 function analyze(c){
-if(c.length<70)return null;
 
-let r=c.slice(-70);
+if(c.length<500)return null;
+let r=c.slice(-500);
+
 let ema20=EMA(r,20);
 let ema50=EMA(r,50);
-if(!ema20||!ema50)return null;
+let ema100=EMA(r,100);
+let ema200=EMA(r,200);
 
-let trendUp=ema20>ema50;
-let trendDown=ema20<ema50;
+if(!ema20||!ema50||!ema100||!ema200)return null;
 
+let score=0;
+
+// trend hierarchy
+if(ema20>ema50&&ema50>ema100&&ema100>ema200)score+=3;
+if(ema20<ema50&&ema50<ema100&&ema100<ema200)score-=3;
+
+// momentum cluster
 let momentum=0;
-for(let i=r.length-6;i<r.length;i++){
+for(let i=r.length-15;i<r.length;i++){
 let d=r[i].close-r[i-1].close;
 if(d>0)momentum++;
 if(d<0)momentum--;
 }
+score+=momentum*0.2;
 
+// structure break
 let last=r[r.length-1];
-let body=Math.abs(last.close-last.open);
-let range=last.high-last.low||0.0001;
-let strength=body/range;
+let high=Math.max(...r.slice(-40).map(x=>x.high));
+let low=Math.min(...r.slice(-40).map(x=>x.low));
+if(last.close>high)score+=2;
+if(last.close<low)score-=2;
 
-/* strong */
-if(trendUp&&momentum>=3&&last.close>ema20&&strength>0.45)return "CALL";
-if(trendDown&&momentum<=-3&&last.close<ema20&&strength>0.45)return "PUT";
+// engulfing
+let prev=r[r.length-2];
+if(last.close>last.open&&prev.close<prev.open&&last.close>prev.open&&last.open<prev.close)score+=2;
+if(last.close<last.open&&prev.close>prev.open&&last.close<prev.open&&last.open>prev.close)score-=2;
 
-/* fallback */
-if(trendUp)return "CALL";
-if(trendDown)return "PUT";
+if(score>=4)return "CALL";
+if(score<=-4)return "PUT";
 
 return last.close>last.open?"CALL":"PUT";
 }
 
 async function generate(){
-if(LOCK)return alert("Already Generated. Refresh to rescan.");
+if(LOCK)return alert("Already Generated.");
 LOCK=true;
 FINAL=[];
-
-output.innerHTML=`<div class="loader">SCANNING HIGH ACCURACY...</div>`;
+output.innerHTML=`<div class="loader">SCANNING 500 CANDLES...</div>`;
 
 const selected=[...pairs.selectedOptions].map(o=>o.value);
-if(!selected.length){
-output.innerText="Select pairs!";
-LOCK=false;
-return;
-}
+if(!selected.length){output.innerText="Select pairs!";LOCK=false;return;}
 
 let pool=[];
 for(const p of selected){
@@ -157,11 +160,8 @@ if(dir)pool.push({pair:p.replace(/-otc|-OTC/,''),dir});
 }catch{}
 }
 
-/* never empty */
 if(!pool.length){
-for(const p of selected){
-pool.push({pair:p.replace(/-otc|-OTC/,''),dir:"CALL"});
-}
+selected.forEach(p=>pool.push({pair:p.replace(/-otc|-OTC/,''),dir:"CALL"}));
 }
 
 distribute(pool);
@@ -169,6 +169,7 @@ display();
 }
 
 function distribute(pool){
+
 const s=start.value,e=end.value;
 let now=new Date();
 let startMs=new Date(now.toDateString()+" "+s).getTime();
@@ -182,8 +183,8 @@ let current=startMs;
 let pairIndex=0;
 
 for(let i=0;i<totalSignals;i++){
-let randomGap=baseGap*(0.75+Math.random()*0.5);
-current+=randomGap;
+let gap=baseGap*(0.75+Math.random()*0.5);
+current+=gap;
 if(current>=endMs)break;
 
 let obj=pool[pairIndex%pool.length];
@@ -206,33 +207,59 @@ FINAL.forEach(s=>{
 txt+=`➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
 });
 txt+="\n━━━━━━━━━━━━━━━━━━━━━━\n";
-txt+="• Trade exact time\n• 1 Step Martingale\n• Avoid News\n• Stop after 2 losses\n";
+txt+="TRADING RULES\n";
+txt+="• Trade exact time\n";
+txt+="• 1 Step Martingale\n";
+txt+="• Avoid News\n";
+txt+="• Stop after 2 losses\n\n";
+txt+="Powered by ✴️ APX Premium";
 output.innerText=txt;
 }
 
 async function sendTG(){
 if(!FINAL.length)return alert("Generate first!");
 
-try{
-await fetch(TG,{method:"POST",body:`✦═╡ APX ULTRA SIGNALS ╞═✦\n\nScanning...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting Server...`});
-await new Promise(r=>setTimeout(r,20000));
+await fetch(TG,{method:"POST",body:
+`✦═╡ APX ULTRA SIGNALS ╞═✦
 
-await fetch(TG,{method:"POST",body:`✦═╡ APX ULTRA SIGNALS ╞═✦\n\n[▓▓▓▓▓▓▓░░░ 70%]\n🧬 Scanning Patterns...`});
-await new Promise(r=>setTimeout(r,20000));
+🟩🟩⬜⬜⬜⬜⬜⬜⬜⬜ 35%
+📡 Connecting Server...`
+});
 
-setTimeout(async()=>{
-let msg="✦═╡ APX ULTRA SIGNALS ╞═✦\n\nUTC+6 Timezone | 1 Min Expiry\n━━━━━━━━━━━━━━━━━━\n```text\n";
+await new Promise(r=>setTimeout(r,15000));
+
+await fetch(TG,{method:"POST",body:
+`✦═╡ APX ULTRA SIGNALS ╞═✦
+
+🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜ 70%
+🧠 Reading 500 Candle Patterns...`
+});
+
+await new Promise(r=>setTimeout(r,15000));
+
+let msg=`✦═╡ APX ULTRA SIGNALS ╞═✦
+
+UTC+6 Timezone | 1 Min Expiry
+━━━━━━━━━━━━━━━━━━
+\`\`\`text
+`;
+
 FINAL.forEach(s=>{
 msg+=`✦ ${s.time}   ${s.pair.padEnd(10)}   ${s.dir}\n`;
 });
-msg+="```\n━━━━━━━━━━━━━━━━━━\nPowered by APX V35";
+
+msg+=`\`\`\`
+━━━━━━━━━━━━━━━━━━
+TRADING RULES
+• Trade exact time
+• 1 Step Martingale
+• Avoid News
+• Stop after 2 losses
+
+Powered by ✴️ APX Premium`;
+
 await fetch(TG,{method:"POST",body:msg});
 alert("Signals Sent Successfully!");
-},20000);
-
-}catch(e){
-alert("Telegram send failed.");
-}
 }
 
 </script>
