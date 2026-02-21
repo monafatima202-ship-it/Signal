@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA V22</title>
+<title>APX ULTRA V23</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -18,163 +18,91 @@
   --text: #e0faff;
 }
 
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--text);
-  font-family: 'Rajdhani', sans-serif;
-  min-height: 100vh;
-}
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; min-height:100vh; }
 
 header {
-  text-align: center;
-  padding: 20px 15px;
-  background: rgba(0,0,0,0.65);
-  border-bottom: 2px solid var(--neon);
-  box-shadow: var(--neon-glow);
+  text-align:center; padding:20px 15px; background:rgba(0,0,0,0.65);
+  border-bottom:2px solid var(--neon); box-shadow:var(--neon-glow);
 }
 
 .logo {
-  font-family: 'Orbitron';
-  font-size: 2.4rem;
-  font-weight: 900;
-  color: var(--neon);
-  text-shadow: var(--neon-glow);
-  letter-spacing: 3px;
+  font-family:'Orbitron'; font-size:2.4rem; font-weight:900;
+  color:var(--neon); text-shadow:var(--neon-glow); letter-spacing:3px;
 }
 
-.container {
-  max-width: 500px;
-  margin: 20px auto;
-  padding: 0 12px;
-}
+.container { max-width:500px; margin:20px auto; padding:0 12px; }
 
 .panel {
-  background: var(--panel);
-  padding: 24px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(0,255,231,0.25);
-  box-shadow: 0 12px 35px rgba(0,0,0,0.7), inset 0 0 15px rgba(0,255,231,0.1);
+  background:var(--panel); padding:24px 18px; border-radius:18px;
+  border:1px solid rgba(0,255,231,0.25); box-shadow:0 12px 35px rgba(0,0,0,0.7);
 }
 
-.tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
-}
+.tabs { display:flex; gap:10px; margin-bottom:18px; }
 
 .tab {
-  flex: 1;
-  padding: 12px;
-  border: 1px solid var(--neon);
-  border-radius: 10px;
-  background: transparent;
-  color: var(--neon);
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
+  flex:1; padding:12px; border:1px solid var(--neon); border-radius:10px;
+  background:transparent; color:var(--neon); font-weight:bold; cursor:pointer;
+  transition:all 0.3s;
 }
 
-.tab.active {
-  background: var(--neon);
-  color: #000;
-  box-shadow: var(--neon-glow);
-  transform: translateY(-2px);
-}
+.tab.active { background:var(--neon); color:#000; box-shadow:var(--neon-glow); transform:translateY(-2px); }
 
 select, input[type="time"] {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 14px;
-  background: #0a1326;
-  border: 1px solid #2a3f5a;
-  border-radius: 10px;
-  color: white;
-  font-size: 1rem;
+  width:100%; padding:12px; margin-bottom:14px;
+  background:#0a1326; border:1px solid #2a3f5a; border-radius:10px;
+  color:white; font-size:1rem;
 }
 
-select[multiple] { height: 160px; }
+select[multiple] { height:160px; }
 
 button {
-  width: 100%;
-  padding: 15px;
-  border: none;
-  border-radius: 12px;
-  font-family: 'Orbitron';
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-  margin: 10px 0;
-  font-size: 1.05rem;
+  width:100%; padding:15px; border:none; border-radius:12px;
+  font-family:'Orbitron'; font-weight:bold; cursor:pointer;
+  transition:all 0.3s; margin:10px 0; font-size:1.05rem;
 }
 
 .generate {
-  background: linear-gradient(135deg, #00ffe7, #00c4ff);
-  color: #000;
-  box-shadow: var(--neon-glow);
+  background:linear-gradient(135deg,#00ffe7,#00c4ff); color:#000;
+  box-shadow:var(--neon-glow);
 }
 
-.generate:hover { transform: translateY(-2px); box-shadow: 0 0 30px #00ffe7; }
+.generate:hover { transform:translateY(-2px); box-shadow:0 0 30px #00ffe7; }
 
-.telegram {
-  background: #0088cc;
-  color: white;
-}
+.telegram { background:#0088cc; color:white; }
 
 #output {
-  margin-top: 20px;
-  padding: 18px;
-  background: #0a1326;
-  border: 1px dashed var(--neon);
-  border-radius: 12px;
-  min-height: 220px;
-  white-space: pre-wrap;
-  font-family: monospace;
-  font-size: 13px;
-  color: #d0f8ff;
+  margin-top:20px; padding:18px; background:#0a1326;
+  border:1px dashed var(--neon); border-radius:12px;
+  min-height:220px; white-space:pre-wrap; font-family:monospace;
+  font-size:13px; color:#d0f8ff;
 }
 
 .loader {
-  text-align: center;
-  padding: 50px 0;
-  font-family: 'Orbitron';
-  font-size: 1.5rem;
-  color: var(--neon);
-  animation: pulse 1.8s infinite alternate;
+  text-align:center; padding:50px 0;
+  font-family:'Orbitron'; font-size:1.5rem; color:var(--neon);
+  animation:pulse 1.8s infinite alternate;
 }
 
 .progress-bar {
-  width: 80%;
-  height: 8px;
-  background: #0f1a2e;
-  border-radius: 4px;
-  margin: 20px auto;
-  overflow: hidden;
+  width:80%; height:8px; background:#0f1a2e; border-radius:4px;
+  margin:20px auto; overflow:hidden;
 }
 
 .progress-fill {
-  width: 0%;
-  height: 100%;
-  background: linear-gradient(90deg, #00ffe7, #00c4ff);
-  animation: loading 3s linear forwards;
+  width:0%; height:100%;
+  background:linear-gradient(90deg,#00ffe7,#00c4ff);
+  animation:loading 3.5s linear forwards;
 }
 
-@keyframes loading {
-  0% { width: 0%; }
-  100% { width: 100%; }
-}
-
-@keyframes pulse {
-  from { opacity: 0.5; text-shadow: 0 0 10px var(--neon); }
-  to   { opacity: 1;   text-shadow: 0 0 20px var(--neon); }
-}
+@keyframes loading { 0% {width:0%} 100% {width:100%} }
+@keyframes pulse { from {opacity:0.5; text-shadow:0 0 10px var(--neon);} to {opacity:1; text-shadow:0 0 20px var(--neon);} }
 </style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">APX ULTRA V22</div>
+  <div class="logo">APX ULTRA V23</div>
 </header>
 
 <div class="container">
@@ -189,14 +117,14 @@ button {
     <select id="pairs" multiple></select>
 
     <div style="display:flex; gap:10px; margin-bottom:14px;">
-      <input type="time" id="start" value="00:00">
-      <input type="time" id="end" value="03:00">
+      <input type="time" id="start" value="14:00">
+      <input type="time" id="end" value="15:00">
     </div>
 
     <button class="generate" onclick="generate()">GENERATE SIGNALS</button>
     <button class="telegram" onclick="manualTG()">SEND TELEGRAM</button>
 
-    <div id="output">READY... Select pairs & time</div>
+    <div id="output">READY... Select pairs & time range</div>
 
   </div>
 </div>
@@ -231,7 +159,43 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// EMA
+// High accuracy logic (relaxed for more signals)
+function analyze(candles) {
+  if (candles.length < 80) return null;
+
+  let recent = candles.slice(-80);
+  let ema20 = EMA(recent, 20);
+  let ema50 = EMA(recent, 50);
+  if (!ema20 || !ema50) return null;
+
+  let trend = ema20 > ema50 ? 1 : -1;
+
+  let momentum = 0;
+  for (let i = 1; i < recent.length; i++) {
+    let diff = recent[i].close - recent[i-1].close;
+    momentum += diff > 0 ? 1 : (diff < 0 ? -1 : 0);
+  }
+
+  let last = recent[recent.length - 1];
+  let recentHigh = Math.max(...recent.slice(-12, -1).map(x => x.high));
+  let recentLow  = Math.min(...recent.slice(-12, -1).map(x => x.low));
+
+  let breakout = 0;
+  if (last.close > recentHigh) breakout = 2;
+  if (last.close < recentLow) breakout = -2;
+
+  let body = Math.abs(last.close - last.open);
+  let range = last.high - last.low || 0.0001;
+  let strength = body / range;
+
+  let score = trend * 3 + (momentum / recent.length * 5) + breakout + (strength > 0.5 ? 1.5 : 0);
+
+  if (score >= 3) return "CALL";
+  if (score <= -3) return "PUT";
+
+  return last.close > last.open ? "CALL" : "PUT"; // force direction
+}
+
 function EMA(data, period) {
   if (data.length < period) return null;
   let k = 2 / (period + 1);
@@ -240,47 +204,6 @@ function EMA(data, period) {
     ema = data[i].close * k + ema * (1 - k);
   }
   return ema;
-}
-
-// High accuracy logic (relaxed thresholds)
-function analyze(candles) {
-  if (candles.length < 100) return null;
-
-  let recent = candles.slice(-100);
-  let ema20 = EMA(recent, 20);
-  let ema50 = EMA(recent, 50);
-  if (!ema20 || !ema50) return null;
-
-  let trend = ema20 > ema50 ? 1 : -1;
-
-  // Momentum last 8 candles
-  let momentum = 0;
-  for (let i = 1; i < recent.length; i++) {
-    let diff = recent[i].close - recent[i-1].close;
-    momentum += diff > 0 ? 1 : (diff < 0 ? -1 : 0);
-  }
-
-  // Breakout check last candle
-  let last = recent[recent.length - 1];
-  let recentHigh = Math.max(...recent.slice(-15, -1).map(x => x.high));
-  let recentLow  = Math.min(...recent.slice(-15, -1).map(x => x.low));
-
-  let breakout = 0;
-  if (last.close > recentHigh) breakout = 2;
-  if (last.close < recentLow) breakout = -2;
-
-  // Strength
-  let body = Math.abs(last.close - last.open);
-  let range = last.high - last.low || 0.0001;
-  let strength = body / range;
-
-  let score = trend * 3 + (momentum / 8 * 4) + breakout + (strength > 0.6 ? 2 : 0);
-
-  if (score >= 4) return "CALL";
-  if (score <= -4) return "PUT";
-
-  // Force last candle if close
-  return last.close > last.open ? "CALL" : "PUT";
 }
 
 async function generate() {
@@ -294,10 +217,11 @@ async function generate() {
 
   const output = document.getElementById('output');
   output.innerHTML = `
-    <div class="loader">APX ULTRA SCANNING...</div>
+    <div class="loader">APX ULTRA ENGINE ACTIVATED...</div>
     <div class="progress-bar">
       <div class="progress-fill"></div>
     </div>
+    <div style="text-align:center; margin-top:10px;">Scanning Market Structure...</div>
   `;
 
   const selected = [...pairs.selectedOptions].map(o => o.value);
@@ -307,8 +231,8 @@ async function generate() {
     return;
   }
 
-  const startVal = start.value || "00:00";
-  const endVal = end.value || "03:00";
+  const startVal = start.value || "14:00";
+  const endVal = end.value || "15:00";
 
   let pool = [];
 
@@ -318,7 +242,7 @@ async function generate() {
       const json = await res.json();
       const candles = json?.data || [];
       const dir = analyze(candles);
-      if (dir) pool.push({pair, dir});
+      if (dir) pool.push({pair: pair.replace(/-otc|-OTC/, ''), dir});
     } catch (e) {
       console.log("API error", pair);
     }
@@ -339,17 +263,21 @@ function distribute(pool, start, end) {
   let e = new Date(now.toDateString() + " " + end).getTime();
   if (e <= s) e += 86400000;
 
-  const count = 15;
-  const gap = (e - s) / count;
+  const totalSlots = 15;
+  const gap = (e - s) / totalSlots;
 
-  for (let i = 0; i < count; i++) {
+  // Shuffle pool slightly for variety
+  pool.sort(() => Math.random() - 0.5);
+
+  for (let i = 0; i < totalSlots; i++) {
     let t = new Date(s + gap * i);
     t.setSeconds(0);
     let timeStr = t.toTimeString().slice(0,5);
 
+    // Each time slot gets a different pair if possible
     let obj = pool[i % pool.length];
     FINAL.push({
-      pair: obj.pair.replace(/-otc|-OTC/, ''),
+      pair: obj.pair,
       dir: obj.dir,
       time: timeStr
     });
@@ -360,7 +288,7 @@ function display() {
   let txt = "APX Premium Signals\n";
   txt += "━━━━━━━━━━━━━━━━━━━━━━\n";
   txt += "UTC+6 Timezone | 1 Min Expiry\n";
-  txt += "Accuracy: EMA + Breakout + Momentum\n\n";
+  txt += "Accuracy: EMA + Momentum + Breakout\n\n";
 
   FINAL.forEach(s => {
     txt += `➤ ${s.pair.padEnd(12)} ${s.time}   ${s.dir}\n`;
@@ -384,7 +312,7 @@ async function manualTG() {
   // Fancy loading in Telegram
   await fetch(TG, {
     method: "POST",
-    body: "⚡ APX ULTRA ENGINE ACTIVATED...\n━━━━━━━━━━\nScanning Market Structure...\n▓▓▓▓▓▓░░░░░ 60%\nPreparing Premium Signals..."
+    body: "⚡ APX ULTRA ENGINE ACTIVATED...\n━━━━━━━━━━\nScanning Market Structure...\n▓▓▓▓▓▓░░░░░ 65%\nPreparing Premium Signals...\nPlease wait 3 seconds..."
   });
 
   setTimeout(async () => {
@@ -407,8 +335,8 @@ async function manualTG() {
     msg += "Powered by ✴️ APX Premium";
 
     await fetch(TG, {method:"POST", body:msg});
-    alert("Premium signals sent with alignment!");
-  }, 3000);
+    alert("Premium signals sent with fancy loading!");
+  }, 3200); // 3.2 sec delay for effect
 }
 
 </script>
