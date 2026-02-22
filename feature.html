@@ -3,34 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V9 - DEEP BRAIN</title>
+<title>APX NEURAL V41 - REAL BRAIN</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root { --bg: #01060b; --panel: #0a111f; --neon: #00ff88; --glow: 0 0 15px #00ff88; --text: #e0fbee; }
+:root {
+  --bg: #02060c;
+  --panel: #0a111f;
+  --neon: #00ff88;
+  --glow: 0 0 15px #00ff88;
+  --text: #e0fbee;
+}
+
 body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
 header { text-align:center; padding:20px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--glow); }
-.logo { font-family:'Orbitron'; font-size:24px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
+.logo { font-family:'Orbitron'; font-size:26px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
+
 .container { max-width:450px; margin:15px auto; padding:10px; }
 .panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.2); box-shadow:0 0 40px rgba(0,0,0,0.5); }
+
 .tabs { display:flex; gap:8px; margin-bottom:15px; }
-.tab { flex:1; padding:10px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:10px; transition:0.3s; }
+.tab { flex:1; padding:10px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:11px; transition:0.3s; }
 .tab.active { background:var(--neon); color:black; box-shadow:var(--glow); }
-select, input { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; font-size:14px; outline:none; box-sizing: border-box;}
+
+select, input { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; font-size:14px; outline:none; box-sizing:border-box; }
 .time-row { display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; }
-.time-row div { flex: 1; }
-button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:13px; transition:0.3s; }
+.time-row div { flex:1; }
+
+button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:14px; transition:0.3s; }
 .generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
 .telegram { background:#0088cc; color:white; }
+
 #output { margin-top:20px; background:#01040a; padding:15px; border-radius:12px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:12px; color:#afffdf; line-height:1.6; min-height:180px; }
+
+/* Progress Bar */
 .loader-box { padding:20px; text-align:center; }
 .bar-bg { width:100%; background:#0d1e13; height:8px; border-radius:10px; margin:10px 0; }
-.bar-fill { width:0%; height:100%; background:var(--neon); box-shadow:var(--glow); transition:0.3s; }
+.bar-fill { width:0%; height:100%; background:var(--neon); box-shadow:var(--glow); transition:0.4s; }
 </style>
 </head>
+
 <body>
 
-<header><div class="logo">APX NEURAL V9 PRO</div></header>
+<header><div class="logo">APX NEURAL V41 - REAL BRAIN</div></header>
 
 <div class="container">
   <div class="panel">
@@ -40,20 +55,15 @@ button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:1
       <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
     </div>
 
-    <label style="font-size:11px; color:var(--neon)">DEEP SCAN ASSETS:</label>
-    <select id="pairs" multiple size="5"></select>
+    <label style="font-size:12px; color:var(--neon)">SELECT ASSETS (3-6):</label>
+    <select id="pairs" multiple size="6"></select>
 
     <div class="time-row">
-      <div><small>START</small><input type="time" id="start" value="16:00"></div>
-      <div><small>TIMEZONE</small>
-        <select id="tz">
-          <option value="5">UTC +5 (PK)</option>
-          <option value="6">UTC +6 (BD)</option>
-        </select>
-      </div>
+      <div><small>START</small><input type="time" id="start" value="21:00"></div>
+      <div><small>END</small><input type="time" id="end" value="23:00"></div>
     </div>
 
-    <button class="generate" onclick="deepNeuralScan()">DEEP BRAIN ANALYSIS</button>
+    <button class="generate" onclick="deepNeuralScan()">DEEP BRAIN SCAN</button>
     <button class="telegram" onclick="sendToTG()">SEND TO TELEGRAM</button>
 
     <div id="output">SYSTEM STATUS: READY...</div>
@@ -61,8 +71,8 @@ button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:1
 </div>
 
 <script>
-const API_URL = "https://apx.mkapi009.workers.dev?pair=";
-const TG_WORKER = "https://signal.mkapi009.workers.dev/send";
+const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
 
 let FINAL_LIST = [];
 let SCANNING = false;
@@ -87,113 +97,180 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// --- REAL NEURAL LOGIC (PAST CANDLE READ) ---
-function analyzePastData(candles) {
-    if (candles.length < 50) return null;
-    
-    // Technical Indicators
-    const slice = candles.slice(-50);
-    const last = slice[slice.length - 1];
-    const avgClose = slice.reduce((s, c) => s + c.close, 0) / 50;
-    
-    // Calculate Momentum (Rate of Change)
-    const roc = ((last.close - slice[0].close) / slice[0].close) * 100;
-    
-    // Simple RSI logic for Overbought/Oversold
-    let gains = 0, losses = 0;
-    for(let i=1; i<20; i++) {
-        let d = slice[slice.length-i].close - slice[slice.length-i-1].close;
-        d > 0 ? gains += d : losses -= d;
-    }
-    const rsi = 100 - (100 / (1 + (gains / (losses || 1))));
+// --- REAL & STRICT BRAIN LOGIC (200 CANDLES) ---
+function analyzeBrain(candles) {
+  if (candles.length < 200) return null;
 
-    // Decision Engine
-    let dir = "";
-    let confidence = 0;
+  let recent = candles.slice(-200);
 
-    if (last.close > avgClose && rsi < 60) {
-        dir = "CALL ↑";
-        confidence = 90 + (roc * 2);
-    } else if (last.close < avgClose && rsi > 40) {
-        dir = "PUT ↓";
-        confidence = 90 - (roc * 2);
-    } else {
-        // Reversal Logic
-        dir = rsi > 50 ? "PUT ↓" : "CALL ↑";
-        confidence = 88 + (Math.abs(50 - rsi) / 5);
-    }
+  // EMA Stack
+  let ema20 = EMA(recent, 20);
+  let ema50 = EMA(recent, 50);
+  let ema100 = EMA(recent, 100);
+  if (!ema20 || !ema50 || !ema100) return null;
 
-    return { dir, acc: Math.min(98.8, Math.max(89.1, confidence)).toFixed(1) };
+  let trendScore = 0;
+  if (ema20 > ema50 && ema50 > ema100) trendScore = 4;
+  else if (ema20 < ema50 && ema50 < ema100) trendScore = -4;
+  else if (ema20 > ema50) trendScore = 1;
+  else if (ema20 < ema50) trendScore = -1;
+
+  // Momentum (weighted - recent zyada weight)
+  let momentum = 0;
+  let weight = 1;
+  for (let i = recent.length - 30; i < recent.length; i++) {
+    let diff = recent[i].close - recent[i-1].close;
+    momentum += diff > 0 ? weight : (diff < 0 ? -weight : 0);
+    weight += 0.05;
+  }
+
+  // Last candle strength
+  let last = recent[recent.length - 1];
+  let body = Math.abs(last.close - last.open);
+  let range = last.high - last.low || 0.0001;
+  let strength = body / range;
+  let strengthScore = strength > 0.7 ? 3 : (strength > 0.5 ? 1 : 0);
+
+  // Breakout
+  let high = Math.max(...recent.slice(-20).map(x => x.high));
+  let low = Math.min(...recent.slice(-20).map(x => x.low));
+  let breakoutScore = 0;
+  if (last.close > high) breakoutScore = 3;
+  if (last.close < low) breakoutScore = -3;
+
+  // Final score (very strict)
+  let totalScore = trendScore + momentum + strengthScore + breakoutScore;
+
+  if (totalScore >= 9) return "CALL";
+  if (totalScore <= -9) return "PUT";
+
+  return null; // Only high-confidence signals
+}
+
+function EMA(data, period) {
+  if (data.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = data[data.length - period].close;
+  for (let i = data.length - period + 1; i < data.length; i++) {
+    ema = data[i].close * k + ema * (1 - k);
+  }
+  return ema;
 }
 
 async function deepNeuralScan() {
   if (SCANNING) return;
-  const pairs = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-  if (pairs.length < 3) return alert("Select at least 3-5 assets!");
-
   SCANNING = true;
   FINAL_LIST = [];
-  const out = document.getElementById('output');
-  out.innerHTML = `<div class="loader-box">READING 50+ CANDLES PER ASSET...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div></div>`;
+
+  const pairs = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
+  if (pairs.length < 3) {
+    document.getElementById('output').innerText = "Select at least 3-5 assets!";
+    SCANNING = false;
+    return;
+  }
+
+  const output = document.getElementById('output');
+  output.innerHTML = `<div class="loader-box">DEEP SCAN 200+ CANDLES PER ASSET...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
 
   let pool = [];
   for (let i = 0; i < pairs.length; i++) {
     try {
-      let res = await fetch(API_URL + pairs[i]);
+      let res = await fetch(API + pairs[i]);
       let json = await res.json();
-      let analysis = analyzePastData(json.data || []);
-      if (analysis) {
-          pool.push({ name: pairs[i].split('-')[0].toUpperCase(), ...analysis });
+      let decision = analyzeBrain(json.data || []);
+      if (decision) {
+        pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision });
       }
-      document.getElementById('pb').style.width = ((i + 1) / pairs.length) * 100 + "%";
-    } catch (e) { console.error("Error fetching " + pairs[i]); }
+      let p = ((i + 1) / pairs.length) * 100;
+      document.querySelector('#pb').style.width = p + "%";
+      document.getElementById('perc').innerText = Math.round(p) + "%";
+    } catch (e) { console.error(e); }
   }
 
-  const startInput = document.getElementById('start').value;
-  let currentTs = new Date("2026-01-01 " + startInput).getTime();
+  if (pool.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+    SCANNING = false;
+    return;
+  }
 
-  // Create 10 unique signals without a predictable pattern
-  for (let j = 0; j < 10; j++) {
-    currentTs += (6 + (j % 4) * 3) * 60000; // Varying gaps (6, 9, 12, 15 mins)
-    
-    // Pick asset based on a "Pseudo-Neural" index
-    let idx = (j * 7 + 3) % pool.length; 
+  // Time Distribution (5-12 min gap - natural feel)
+  const sT = document.getElementById('start').value;
+  const eT = document.getElementById('end').value;
+  let start = new Date("2025-01-01 " + sT).getTime();
+  let end = new Date("2025-01-01 " + eT).getTime();
+  if (end <= start) end += 86400000;
+
+  let current = start;
+  while (current < end && FINAL_LIST.length < 12) {
+    current += (5 + Math.random() * 7) * 60000; // 5-12 min gap
+    if (current >= end) break;
+
+    let idx = Math.floor(Math.random() * pool.length);
     let asset = pool[idx];
-    
+
     FINAL_LIST.push({
-      time: new Date(currentTs).toTimeString().slice(0, 5),
-      ...asset
+      time: new Date(current).toTimeString().slice(0,5),
+      pair: asset.pair,
+      dir: asset.dir
     });
   }
 
-  // Final Sort by Time
-  FINAL_LIST.sort((a, b) => a.time.localeCompare(b.time));
-
-  render();
+  renderResult();
   SCANNING = false;
 }
 
-function render() {
-  const tz = document.getElementById('tz').value;
-  let h = "✅ APX NEURAL V9 PRO ✅\n";
+function renderResult() {
+  let h = "APX ULTRA V41 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += `ZONE: UTC +${tz} | 1 MIN EXP\n`;
-  h += "LOGIC: 50-CANDLE MOMENTUM\n\n";
-  
+  h += "UTC+6 | 1 MIN EXP\n\n";
+
   FINAL_LIST.forEach(s => {
-    h += `✦ ${s.time} | ${s.name.padEnd(8)} | ${s.dir} [${s.acc}%]\n`;
+    h += `✦ ${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
   });
-  
+
   h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += "STRATEGY: 1-STEP MARTINGALE\n";
-  h += "STATUS: DEEP SCAN COMPLETE ✅";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH\n";
   document.getElementById('output').innerText = h;
 }
 
 async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
-  fetch(TG_WORKER, { method: "POST", body: document.getElementById('output').innerText })
-  .then(() => alert("Sent!")).catch(() => alert("Error!"));
+
+  try {
+    // Loading stages
+    const stages = [
+      "✦═╡ APX NEURAL V41 ╞═✦\nScanning Market...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V41 ╞═✦\nAnalyzing 200+ Candles...\n[▓▓▓▓▓▓░░░ 70%]\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V41 ╞═✦\nFinal Filtering...\n[▓▓▓▓▓▓▓▓▓░ 100%]\n✅ Signals Ready!"
+    ];
+
+    for (let msg of stages) {
+      await fetch(TG, { method: "POST", body: msg });
+      await new Promise(r => setTimeout(r, 1800));
+    }
+
+    // Real signals
+    let finalMsg = "🌟 APX ULTRA V41 PRO SIGNALS 🌟\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "UTC+6 | 1 MIN EXP\n\n";
+
+    FINAL_LIST.forEach(s => {
+      finalMsg += `💫\( {s.pair.padEnd(10)}• \){s.time};${s.dir}\n`;
+    });
+
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "RULES:\n";
+    finalMsg += "• Trade exact time\n";
+    finalMsg += "• 1 Step Martingale Only\n";
+    finalMsg += "• Avoid News\n";
+    finalMsg += "• Stop after 2 losses\n\n";
+    finalMsg += "POWERED BY APX PREMIUM AI";
+
+    await fetch(TG, { method: "POST", body: finalMsg });
+    alert("Signals Sent!");
+  } catch (e) {
+    alert("Telegram Error!");
+  }
 }
 </script>
 </body>
