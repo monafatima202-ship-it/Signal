@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V50 - ADAPTIVE</title>
+<title>APX NEURAL V51 - PRO STRENGTH</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -35,7 +35,7 @@ button{width:100%;padding:18px;margin-top:12px;border:none;border-radius:14px;fo
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V50 ADAPTIVE</div></header>
+<header><div class="logo">APX NEURAL V51 PRO</div></header>
 
 <div class="container">
 <div class="panel">
@@ -51,7 +51,7 @@ button{width:100%;padding:18px;margin-top:12px;border:none;border-radius:14px;fo
 <input type="time" id="start" value="21:00">
 <input type="time" id="end" value="23:00">
 
-<button class="generate" onclick="runScan()">DEEP ADAPTIVE SCAN</button>
+<button class="generate" onclick="runScan()">PRO STRENGTH SCAN</button>
 <button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
 <div id="output">SYSTEM READY...</div>
@@ -96,45 +96,39 @@ return e;
 }
 
 function analyze(c){
-if(c.length<300)return null;
-let r=c.slice(-300);
+if(c.length<250)return null;
+let r=c.slice(-250);
 let ema20=EMA(r,20);
 let ema50=EMA(r,50);
 let ema100=EMA(r,100);
 let last=r[r.length-1];
 
-let spread=Math.abs(ema20-ema100)/last.close;
-let regime="weak";
-if(spread>0.0015)regime="strong";
-else if(spread>0.0009)regime="medium";
-else if(spread>0.0005)regime="weak";
-else return null;
-
 let score=0;
-if(ema20>ema50&&ema50>ema100)score+=4;
-if(ema20<ema50&&ema50<ema100)score-=4;
 
-let m=0;
-for(let i=r.length-30;i<r.length;i++){
+if(ema20>ema50&&ema50>ema100)score+=5;
+if(ema20<ema50&&ema50<ema100)score-=5;
+
+let momentum=0;
+for(let i=r.length-25;i<r.length;i++){
 let diff=r[i].close-r[i-1].close;
-if(diff>0)m++;
-if(diff<0)m--;
+if(diff>0)momentum++;
+if(diff<0)momentum--;
 }
-if(m>8)score+=3;
-if(m<-8)score-=3;
+if(momentum>8)score+=3;
+if(momentum<-8)score-=3;
 
-let high=Math.max(...r.slice(-40).map(x=>x.high));
-let low=Math.min(...r.slice(-40).map(x=>x.low));
+let high=Math.max(...r.slice(-35).map(x=>x.high));
+let low=Math.min(...r.slice(-35).map(x=>x.low));
+
 if(last.close>high)score+=3;
 if(last.close<low)score-=3;
 
-let threshold=8;
-if(regime==="medium")threshold=6;
-if(regime==="weak")threshold=5;
+if(Math.abs(score)<4)return null;
 
-if(score>=threshold)return{dir:"CALL",strength:score};
-if(score<=-threshold)return{dir:"PUT",strength:Math.abs(score)};
-return null;
+return{
+dir:score>0?"CALL":"PUT",
+strength:Math.abs(score)
+};
 }
 
 async function runScan(){
@@ -142,7 +136,7 @@ if(SCAN)return;
 SCAN=true;
 FINAL=[];
 let out=document.getElementById("output");
-out.innerHTML=`<div class="loader-box">SCANNING 300 CANDLES...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div></div>`;
+out.innerHTML=`<div class="loader-box">ANALYZING MARKET...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div></div>`;
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 let pool=[];
@@ -154,7 +148,7 @@ if(d)pool.push({pair:selected[i].replace(/-otc|-OTC/gi,''),dir:d.dir,str:d.stren
 document.getElementById("pb").style.width=((i+1)/selected.length*100)+"%";
 }
 
-if(pool.length===0){out.innerText="MARKET WEAK.";SCAN=false;return;}
+if(pool.length===0){out.innerText="MARKET CONDITIONS NOT FAVORABLE.";SCAN=false;return;}
 
 pool.sort((a,b)=>b.str-a.str);
 
@@ -162,13 +156,21 @@ let start=new Date("2025-01-01 "+document.getElementById("start").value).getTime
 let end=new Date("2025-01-01 "+document.getElementById("end").value).getTime();
 if(end<=start)end+=86400000;
 
-let gap=(end-start)/18;
+let totalWeight=pool.reduce((sum,p)=>sum+p.str,0);
+let signalCount=18;
 let current=start;
+let gap=(end-start)/signalCount;
 
-for(let i=0;i<18;i++){
+for(let i=0;i<signalCount;i++){
 current+=gap;
-let asset=pool[i%pool.length];
-FINAL.push({time:new Date(current).toTimeString().slice(0,5),pair:asset.pair,dir:asset.dir});
+let weightedIndex=Math.floor((i/ signalCount)*totalWeight);
+let cumulative=0;
+let chosen=pool[0];
+for(let p of pool){
+cumulative+=p.str;
+if(weightedIndex<cumulative){chosen=p;break;}
+}
+FINAL.push({time:new Date(current).toTimeString().slice(0,5),pair:chosen.pair,dir:chosen.dir});
 }
 
 render();
@@ -176,38 +178,37 @@ SCAN=false;
 }
 
 function render(){
-let h="APX NEURAL V50 ADAPTIVE\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n\n";
+let h="APX NEURAL V51 PRO\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n\n";
 FINAL.forEach(s=>{
 h+=`✦ ${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
-h+="\n━━━━━━━━━━━━━━━━━━━━━━\nAdaptive Strength Engine\n";
+h+="\n━━━━━━━━━━━━━━━━━━━━━━\nWeighted Strength Model\n";
 document.getElementById("output").innerText=h;
 }
 
 async function sendTG(){
 if(FINAL.length===0)return alert("Scan first.");
 
-let stages=[
-"🟩⬜⬜⬜⬜ 20%  Connecting...",
-"🟩🟩⬜⬜⬜ 40%  Reading 300 Candles...",
-"🟩🟩🟩⬜⬜ 60%  Adaptive Scoring...",
-"🟩🟩🟩🟩⬜ 80%  Ranking Strength...",
-"🟩🟩🟩🟩🟩 100%  Signals Ready!"
-];
+let loading="🟩⬜⬜⬜⬜ 20%\n";
+await fetch(TG,{method:"POST",body:loading});
+await new Promise(r=>setTimeout(r,2000));
 
-for(let s of stages){
-await fetch(TG,{method:"POST",body:s});
-await new Promise(r=>setTimeout(r,3000));
-}
+loading="🟩🟩🟩⬜⬜ 60%\n";
+await fetch(TG,{method:"POST",body:loading});
+await new Promise(r=>setTimeout(r,2000));
 
-let msg="APX NEURAL V50 ADAPTIVE\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n";
+loading="🟩🟩🟩🟩🟩 100%\n";
+await fetch(TG,{method:"POST",body:loading});
+await new Promise(r=>setTimeout(r,1500));
+
+let msg="📊 APX NEURAL V51 PRO 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n";
 FINAL.forEach(s=>{
 msg+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
 msg+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\n1 Step Martingale\nStop after 2 losses\n\nPowered by APX Premium";
 
 await fetch(TG,{method:"POST",body:msg});
-alert("Signals Sent!");
+alert("Signals Sent Successfully!");
 }
 </script>
 </body>
