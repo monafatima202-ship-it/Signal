@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V41 - REAL BRAIN</title>
+<title>APX NEURAL V3 - Loading Bars</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -38,14 +38,14 @@ button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:1
 
 /* Progress Bar */
 .loader-box { padding:20px; text-align:center; }
-.bar-bg { width:100%; background:#0d1e13; height:8px; border-radius:10px; margin:10px 0; }
-.bar-fill { width:0%; height:100%; background:var(--neon); box-shadow:var(--glow); transition:0.4s; }
+.bar-bg { width:100%; background:#0d1e13; height:10px; border-radius:10px; margin:10px 0; overflow:hidden; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff); transition:width 0.3s; box-shadow:var(--glow); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX NEURAL V41 - REAL BRAIN</div></header>
+<header><div class="logo">APX NEURAL V44 - LOADING BARS</div></header>
 
 <div class="container">
   <div class="panel">
@@ -97,7 +97,43 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// --- REAL & STRICT BRAIN LOGIC (200 CANDLES) ---
+// --- ADX CALCULATION (14-period) ---
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
+}
+
+// --- FINAL HIGH ACCURACY BRAIN LOGIC (200+ CANDLES + ADX) ---
 function analyzeBrain(candles) {
   if (candles.length < 200) return null;
 
@@ -110,12 +146,18 @@ function analyzeBrain(candles) {
   if (!ema20 || !ema50 || !ema100) return null;
 
   let trendScore = 0;
-  if (ema20 > ema50 && ema50 > ema100) trendScore = 4;
-  else if (ema20 < ema50 && ema50 < ema100) trendScore = -4;
-  else if (ema20 > ema50) trendScore = 1;
-  else if (ema20 < ema50) trendScore = -1;
+  if (ema20 > ema50 && ema50 > ema100) trendScore = 5;
+  else if (ema20 < ema50 && ema50 < ema100) trendScore = -5;
+  else if (ema20 > ema50) trendScore = 2;
+  else if (ema20 < ema50) trendScore = -2;
 
-  // Momentum (weighted - recent zyada weight)
+  // RSI
+  let rsi = getRSI(candles);
+  let rsiScore = 0;
+  if (rsi < 35) rsiScore = 4;
+  if (rsi > 65) rsiScore = -4;
+
+  // Momentum
   let momentum = 0;
   let weight = 1;
   for (let i = recent.length - 30; i < recent.length; i++) {
@@ -124,27 +166,50 @@ function analyzeBrain(candles) {
     weight += 0.05;
   }
 
-  // Last candle strength
+  // Candle strength
   let last = recent[recent.length - 1];
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
   let strength = body / range;
-  let strengthScore = strength > 0.7 ? 3 : (strength > 0.5 ? 1 : 0);
+  let strengthScore = strength > 0.7 ? 4 : (strength > 0.5 ? 1 : 0);
 
   // Breakout
   let high = Math.max(...recent.slice(-20).map(x => x.high));
   let low = Math.min(...recent.slice(-20).map(x => x.low));
   let breakoutScore = 0;
-  if (last.close > high) breakoutScore = 3;
-  if (last.close < low) breakoutScore = -3;
+  if (last.close > high) breakoutScore = 4;
+  if (last.close < low) breakoutScore = -4;
 
-  // Final score (very strict)
-  let totalScore = trendScore + momentum + strengthScore + breakoutScore;
+  // ADX filter (new added)
+  let adxData = calculateADX(candles);
+  let adxScore = 0;
+  if (adxData.adx > 25) {
+    if (adxData.pdi > adxData.mdi) adxScore = 4;
+    if (adxData.mdi > adxData.pdi) adxScore = -4;
+  } else {
+    return null; // No trend = skip
+  }
 
-  if (totalScore >= 9) return "CALL";
-  if (totalScore <= -9) return "PUT";
+  // Final very strict score
+  let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
-  return null; // Only high-confidence signals
+  if (totalScore >= 14) return "CALL";
+  if (totalScore <= -14) return "PUT";
+
+  return null;
+}
+
+function getRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    let diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period || 0.0001;
+  let rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
 }
 
 function EMA(data, period) {
@@ -170,7 +235,7 @@ async function deepNeuralScan() {
   }
 
   const output = document.getElementById('output');
-  output.innerHTML = `<div class="loader-box">DEEP SCAN 200+ CANDLES PER ASSET...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
+  output.innerHTML = `<div class="loader-box">DEEP SCAN 200+ CANDLES...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
 
   let pool = [];
   for (let i = 0; i < pairs.length; i++) {
@@ -220,7 +285,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V41 PRO SIGNALS\n";
+  let h = "APX ULTRA V43 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -229,7 +294,7 @@ function renderResult() {
   });
 
   h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH\n";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX\n";
   document.getElementById('output').innerText = h;
 }
 
@@ -239,9 +304,9 @@ async function sendToTG() {
   try {
     // Loading stages
     const stages = [
-      "✦═╡ APX NEURAL V41 ╞═✦\nScanning Market...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting API...",
-      "✦═╡ APX NEURAL V41 ╞═✦\nAnalyzing 200+ Candles...\n[▓▓▓▓▓▓░░░ 70%]\n🧠 Brain Processing...",
-      "✦═╡ APX NEURAL V41 ╞═✦\nFinal Filtering...\n[▓▓▓▓▓▓▓▓▓░ 100%]\n✅ Signals Ready!"
+      "✦═╡ APX NEURAL V43 ╞═✦\nScanning Market...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V43 ╞═✦\nAnalyzing 200+ Candles...\n[▓▓▓▓▓▓░░░ 70%]\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V43 ╞═✦\nFinal Filtering...\n[▓▓▓▓▓▓▓▓▓░ 100%]\n✅ Signals Ready!"
     ];
 
     for (let msg of stages) {
@@ -250,7 +315,7 @@ async function sendToTG() {
     }
 
     // Real signals
-    let finalMsg = "🌟 APX ULTRA V41 PRO SIGNALS 🌟\n";
+    let finalMsg = "🌟 APX ULTRA V43 PRO SIGNALS 🌟\n";
     finalMsg += "━━━━━━━━━━━━━━━━━━\n";
     finalMsg += "UTC+6 | 1 MIN EXP\n\n";
 
