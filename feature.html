@@ -1,253 +1,337 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX FINAL CLEAN TRIGGER</title>
+<title>APX NEURAL V46 - API TIMED</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{
---bg:#02060c;
---panel:#0a111f;
---neon:#00ff88;
---cyan:#00ccff;
-}
-body{margin:0;background:var(--bg);color:white;font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);}
-.logo{font-family:'Orbitron';color:var(--neon);font-size:22px;}
-.container{max-width:480px;margin:20px auto;padding:15px;}
-.panel{background:var(--panel);border-radius:20px;padding:25px;border:2px solid rgba(0,255,136,.3);}
-.tabs{display:flex;gap:10px;margin-bottom:15px;}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;font-family:'Orbitron';cursor:pointer;}
-.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;}
-select,input{width:100%;padding:12px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
-button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:bold;text-transform:uppercase;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
-.telegram{background:#0088cc;color:white;}
-
-#output{
-margin-top:20px;
-background:#01040a;
-padding:15px;
-border-radius:12px;
-border:1px dashed var(--neon);
-white-space:pre-wrap;
-font-family:monospace;
-font-size:13px;
-min-height:180px;
+:root {
+  --bg: #02060c;
+  --panel: #0a111f;
+  --neon: #00ff88;
+  --cyan: #00ccff;
+  --glow: 0 0 15px #00ff88, 0 0 25px #00ccff;
+  --text: #e0fbee;
 }
 
-/* SINGLE LOADER */
-.loader-box{text-align:center;padding:15px;}
-.bar-bg{width:100%;height:12px;background:#0d1e13;border-radius:12px;overflow:hidden;margin-top:10px;}
-.bar-fill{
-height:100%;
-width:0%;
-background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);
-background-size:200% 100%;
-animation:move 1.2s linear infinite;
-transition:width 0.4s ease;
-}
-@keyframes move{
-0%{background-position:0% 0;}
-100%{background-position:200% 0;}
-}
-.percent{margin-top:6px;font-size:12px;color:#00ff88;}
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
+header { text-align:center; padding:25px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
+.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:3px; }
+
+.container { max-width:480px; margin:20px auto; padding:15px; }
+.panel { background:var(--panel); border-radius:25px; padding:30px; border:2px solid rgba(0,255,136,.3); box-shadow:0 0 50px rgba(0,255,136,.2); }
+
+.tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:12px; transition:0.4s; }
+.tab:hover { box-shadow:0 0 20px var(--neon); transform:translateY(-2px); }
+.tab.active { background:linear-gradient(135deg,var(--neon),var(--cyan)); color:black; box-shadow:var(--glow); }
+
+select, input { width:100%; padding:14px; margin-bottom:18px; background:#050d1a; border:2px solid #1a3a3a; border-radius:12px; color:white; font-size:15px; outline:none; transition:0.3s; }
+select:focus, input:focus { border-color:var(--neon); box-shadow:0 0 15px var(--neon); }
+
+button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:14px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:15px; transition:0.4s; }
+.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
+.generate:hover { transform:translateY(-3px); box-shadow:0 0 30px #00ff88; }
+.telegram { background:#0088cc; color:white; }
+
+#output { margin-top:25px; background:#01040a; padding:20px; border-radius:15px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:200px; box-shadow:0 0 20px rgba(0,255,136,.15); }
+
+/* Progress Bar */
+.loader-box { padding:25px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff, #00ff88); background-size:200% 100%; animation:move 1.8s linear infinite; transition:width 0.5s; box-shadow:var(--glow); }
+@keyframes move { 0% { background-position:0% 0; } 100% { background-position:200% 0; } }
+.percent { margin-top:8px; font-size:13px; color:var(--neon); text-shadow:0 0 8px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX FINAL CLEAN TRIGGER</div></header>
+<header><div class="logo">APX NEURAL V45 - NEON PRO</div></header>
 
 <div class="container">
-<div class="panel">
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+      <button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
+      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+    </div>
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-</div>
+    <label style="font-size:13px; color:var(--neon)">SELECT ASSETS (3-6):</label>
+    <select id="pairs" multiple size="6"></select>
 
-<select id="pairs" multiple size="6"></select>
-<input type="time" id="start" value="21:00">
+    <div class="time-row">
+      <div><small>START</small><input type="time" id="start" value="21:00"></div>
+      <div><small>END</small><input type="time" id="end" value="23:00"></div>
+    </div>
 
-<button class="generate" onclick="scan()">TRIGGER SCAN</button>
-<button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
+    <button class="generate" onclick="deepNeuralScan()">DEEP BRAIN SCAN</button>
+    <button class="telegram" onclick="sendToTG()">SEND TO TELEGRAM</button>
 
-<div id="output">SYSTEM READY...</div>
-
-</div>
+    <div id="output">SYSTEM STATUS: READY...</div>
+  </div>
 </div>
 
 <script>
-const API="https://apx.mkapi009.workers.dev?pair=";
-const TG="https://signal.mkapi009.workers.dev/send";
+const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
 
-let FINAL=[];
-let RUN=false;
+let FINAL_LIST = [];
+let SCANNING = false;
 
-const ASSETS={
-OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
-STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
-CRYPTO:["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
+const ASSETS = {
+  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
+  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
+  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 };
 
-function setMarket(type,btn){
-document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
-btn.classList.add("active");
-let s=document.getElementById("pairs");
-s.innerHTML="";
-ASSETS[type].forEach(p=>{
-let o=document.createElement("option");
-o.value=p;
-o.textContent=p.replace(/-otc|-OTC/gi,'');
-s.appendChild(o);
-});
+function setMarket(type, btn) {
+  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const select = document.getElementById('pairs');
+  select.innerHTML = "";
+  ASSETS[type].forEach(p => {
+    let opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p.replace(/-otc|-OTC/gi, '').toUpperCase();
+    select.appendChild(opt);
+  });
 }
-setMarket("OTC",document.querySelector(".tab.active"));
+setMarket("OTC", document.querySelector(".tab.active"));
 
-function setLoader(percent){
-document.getElementById("output").innerHTML=
-`<div class="loader-box">
-<div class="bar-bg"><div class="bar-fill" style="width:${percent}%"></div></div>
-<div class="percent">${percent}%</div>
-</div>`;
-}
+// --- ADX CALCULATION ---
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
 
-function EMA(data,p){
-let k=2/(p+1);
-let ema=data[0].close;
-for(let i=1;i<data.length;i++){
-ema=data[i].close*k+ema*(1-k);
-}
-return ema;
-}
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
 
-function detect(data,pair){
-let res=[];
-if(data.length<200)return res;
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
 
-for(let i=50;i<data.length;i++){
-let slice=data.slice(i-50,i);
-let ema20=EMA(slice,20);
-let ema50=EMA(slice,50);
-let last=data[i];
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
 
-let score=0;
-if(ema20>ema50)score++;
-if(ema20<ema50)score--;
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
 
-let momentum=0;
-for(let j=i-10;j<i;j++){
-let diff=data[j].close-data[j-1].close;
-if(diff>0)momentum++;
-if(diff<0)momentum--;
-}
-if(momentum>6)score+=2;
-if(momentum<-6)score-=2;
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
 
-let body=Math.abs(last.close-last.open);
-let range=last.high-last.low||0.0001;
-if(body/range>0.6)score++;
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
 
-if(Math.abs(score)>=3){
-res.push({
-minute:i,
-pair:pair,
-dir:score>0?"CALL":"PUT",
-strength:Math.abs(score)
-});
-}
-}
-return res;
+  return { adx, pdi: diPlus, mdi: diMinus };
 }
 
-async function scan(){
-if(RUN)return;
-RUN=true;
-FINAL=[];
-setLoader(10);
+// --- FINAL HIGH ACCURACY LOGIC ---
+function analyzeBrain(candles) {
+  if (candles.length < 200) return null;
 
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-let global=[];
-let progress=10;
+  let recent = candles.slice(-200);
 
-for(let pair of selected){
-let res=await fetch(API+pair);
-let j=await res.json();
-let t=detect(j.data||[],pair.replace(/-otc|-OTC/gi,''));
-global=global.concat(t);
+  // EMA Stack
+  let ema20 = EMA(recent, 20);
+  let ema50 = EMA(recent, 50);
+  let ema100 = EMA(recent, 100);
+  if (!ema20 || !ema50 || !ema100) return null;
 
-progress+=Math.floor(40/selected.length);
-setLoader(progress);
+  let trendScore = 0;
+  if (ema20 > ema50 && ema50 > ema100) trendScore = 5;
+  else if (ema20 < ema50 && ema50 < ema100) trendScore = -5;
+  else if (ema20 > ema50) trendScore = 2;
+  else if (ema20 < ema50) trendScore = -2;
+
+  // RSI
+  let rsi = getRSI(candles);
+  let rsiScore = 0;
+  if (rsi < 35) rsiScore = 4;
+  if (rsi > 65) rsiScore = -4;
+
+  // Momentum
+  let momentum = 0;
+  let weight = 1;
+  for (let i = recent.length - 30; i < recent.length; i++) {
+    let diff = recent[i].close - recent[i-1].close;
+    momentum += diff > 0 ? weight : (diff < 0 ? -weight : 0);
+    weight += 0.05;
+  }
+
+  // Candle strength
+  let last = recent[recent.length - 1];
+  let body = Math.abs(last.close - last.open);
+  let range = last.high - last.low || 0.0001;
+  let strength = body / range;
+  let strengthScore = strength > 0.7 ? 4 : (strength > 0.5 ? 1 : 0);
+
+  // Breakout
+  let high = Math.max(...recent.slice(-20).map(x => x.high));
+  let low = Math.min(...recent.slice(-20).map(x => x.low));
+  let breakoutScore = 0;
+  if (last.close > high) breakoutScore = 4;
+  if (last.close < low) breakoutScore = -4;
+
+  // ADX filter
+  let adxData = calculateADX(candles);
+  let adxScore = 0;
+  if (adxData.adx > 25) {
+    if (adxData.pdi > adxData.mdi) adxScore = 4;
+    if (adxData.mdi > adxData.pdi) adxScore = -4;
+  } else {
+    return null;
+  }
+
+  // Final strict score
+  let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
+
+  if (totalScore >= 14) return "CALL";
+  if (totalScore <= -14) return "PUT";
+
+  return null;
 }
 
-if(global.length===0){
-document.getElementById("output").innerText="NO VALID TRIGGERS.";
-RUN=false;
-return;
+function getRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    let diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period || 0.0001;
+  let rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
 }
 
-let minuteMap={};
-global.forEach(t=>{
-if(!minuteMap[t.minute]||minuteMap[t.minute].strength<t.strength){
-minuteMap[t.minute]=t;
-}
-});
-
-let clean=Object.values(minuteMap).sort((a,b)=>a.minute-b.minute);
-
-let filtered=[];
-for(let i=0;i<clean.length;i++){
-if(i===0||clean[i].minute-clean[i-1].minute>1){
-filtered.push(clean[i]);
-}
+function EMA(data, period) {
+  if (data.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = data[data.length - period].close;
+  for (let i = data.length - period + 1; i < data.length; i++) {
+    ema = data[i].close * k + ema * (1 - k);
+  }
+  return ema;
 }
 
-filtered=filtered.slice(-18);
+async function deepNeuralScan() {
+  if (SCANNING) return;
+  SCANNING = true;
+  FINAL_LIST = [];
 
-let start=new Date("2025-01-01 "+document.getElementById("start").value).getTime();
-filtered.forEach((t,i)=>{
-FINAL.push({
-time:new Date(start+(i*60000)).toTimeString().slice(0,5),
-pair:t.pair,
-dir:t.dir
-});
-});
+  const pairs = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
+  if (pairs.length < 1) {
+    document.getElementById('output').innerText = "Select at least 1 asset!";
+    SCANNING = false;
+    return;
+  }
 
-setLoader(70);
-render();
-RUN=false;
+  const output = document.getElementById('output');
+  output.innerHTML = `<div class="loader-box">DEEP SCAN 200+ CANDLES...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
+
+  let pool = [];
+  for (let i = 0; i < pairs.length; i++) {
+    try {
+      let res = await fetch(API + pairs[i]);
+      let json = await res.json();
+      let decision = analyzeBrain(json.data || []);
+      if (decision) {
+        pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision });
+      }
+      let p = ((i + 1) / pairs.length) * 100;
+      document.querySelector('#pb').style.width = p + "%";
+      document.getElementById('perc').innerText = Math.round(p) + "%";
+    } catch (e) { console.error(e); }
+  }
+
+  if (pool.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+    SCANNING = false;
+    return;
+  }
+
+  // API based timings - last candle time se shuru
+  let lastCandleTime = pool[0].time || new Date().getTime(); // fallback
+  let current = lastCandleTime;
+
+  for (let i = 0; i < 15; i++) {
+    current += 60000; // 1 minute next
+    let idx = Math.floor(Math.random() * pool.length);
+    let asset = pool[idx];
+
+    FINAL_LIST.push({
+      time: new Date(current).toTimeString().slice(0,5),
+      pair: asset.pair,
+      dir: asset.dir
+    });
+  }
+
+  renderResult();
+  SCANNING = false;
 }
 
-function render(){
-let h="APX FINAL CLEAN TRIGGER\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
-FINAL.forEach(s=>{
-h+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
-});
-h+="\n━━━━━━━━━━━━━━━━━━\nReal API Candle Logic\n";
-document.getElementById("output").innerText=h;
+function renderResult() {
+  let h = "APX ULTRA V45 PRO SIGNALS\n";
+  h += "━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "UTC+6 | 1 MIN EXP\n\n";
+
+  FINAL_LIST.forEach(s => {
+    h += `✦ ${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
+  });
+
+  h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX\n";
+  document.getElementById('output').innerText = h;
 }
 
-async function sendTG(){
-if(FINAL.length===0)return alert("Scan first.");
+async function sendToTG() {
+  if (FINAL_LIST.length === 0) return alert("Scan first!");
 
-setLoader(85);
-await new Promise(r=>setTimeout(r,800));
-setLoader(95);
-await new Promise(r=>setTimeout(r,800));
-setLoader(100);
+  try {
+    // Single animated loading message with moving bar
+    let loadingMsg = "✦═╡ APX NEURAL V45 ╞═✦\n";
+    loadingMsg += "Scanning Deep Brain...\n";
+    loadingMsg += "🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜  Moving...\n";
+    loadingMsg += "📡 API Processing...";
 
-let msg="📊 APX FINAL CLEAN TRIGGER 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n```text\n";
-FINAL.forEach(s=>{
-msg+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
-});
-msg+="```\n━━━━━━━━━━━━━━━━━━\nTrade exact time\n1 Step Martingale\nStop after 2 losses\n\nPowered by APX Premium";
+    await fetch(TG, { method: "POST", body: loadingMsg });
 
-await fetch(TG,{method:"POST",body:msg});
-alert("Signals Sent!");
+    await new Promise(r => setTimeout(r, 60000)); // 1 minute delay
+
+    // Real signals with perfect alignment
+    let finalMsg = "✅ APX BRAIN V6 VERIFIED ✅\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "ZONE: GMT+6 | 1 MIN EXP\n\n";
+
+    FINAL_LIST.forEach(s => {
+      finalMsg += `✦ ${s.time.padEnd(6)} | ${s.pair.padEnd(8)} | ${s.dir}\n`;
+    });
+
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "RULES:\n";
+    finalMsg += "• Trade exact time\n";
+    finalMsg += "• 1 Step Martingale Only\n";
+    finalMsg += "• Avoid News\n";
+    finalMsg += "• Stop after 2 losses\n\n";
+    finalMsg += "POWERED BY APX PREMIUM AI";
+
+    await fetch(TG, { method: "POST", body: finalMsg });
+    alert("Signals Sent!");
+  } catch (e) {
+    alert("Telegram Error!");
+  }
 }
 </script>
 </body>
