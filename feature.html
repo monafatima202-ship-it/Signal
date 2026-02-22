@@ -15,29 +15,22 @@
 --glow:0 0 15px #00ff88,0 0 25px #00ccff;
 --text:#e0fbee;
 }
-
 body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
 header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
 .logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
-
 .container{max-width:480px;margin:20px auto;padding:15px;}
 .panel{background:var(--panel);border-radius:25px;padding:25px;border:2px solid rgba(0,255,136,.3);box-shadow:0 0 50px rgba(0,255,136,.2);}
-
 .tabs{display:flex;gap:10px;margin-bottom:15px;}
 .tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-family:'Orbitron';cursor:pointer;font-size:11px;}
 .tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;box-shadow:var(--glow);}
-
-select,input{width:100%;padding:12px;margin-bottom:15px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;}
-
-button{width:100%;padding:16px;margin-top:8px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
+select,input{width:100%;padding:12px;margin-bottom:12px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;}
+button{width:100%;padding:15px;margin-top:8px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
 .telegram{background:#0088cc;color:white;}
-
-#output{margin-top:20px;background:#01040a;padding:18px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;min-height:200px;}
-
+#output{margin-top:18px;background:#01040a;padding:18px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;min-height:200px;}
 .loader{padding:20px;text-align:center;}
 .bar{width:100%;height:10px;background:#0d1e13;border-radius:10px;overflow:hidden;margin-top:10px;}
-.bar-fill{width:0%;height:100%;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);background-size:200% 100%;animation:move 1.5s linear infinite;}
+.bar-fill{width:100%;height:100%;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);background-size:200% 100%;animation:move 1.5s linear infinite;}
 @keyframes move{0%{background-position:0%}100%{background-position:200%}}
 </style>
 </head>
@@ -55,6 +48,9 @@ button{width:100%;padding:16px;margin-top:8px;border:none;border-radius:12px;fon
 </div>
 
 <select id="pairs" multiple size="6"></select>
+
+<input type="time" id="start" value="21:00">
+<input type="time" id="end" value="23:00">
 
 <button class="generate" onclick="scan()">DEEP ADAPTIVE SCAN</button>
 <button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
@@ -113,7 +109,7 @@ return 100-(100/(1+rs));
 }
 
 function strengthScore(c){
-if(c.length<200)return null;
+if(!c||c.length<200)return null;
 let s=c.slice(-200);
 let e20=EMA(s,20),e50=EMA(s,50);
 if(!e20||!e50)return null;
@@ -125,7 +121,7 @@ for(let i=s.length-30;i<s.length;i++){
 let d=s[i].close-s[i-1].close;
 momentum+=d>0?1:-1;
 }
-let total=trend+rScore+(momentum/15);
+let total=trend+rScore+(momentum/20);
 if(total>=2)return{dir:"CALL",power:total};
 if(total<=-2)return{dir:"PUT",power:Math.abs(total)};
 return null;
@@ -159,18 +155,42 @@ return;
 pool.sort((a,b)=>b.power-a.power);
 let top=pool.slice(0,3);
 
-let dirCount={CALL:0,PUT:0};
+let startVal=document.getElementById("start").value;
+let endVal=document.getElementById("end").value;
 let now=new Date();
-for(let i=1;i<=15;i++){
-let t=new Date(now.getTime()+i*60000);
+let start=new Date(now.toDateString()+" "+startVal).getTime();
+let end=new Date(now.toDateString()+" "+endVal).getTime();
+if(end<=start)end+=86400000;
+
+let totalMinutes=Math.floor((end-start)/60000);
+let count=Math.min(18,Math.max(10,top.length*4));
+let baseGap=Math.floor(totalMinutes/count);
+
+let current=start;
+let lastPair="";
+let repeat=0;
+
+for(let i=0;i<count;i++){
+current+= (baseGap + Math.floor(Math.random()*2))*60000;
+if(current>=end)break;
+
 let pick=top[i%top.length];
-
-if(dirCount[pick.dir]>dirCount[pick.dir==="CALL"?"PUT":"CALL"]+3){
-pick=top.find(x=>x.dir!==pick.dir)||pick;
+if(pick.pair===lastPair){
+repeat++;
+if(repeat>=2){
+let alt=top.find(x=>x.pair!==lastPair);
+if(alt)pick=alt;
+repeat=0;
 }
+}else repeat=0;
 
-dirCount[pick.dir]++;
-FINAL.push({time:t.toTimeString().slice(0,5),pair:pick.pair,dir:pick.dir});
+lastPair=pick.pair;
+
+FINAL.push({
+time:new Date(current).toTimeString().slice(0,5),
+pair:pick.pair,
+dir:pick.dir
+});
 }
 
 render();
@@ -192,18 +212,33 @@ output.innerText=txt;
 async function sendTG(){
 if(!FINAL.length)return alert("Scan first.");
 
-let loading="🟩⬜⬜⬜⬜";
-await fetch(TG,{method:"POST",body:"APX Adaptive Loading...\n"+loading});
-await new Promise(r=>setTimeout(r,2000));
+await fetch(TG,{method:"POST",body:
+"📡 APX ENGINE\n"+
+"━━━━━━━━━━━━━━━━━━\n"+
+"Scanning Market...\n\n"+
+"🟩🟩⬜⬜⬜ 40%\n"+
+"Processing..."
+});
 
-let msg="📊 APX ADAPTIVE PRO 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
+await new Promise(r=>setTimeout(r,2500));
+
+let msg="📊 APX ADAPTIVE PRO 📊\n"+
+"━━━━━━━━━━━━━━━━━━\n"+
+"UTC+6 | 1 MIN EXP\n"+
+"━━━━━━━━━━━━━━━━━━\n\n";
+
 FINAL.forEach(s=>{
 msg+=`${s.pair.padEnd(8)} ${s.time}   ${s.dir}\n`;
 });
-msg+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\nStop after 2 losses\nPowered by APX Premium";
+
+msg+="\n━━━━━━━━━━━━━━━━━━\n"+
+"Trade exact time\n"+
+"1 Step Martingale\n"+
+"Stop after 2 losses\n\n"+
+"Powered by APX Premium";
 
 await fetch(TG,{method:"POST",body:msg});
-alert("Sent.");
+alert("Signals Sent.");
 }
 
 </script>
