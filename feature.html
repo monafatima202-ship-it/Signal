@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V46 - API TIMED</title>
+<title>APX NEURAL V47 - M</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V45 - NEON PRO</div></header>
+<header><div class="logo">APX NEURAL V46 - NO RANDOM</div></header>
 
 <div class="container">
   <div class="panel">
@@ -59,7 +59,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
       <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
     </div>
 
-    <label style="font-size:13px; color:var(--neon)">SELECT ASSETS (3-6):</label>
+    <label style="font-size:13px; color:var(--neon)">SELECT ASSETS (1-6):</label>
     <select id="pairs" multiple size="6"></select>
 
     <div class="time-row">
@@ -101,43 +101,7 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// --- ADX CALCULATION ---
-function calculateADX(candles, period = 14) {
-  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
-
-  let tr = [];
-  let dmPlus = [];
-  let dmMinus = [];
-
-  for (let i = 1; i < candles.length; i++) {
-    let high = candles[i].high;
-    let low = candles[i].low;
-    let prevHigh = candles[i-1].high;
-    let prevLow = candles[i-1].low;
-    let prevClose = candles[i-1].close;
-
-    let tr1 = high - low;
-    let tr2 = Math.abs(high - prevClose);
-    let tr3 = Math.abs(low - prevClose);
-    tr.push(Math.max(tr1, tr2, tr3));
-
-    let upMove = high - prevHigh;
-    let downMove = prevLow - low;
-    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
-    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
-  }
-
-  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
-  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-
-  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
-  let adx = dx;
-
-  return { adx, pdi: diPlus, mdi: diMinus };
-}
-
-// --- FINAL HIGH ACCURACY LOGIC ---
+// --- HIGH ACCURACY LOGIC ---
 function analyzeBrain(candles) {
   if (candles.length < 200) return null;
 
@@ -226,6 +190,41 @@ function EMA(data, period) {
   return ema;
 }
 
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
+}
+
 async function deepNeuralScan() {
   if (SCANNING) return;
   SCANNING = true;
@@ -262,13 +261,13 @@ async function deepNeuralScan() {
     return;
   }
 
-  // API based timings - last candle time se shuru
-  let lastCandleTime = pool[0].time || new Date().getTime(); // fallback
-  let current = lastCandleTime;
+  // API based timings - 1 minute exact intervals
+  let baseTime = new Date();
+  let current = baseTime.getTime();
 
   for (let i = 0; i < 15; i++) {
-    current += 60000; // 1 minute next
-    let idx = Math.floor(Math.random() * pool.length);
+    current += 60000; // exactly 1 minute
+    let idx = i % pool.length; // cycle through all pairs
     let asset = pool[idx];
 
     FINAL_LIST.push({
@@ -283,7 +282,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V45 PRO SIGNALS\n";
+  let h = "APX ULTRA V46 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -301,9 +300,9 @@ async function sendToTG() {
 
   try {
     // Single animated loading message with moving bar
-    let loadingMsg = "✦═╡ APX NEURAL V45 ╞═✦\n";
+    let loadingMsg = "✦═╡ APX NEURAL V46 ╞═✦\n";
     loadingMsg += "Scanning Deep Brain...\n";
-    loadingMsg += "🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜  Moving...\n";
+    loadingMsg += "🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ Moving...\n";
     loadingMsg += "📡 API Processing...";
 
     await fetch(TG, { method: "POST", body: loadingMsg });
