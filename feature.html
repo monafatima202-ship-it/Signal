@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V3 - Loading Bars</title>
+<title>APX NEURAL V45 - Clean Telegram</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -13,9 +13,10 @@
   --neon: #00ff88;
   --glow: 0 0 15px #00ff88;
   --text: #e0fbee;
+  --green: #00ff88;
 }
 
-body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
 header { text-align:center; padding:20px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--glow); }
 .logo { font-family:'Orbitron'; font-size:26px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
 
@@ -39,13 +40,13 @@ button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:1
 /* Progress Bar */
 .loader-box { padding:20px; text-align:center; }
 .bar-bg { width:100%; background:#0d1e13; height:10px; border-radius:10px; margin:10px 0; overflow:hidden; border:1px solid #1a3a2a; }
-.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff); transition:width 0.3s; box-shadow:var(--glow); }
+.bar-fill { width:0%; height:100%; background:var(--green); box-shadow:0 0 10px var(--green); transition:width 0.4s; }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX NEURAL V44 - LOADING BARS</div></header>
+<header><div class="logo">APX NEURAL V45 - CLEAN ALIGN</div></header>
 
 <div class="container">
   <div class="panel">
@@ -97,43 +98,7 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// --- ADX CALCULATION (14-period) ---
-function calculateADX(candles, period = 14) {
-  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
-
-  let tr = [];
-  let dmPlus = [];
-  let dmMinus = [];
-
-  for (let i = 1; i < candles.length; i++) {
-    let high = candles[i].high;
-    let low = candles[i].low;
-    let prevHigh = candles[i-1].high;
-    let prevLow = candles[i-1].low;
-    let prevClose = candles[i-1].close;
-
-    let tr1 = high - low;
-    let tr2 = Math.abs(high - prevClose);
-    let tr3 = Math.abs(low - prevClose);
-    tr.push(Math.max(tr1, tr2, tr3));
-
-    let upMove = high - prevHigh;
-    let downMove = prevLow - low;
-    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
-    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
-  }
-
-  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
-  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-
-  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
-  let adx = dx;
-
-  return { adx, pdi: diPlus, mdi: diMinus };
-}
-
-// --- FINAL HIGH ACCURACY BRAIN LOGIC (200+ CANDLES + ADX) ---
+// --- HIGH ACCURACY BRAIN LOGIC (200 CANDLES) ---
 function analyzeBrain(candles) {
   if (candles.length < 200) return null;
 
@@ -180,7 +145,7 @@ function analyzeBrain(candles) {
   if (last.close > high) breakoutScore = 4;
   if (last.close < low) breakoutScore = -4;
 
-  // ADX filter (new added)
+  // ADX filter
   let adxData = calculateADX(candles);
   let adxScore = 0;
   if (adxData.adx > 25) {
@@ -190,7 +155,7 @@ function analyzeBrain(candles) {
     return null; // No trend = skip
   }
 
-  // Final very strict score
+  // Final strict score
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
   if (totalScore >= 14) return "CALL";
@@ -220,6 +185,41 @@ function EMA(data, period) {
     ema = data[i].close * k + ema * (1 - k);
   }
   return ema;
+}
+
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
 }
 
 async function deepNeuralScan() {
@@ -302,19 +302,19 @@ async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
 
   try {
-    // Loading stages
+    // Loading stages (green emoji bar)
     const stages = [
-      "✦═╡ APX NEURAL V43 ╞═✦\nScanning Market...\n[▓▓▓░░░░░░░ 35%]\n📡 Connecting API...",
-      "✦═╡ APX NEURAL V43 ╞═✦\nAnalyzing 200+ Candles...\n[▓▓▓▓▓▓░░░ 70%]\n🧠 Brain Processing...",
-      "✦═╡ APX NEURAL V43 ╞═✦\nFinal Filtering...\n[▓▓▓▓▓▓▓▓▓░ 100%]\n✅ Signals Ready!"
+      "✦═╡ APX NEURAL V43 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V43 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V43 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
     ];
 
     for (let msg of stages) {
       await fetch(TG, { method: "POST", body: msg });
-      await new Promise(r => setTimeout(r, 1800));
+      await new Promise(r => setTimeout(r, 20000)); // 20 sec delay per stage
     }
 
-    // Real signals
+    // Real signals with perfect alignment
     let finalMsg = "🌟 APX ULTRA V43 PRO SIGNALS 🌟\n";
     finalMsg += "━━━━━━━━━━━━━━━━━━\n";
     finalMsg += "UTC+6 | 1 MIN EXP\n\n";
