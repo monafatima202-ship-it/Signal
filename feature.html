@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX BALANCED PRO ENGINE</title>
+<title>APX TRIGGER ENGINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -12,26 +12,25 @@
 --panel:#0a111f;
 --neon:#00ff88;
 --cyan:#00ccff;
---text:#e0fbee;
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
-header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
+body{margin:0;background:var(--bg);color:white;font-family:'Rajdhani';}
+header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);}
+.logo{font-family:'Orbitron';color:var(--neon);}
 .container{max-width:480px;margin:20px auto;padding:15px;}
-.panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,.3);}
-.tabs{display:flex;gap:10px;margin-bottom:20px;}
-.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-family:'Orbitron';font-size:12px;cursor:pointer;}
+.panel{background:var(--panel);border-radius:20px;padding:25px;border:2px solid rgba(0,255,136,.3);}
+.tabs{display:flex;gap:10px;margin-bottom:15px;}
+.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;font-family:'Orbitron';cursor:pointer;}
 .tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;}
-select,input{width:100%;padding:14px;margin-bottom:18px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;}
-button{width:100%;padding:18px;margin-top:12px;border:none;border-radius:14px;font-family:'Orbitron';font-weight:900;text-transform:uppercase;}
+select,input{width:100%;padding:12px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
+button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:bold;text-transform:uppercase;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
 .telegram{background:#0088cc;color:white;}
-#output{margin-top:25px;background:#01040a;padding:20px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:200px;}
+#output{margin-top:20px;background:#01040a;padding:15px;border-radius:12px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:180px;}
 .loader-box{text-align:center;padding:20px;}
-.bar-bg{width:100%;background:#0d1e13;height:12px;border-radius:12px;margin:15px 0;overflow:hidden;}
+.bar-bg{width:100%;height:10px;background:#0d1e13;border-radius:10px;overflow:hidden;}
 .bar-fill{
-height:100%;
 width:40%;
+height:100%;
 background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);
 animation:move 1.2s linear infinite;
 }
@@ -43,7 +42,7 @@ animation:move 1.2s linear infinite;
 </head>
 <body>
 
-<header><div class="logo">APX BALANCED PRO</div></header>
+<header><div class="logo">APX TRIGGER ENGINE</div></header>
 
 <div class="container">
 <div class="panel">
@@ -55,14 +54,12 @@ animation:move 1.2s linear infinite;
 </div>
 
 <select id="pairs" multiple size="6"></select>
-
 <input type="time" id="start" value="21:00">
-<input type="time" id="end" value="23:00">
 
-<button class="generate" onclick="scan()">BALANCED SCAN</button>
-<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
+<button class="generate" onclick="scan()">TRIGGER SCAN</button>
+<button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
 
-<div id="output">SYSTEM READY...</div>
+<div id="output">READY...</div>
 
 </div>
 </div>
@@ -72,7 +69,7 @@ const API="https://apx.mkapi009.workers.dev?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 let FINAL=[];
-let SCANNING=false;
+let RUN=false;
 
 const ASSETS={
 OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
@@ -94,118 +91,99 @@ s.appendChild(o);
 }
 setMarket("OTC",document.querySelector(".tab.active"));
 
-function EMA(d,p){
-let k=2/(p+1);
-let e=d[d.length-p].close;
-for(let i=d.length-p+1;i<d.length;i++){
-e=d[i].close*k+e*(1-k);
+function EMA(data,period){
+let k=2/(period+1);
+let ema=data[0].close;
+for(let i=1;i<data.length;i++){
+ema=data[i].close*k+ema*(1-k);
 }
-return e;
+return ema;
 }
 
-function analyze(data){
-if(data.length<200)return null;
-let r=data.slice(-200);
-let ema20=EMA(r,20);
-let ema50=EMA(r,50);
-let ema100=EMA(r,100);
-let last=r[r.length-1];
+function detectTriggers(data){
+if(data.length<250)return [];
+let signals=[];
+for(let i=50;i<data.length-1;i++){
+let slice=data.slice(i-50,i);
+let ema20=EMA(slice,20);
+let ema50=EMA(slice,50);
+let last=data[i];
 
 let score=0;
 
-if(ema20>ema50&&ema50>ema100)score+=4;
-if(ema20<ema50&&ema50<ema100)score-=4;
+if(ema20>ema50)score++;
+if(ema20<ema50)score--;
 
 let momentum=0;
-for(let i=r.length-20;i<r.length;i++){
-let diff=r[i].close-r[i-1].close;
+for(let j=i-10;j<i;j++){
+let diff=data[j].close-data[j-1].close;
 if(diff>0)momentum++;
 if(diff<0)momentum--;
 }
-if(momentum>5)score+=2;
-if(momentum<-5)score-=2;
+if(momentum>6)score+=2;
+if(momentum<-6)score-=2;
 
-let high=Math.max(...r.slice(-25).map(x=>x.high));
-let low=Math.min(...r.slice(-25).map(x=>x.low));
-if(last.close>high)score+=2;
-if(last.close<low)score-=2;
+let body=Math.abs(last.close-last.open);
+let range=last.high-last.low||0.0001;
+if(body/range>0.6)score+=1;
 
-if(Math.abs(score)<2)return null;
-
-return{
-dir:score>0?"CALL":"PUT",
-strength:Math.abs(score)
-};
+if(score>=3)signals.push({index:i,dir:"CALL"});
+if(score<=-3)signals.push({index:i,dir:"PUT"});
+}
+return signals.slice(-15);
 }
 
 async function scan(){
-if(SCANNING)return;
-SCANNING=true;
+if(RUN)return;
+RUN=true;
 FINAL=[];
 let out=document.getElementById("output");
-out.innerHTML=`<div class="loader-box">ANALYZING MARKET<div class="bar-bg"><div class="bar-fill"></div></div></div>`;
+out.innerHTML=`<div class="loader-box">SCANNING STRUCTURE<div class="bar-bg"><div class="bar-fill"></div></div></div>`;
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-let pool=[];
+let start=new Date("2025-01-01 "+document.getElementById("start").value).getTime();
+
 for(let pair of selected){
 let res=await fetch(API+pair);
 let j=await res.json();
-let d=analyze(j.data||[]);
-if(d){
-pool.push({pair:pair.replace(/-otc|-OTC/gi,''),dir:d.dir,str:d.strength});
-}
+let triggers=detectTriggers(j.data||[]);
+triggers.forEach((t,k)=>{
+FINAL.push({
+time:new Date(start+(k*60000)).toTimeString().slice(0,5),
+pair:pair.replace(/-otc|-OTC/gi,''),
+dir:t.dir
+});
+});
 }
 
-if(pool.length===0){
-out.innerText="MARKET TOO FLAT.";
-SCANNING=false;
+if(FINAL.length===0){
+out.innerText="NO VALID TRIGGERS FOUND.";
+RUN=false;
 return;
 }
 
-pool.sort((a,b)=>b.str-a.str);
-
-let start=new Date("2025-01-01 "+document.getElementById("start").value).getTime();
-let end=new Date("2025-01-01 "+document.getElementById("end").value).getTime();
-if(end<=start)end+=86400000;
-
-let totalMinutes=Math.floor((end-start)/60000);
-let signalCount=Math.min(18, totalMinutes);
-let minuteGap=Math.max(1,Math.floor(totalMinutes/signalCount));
-
-let current=start;
-
-for(let i=0;i<signalCount;i++){
-current+=minuteGap*60000;
-let asset=pool[i%pool.length];
-FINAL.push({
-time:new Date(current).toTimeString().slice(0,5),
-pair:asset.pair,
-dir:asset.dir
-});
-}
-
 render();
-SCANNING=false;
+RUN=false;
 }
 
 function render(){
-let h="APX BALANCED PRO\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
+let h="APX TRIGGER ENGINE\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
 FINAL.forEach(s=>{
 h+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
-h+="\n━━━━━━━━━━━━━━━━━━\nBalanced Strength Model\n";
+h+="\n━━━━━━━━━━━━━━━━━━\nReal Trigger Model\n";
 document.getElementById("output").innerText=h;
 }
 
 async function sendTG(){
-if(FINAL.length===0)return alert("Scan first!");
+if(FINAL.length===0)return alert("Scan first.");
 
 let stages=[
-"🟩⬜⬜⬜⬜ 20%  Connecting...",
-"🟩🟩⬜⬜⬜ 40%  Reading Candles...",
-"🟩🟩🟩⬜⬜ 60%  Scoring...",
-"🟩🟩🟩🟩⬜ 80%  Finalizing...",
-"🟩🟩🟩🟩🟩 100%  Ready!"
+"🟩⬜⬜⬜⬜ 20% Connecting...",
+"🟩🟩⬜⬜⬜ 40% Reading Candles...",
+"🟩🟩🟩⬜⬜ 60% Detecting Triggers...",
+"🟩🟩🟩🟩⬜ 80% Finalizing...",
+"🟩🟩🟩🟩🟩 100% Ready!"
 ];
 
 for(let s of stages){
@@ -213,14 +191,14 @@ await fetch(TG,{method:"POST",body:s});
 await new Promise(r=>setTimeout(r,2000));
 }
 
-let msg="📊 APX BALANCED PRO 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n```text\n";
+let msg="📊 APX TRIGGER ENGINE 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n```text\n";
 FINAL.forEach(s=>{
 msg+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
 msg+="```\n━━━━━━━━━━━━━━━━━━\nTrade exact time\n1 Step Martingale\nStop after 2 losses\n\nPowered by APX Premium";
 
 await fetch(TG,{method:"POST",body:msg});
-alert("Signals Sent!");
+alert("Sent!");
 }
 </script>
 </body>
