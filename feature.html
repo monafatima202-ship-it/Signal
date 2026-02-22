@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V51 - PRO STRENGTH</title>
+<title>APX NEURAL V60 - STRONG TRIGGER</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -12,30 +12,38 @@
 --panel:#0a111f;
 --neon:#00ff88;
 --cyan:#00ccff;
---glow:0 0 15px #00ff88,0 0 25px #00ccff;
 --text:#e0fbee;
 }
 body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
-header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
+header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
 .container{max-width:480px;margin:20px auto;padding:15px;}
 .panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,.3);}
 .tabs{display:flex;gap:10px;margin-bottom:20px;}
-.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-weight:bold;cursor:pointer;font-family:'Orbitron';font-size:12px;}
-.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;box-shadow:var(--glow);}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-family:'Orbitron';font-size:12px;cursor:pointer;}
+.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;}
 select,input{width:100%;padding:14px;margin-bottom:18px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;}
-button{width:100%;padding:18px;margin-top:12px;border:none;border-radius:14px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+button{width:100%;padding:18px;margin-top:12px;border:none;border-radius:14px;font-family:'Orbitron';font-weight:900;text-transform:uppercase;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
 .telegram{background:#0088cc;color:white;}
 #output{margin-top:25px;background:#01040a;padding:20px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:200px;}
 .loader-box{text-align:center;padding:20px;}
-.bar-bg{width:100%;background:#0d1e13;height:12px;border-radius:12px;margin:15px 0;}
-.bar-fill{width:0%;height:100%;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);transition:width .4s;}
+.bar-bg{width:100%;background:#0d1e13;height:12px;border-radius:12px;margin:15px 0;overflow:hidden;}
+.bar-fill{
+height:100%;
+width:40%;
+background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);
+animation:move 1.2s linear infinite;
+}
+@keyframes move{
+0%{margin-left:-40%;}
+100%{margin-left:100%;}
+}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V51 PRO</div></header>
+<header><div class="logo">APX NEURAL V60 STRONG</div></header>
 
 <div class="container">
 <div class="panel">
@@ -47,11 +55,9 @@ button{width:100%;padding:18px;margin-top:12px;border:none;border-radius:14px;fo
 </div>
 
 <select id="pairs" multiple size="6"></select>
-
 <input type="time" id="start" value="21:00">
-<input type="time" id="end" value="23:00">
 
-<button class="generate" onclick="runScan()">PRO STRENGTH SCAN</button>
+<button class="generate" onclick="scan()">STRONG SCAN</button>
 <button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
 <div id="output">SYSTEM READY...</div>
@@ -64,7 +70,7 @@ const API="https://apx.mkapi009.workers.dev?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 let FINAL=[];
-let SCAN=false;
+let SCANNING=false;
 
 const ASSETS={
 OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
@@ -95,120 +101,96 @@ e=d[i].close*k+e*(1-k);
 return e;
 }
 
-function analyze(c){
-if(c.length<250)return null;
-let r=c.slice(-250);
+function strongSignal(data){
+if(data.length<200)return null;
+let r=data.slice(-200);
 let ema20=EMA(r,20);
 let ema50=EMA(r,50);
 let ema100=EMA(r,100);
 let last=r[r.length-1];
 
 let score=0;
-
-if(ema20>ema50&&ema50>ema100)score+=5;
-if(ema20<ema50&&ema50<ema100)score-=5;
+if(ema20>ema50&&ema50>ema100)score+=4;
+if(ema20<ema50&&ema50<ema100)score-=4;
 
 let momentum=0;
-for(let i=r.length-25;i<r.length;i++){
+for(let i=r.length-20;i<r.length;i++){
 let diff=r[i].close-r[i-1].close;
 if(diff>0)momentum++;
 if(diff<0)momentum--;
 }
-if(momentum>8)score+=3;
-if(momentum<-8)score-=3;
+if(momentum>6)score+=3;
+if(momentum<-6)score-=3;
 
-let high=Math.max(...r.slice(-35).map(x=>x.high));
-let low=Math.min(...r.slice(-35).map(x=>x.low));
+let high=Math.max(...r.slice(-30).map(x=>x.high));
+let low=Math.min(...r.slice(-30).map(x=>x.low));
 
 if(last.close>high)score+=3;
 if(last.close<low)score-=3;
 
-if(Math.abs(score)<4)return null;
-
-return{
-dir:score>0?"CALL":"PUT",
-strength:Math.abs(score)
-};
+if(score>=7)return "CALL";
+if(score<=-7)return "PUT";
+return null;
 }
 
-async function runScan(){
-if(SCAN)return;
-SCAN=true;
+async function scan(){
+if(SCANNING)return;
+SCANNING=true;
 FINAL=[];
 let out=document.getElementById("output");
-out.innerHTML=`<div class="loader-box">ANALYZING MARKET...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div></div>`;
+out.innerHTML=`<div class="loader-box">ANALYZING STRONG STRUCTURE<div class="bar-bg"><div class="bar-fill"></div></div></div>`;
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-let pool=[];
-for(let i=0;i<selected.length;i++){
-let res=await fetch(API+selected[i]);
-let j=await res.json();
-let d=analyze(j.data||[]);
-if(d)pool.push({pair:selected[i].replace(/-otc|-OTC/gi,''),dir:d.dir,str:d.strength});
-document.getElementById("pb").style.width=((i+1)/selected.length*100)+"%";
-}
-
-if(pool.length===0){out.innerText="MARKET CONDITIONS NOT FAVORABLE.";SCAN=false;return;}
-
-pool.sort((a,b)=>b.str-a.str);
-
 let start=new Date("2025-01-01 "+document.getElementById("start").value).getTime();
-let end=new Date("2025-01-01 "+document.getElementById("end").value).getTime();
-if(end<=start)end+=86400000;
-
-let totalWeight=pool.reduce((sum,p)=>sum+p.str,0);
-let signalCount=18;
 let current=start;
-let gap=(end-start)/signalCount;
 
-for(let i=0;i<signalCount;i++){
-current+=gap;
-let weightedIndex=Math.floor((i/ signalCount)*totalWeight);
-let cumulative=0;
-let chosen=pool[0];
-for(let p of pool){
-cumulative+=p.str;
-if(weightedIndex<cumulative){chosen=p;break;}
+for(let pair of selected){
+let res=await fetch(API+pair);
+let j=await res.json();
+let dir=strongSignal(j.data||[]);
+if(dir){
+FINAL.push({
+time:new Date(current).toTimeString().slice(0,5),
+pair:pair.replace(/-otc|-OTC/gi,''),
+dir:dir
+});
+current+=60000; // next minute only if strong
 }
-FINAL.push({time:new Date(current).toTimeString().slice(0,5),pair:chosen.pair,dir:chosen.dir});
+}
+
+if(FINAL.length===0){
+out.innerText="NO STRONG STRUCTURE FOUND.";
+SCANNING=false;
+return;
 }
 
 render();
-SCAN=false;
+SCANNING=false;
 }
 
 function render(){
-let h="APX NEURAL V51 PRO\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n\n";
+let h="APX NEURAL V60 STRONG\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
 FINAL.forEach(s=>{
-h+=`✦ ${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
+h+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
-h+="\n━━━━━━━━━━━━━━━━━━━━━━\nWeighted Strength Model\n";
+h+="\n━━━━━━━━━━━━━━━━━━\nStrong Trigger Engine\n";
 document.getElementById("output").innerText=h;
 }
 
 async function sendTG(){
-if(FINAL.length===0)return alert("Scan first.");
+if(FINAL.length===0)return alert("Scan first!");
 
-let loading="🟩⬜⬜⬜⬜ 20%\n";
+let loading="🟩🟩🟩🟩🟩 100%\n";
 await fetch(TG,{method:"POST",body:loading});
-await new Promise(r=>setTimeout(r,2000));
 
-loading="🟩🟩🟩⬜⬜ 60%\n";
-await fetch(TG,{method:"POST",body:loading});
-await new Promise(r=>setTimeout(r,2000));
-
-loading="🟩🟩🟩🟩🟩 100%\n";
-await fetch(TG,{method:"POST",body:loading});
-await new Promise(r=>setTimeout(r,1500));
-
-let msg="📊 APX NEURAL V51 PRO 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n";
+let msg="📊 APX NEURAL V60 STRONG 📊\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n";
 FINAL.forEach(s=>{
 msg+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
 msg+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\n1 Step Martingale\nStop after 2 losses\n\nPowered by APX Premium";
 
 await fetch(TG,{method:"POST",body:msg});
-alert("Signals Sent Successfully!");
+alert("Signals Sent!");
 }
 </script>
 </body>
