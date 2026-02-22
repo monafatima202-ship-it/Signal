@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V45 - Clean Telegram</title>
+<title>APX NEURAL V45 - NEON PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -11,42 +11,43 @@
   --bg: #02060c;
   --panel: #0a111f;
   --neon: #00ff88;
-  --glow: 0 0 15px #00ff88;
+  --cyan: #00ccff;
+  --glow: 0 0 15px #00ff88, 0 0 25px #00ccff;
   --text: #e0fbee;
-  --green: #00ff88;
 }
 
-body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
-header { text-align:center; padding:20px; background:black; border-bottom:3px solid var(--neon); box-shadow:var(--glow); }
-.logo { font-family:'Orbitron'; font-size:26px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
+header { text-align:center; padding:25px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
+.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:3px; }
 
-.container { max-width:450px; margin:15px auto; padding:10px; }
-.panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.2); box-shadow:0 0 40px rgba(0,0,0,0.5); }
+.container { max-width:480px; margin:20px auto; padding:15px; }
+.panel { background:var(--panel); border-radius:25px; padding:30px; border:2px solid rgba(0,255,136,.3); box-shadow:0 0 50px rgba(0,255,136,.2); }
 
-.tabs { display:flex; gap:8px; margin-bottom:15px; }
-.tab { flex:1; padding:10px; border:1.5px solid var(--neon); background:transparent; color:var(--neon); border-radius:8px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:11px; transition:0.3s; }
-.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); }
+.tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:12px; transition:0.4s; }
+.tab:hover { box-shadow:0 0 20px var(--neon); transform:translateY(-2px); }
+.tab.active { background:linear-gradient(135deg,var(--neon),var(--cyan)); color:black; box-shadow:var(--glow); }
 
-select, input { width:100%; padding:12px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:10px; color:white; font-size:14px; outline:none; box-sizing:border-box; }
-.time-row { display:flex; justify-content:space-between; gap:10px; margin-bottom:15px; }
-.time-row div { flex:1; }
+select, input { width:100%; padding:14px; margin-bottom:18px; background:#050d1a; border:2px solid #1a3a3a; border-radius:12px; color:white; font-size:15px; outline:none; transition:0.3s; }
+select:focus, input:focus { border-color:var(--neon); box-shadow:0 0 15px var(--neon); }
 
-button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:12px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:14px; transition:0.3s; }
+button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:14px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:15px; transition:0.4s; }
 .generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
+.generate:hover { transform:translateY(-3px); box-shadow:0 0 30px #00ff88; }
 .telegram { background:#0088cc; color:white; }
 
-#output { margin-top:20px; background:#01040a; padding:15px; border-radius:12px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:12px; color:#afffdf; line-height:1.6; min-height:180px; }
+#output { margin-top:25px; background:#01040a; padding:20px; border-radius:15px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:200px; box-shadow:0 0 20px rgba(0,255,136,.15); }
 
 /* Progress Bar */
-.loader-box { padding:20px; text-align:center; }
-.bar-bg { width:100%; background:#0d1e13; height:10px; border-radius:10px; margin:10px 0; overflow:hidden; border:1px solid #1a3a2a; }
-.bar-fill { width:0%; height:100%; background:var(--green); box-shadow:0 0 10px var(--green); transition:width 0.4s; }
+.loader-box { padding:25px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff, #00ff88); box-shadow:var(--glow); transition:width 0.5s; }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX NEURAL V45 - CLEAN ALIGN</div></header>
+<header><div class="logo">APX NEURAL V45 - NEON PRO</div></header>
 
 <div class="container">
   <div class="panel">
@@ -56,7 +57,7 @@ button { width:100%; padding:16px; margin-top:10px; border:none; border-radius:1
       <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
     </div>
 
-    <label style="font-size:12px; color:var(--neon)">SELECT ASSETS (3-6):</label>
+    <label style="font-size:13px; color:var(--neon)">SELECT ASSETS (3-6):</label>
     <select id="pairs" multiple size="6"></select>
 
     <div class="time-row">
@@ -98,7 +99,43 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// --- HIGH ACCURACY BRAIN LOGIC (200 CANDLES) ---
+// --- ADX CALCULATION ---
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
+}
+
+// --- FINAL HIGH ACCURACY BRAIN LOGIC ---
 function analyzeBrain(candles) {
   if (candles.length < 200) return null;
 
@@ -187,49 +224,14 @@ function EMA(data, period) {
   return ema;
 }
 
-function calculateADX(candles, period = 14) {
-  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
-
-  let tr = [];
-  let dmPlus = [];
-  let dmMinus = [];
-
-  for (let i = 1; i < candles.length; i++) {
-    let high = candles[i].high;
-    let low = candles[i].low;
-    let prevHigh = candles[i-1].high;
-    let prevLow = candles[i-1].low;
-    let prevClose = candles[i-1].close;
-
-    let tr1 = high - low;
-    let tr2 = Math.abs(high - prevClose);
-    let tr3 = Math.abs(low - prevClose);
-    tr.push(Math.max(tr1, tr2, tr3));
-
-    let upMove = high - prevHigh;
-    let downMove = prevLow - low;
-    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
-    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
-  }
-
-  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
-  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-
-  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
-  let adx = dx;
-
-  return { adx, pdi: diPlus, mdi: diMinus };
-}
-
 async function deepNeuralScan() {
   if (SCANNING) return;
   SCANNING = true;
   FINAL_LIST = [];
 
   const pairs = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-  if (pairs.length < 3) {
-    document.getElementById('output').innerText = "Select at least 3-5 assets!";
+  if (pairs.length < 1) {
+    document.getElementById('output').innerText = "Select at least 1 asset!";
     SCANNING = false;
     return;
   }
@@ -258,7 +260,7 @@ async function deepNeuralScan() {
     return;
   }
 
-  // Time Distribution (5-12 min gap - natural feel)
+  // Time Distribution (5-12 min gap)
   const sT = document.getElementById('start').value;
   const eT = document.getElementById('end').value;
   let start = new Date("2025-01-01 " + sT).getTime();
@@ -266,8 +268,8 @@ async function deepNeuralScan() {
   if (end <= start) end += 86400000;
 
   let current = start;
-  while (current < end && FINAL_LIST.length < 12) {
-    current += (5 + Math.random() * 7) * 60000; // 5-12 min gap
+  while (current < end && FINAL_LIST.length < 15) {
+    current += (5 + Math.random() * 7) * 60000;
     if (current >= end) break;
 
     let idx = Math.floor(Math.random() * pool.length);
@@ -285,7 +287,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V43 PRO SIGNALS\n";
+  let h = "APX ULTRA V45 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -302,28 +304,28 @@ async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
 
   try {
-    // Loading stages (green emoji bar)
+    // Green loading stages (20 sec each = 1 min total delay)
     const stages = [
-      "✦═╡ APX NEURAL V43 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
-      "✦═╡ APX NEURAL V43 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
-      "✦═╡ APX NEURAL V43 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
+      "✦═╡ APX NEURAL V45 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V45 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V45 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
     ];
 
     for (let msg of stages) {
       await fetch(TG, { method: "POST", body: msg });
-      await new Promise(r => setTimeout(r, 20000)); // 20 sec delay per stage
+      await new Promise(r => setTimeout(r, 20000)); // 20 sec delay
     }
 
     // Real signals with perfect alignment
-    let finalMsg = "🌟 APX ULTRA V43 PRO SIGNALS 🌟\n";
-    finalMsg += "━━━━━━━━━━━━━━━━━━\n";
-    finalMsg += "UTC+6 | 1 MIN EXP\n\n";
+    let finalMsg = "✅ APX BRAIN V6 VERIFIED ✅\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "ZONE: GMT+6 | 1 MIN EXP\n\n";
 
     FINAL_LIST.forEach(s => {
-      finalMsg += `💫\( {s.pair.padEnd(10)}• \){s.time};${s.dir}\n`;
+      finalMsg += `✦ ${s.time} | ${s.pair.padEnd(8)} | ${s.dir}\n`;
     });
 
-    finalMsg += "\n━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
     finalMsg += "RULES:\n";
     finalMsg += "• Trade exact time\n";
     finalMsg += "• 1 Step Martingale Only\n";
