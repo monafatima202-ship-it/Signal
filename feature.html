@@ -148,7 +148,7 @@ function analyzeBrain(candles) {
   if (last.close > high) breakoutScore = 4;
   if (last.close < low) breakoutScore = -4;
 
-  // ADX filter (relaxed)
+  // ADX filter (relaxed to 22)
   let adxData = calculateADX(candles);
   let adxScore = 0;
   if (adxData.adx > 22) {
@@ -281,7 +281,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V48 PRO SIGNALS\n";
+  let h = "APX ULTRA V50 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -299,7 +299,7 @@ async function sendToTG() {
 
   try {
     // Single animated loading message with moving bar
-    let loadingMsg = "✦═╡ APX NEURAL V48 ╞═✦\n";
+    let loadingMsg = "✦═╡ APX NEURAL V50 ╞═✦\n";
     loadingMsg += "Scanning Deep Brain...\n";
     loadingMsg += "🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ Moving...\n";
     loadingMsg += "📡 API Processing...";
