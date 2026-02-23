@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V47 - FINAL CLEAN</title>
+<title>APX NEURAL V48 - MULTI PAIR FIX</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V47 - FINAL CLEAN</div></header>
+<header><div class="logo">APX NEURAL V48 - MULTI PAIR FIX</div></header>
 
 <div class="container">
   <div class="panel">
@@ -155,14 +155,14 @@ function analyzeBrain(candles) {
     if (adxData.pdi > adxData.mdi) adxScore = 4;
     if (adxData.mdi > adxData.pdi) adxScore = -4;
   } else {
-    return null;
+    adxScore = 0; // Weak trend, lekin skip nahi kar rahe ab
   }
 
-  // Final strict score
+  // Final strict score (relaxed to 10 for variety)
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
-  if (totalScore >= 14) return "CALL";
-  if (totalScore <= -14) return "PUT";
+  if (totalScore >= 10) return "CALL";
+  if (totalScore <= -10) return "PUT";
 
   return null;
 }
@@ -247,22 +247,14 @@ async function deepNeuralScan() {
       let json = await res.json();
       let candles = json.data || [];
       let decision = analyzeBrain(candles);
-      if (decision) {
-        pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision });
-      }
+      pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision || "HOLD" }); // All pairs include, even HOLD
       let p = ((i + 1) / pairs.length) * 100;
       document.querySelector('#pb').style.width = p + "%";
       document.getElementById('perc').innerText = Math.round(p) + "%";
     } catch (e) { console.error(e); }
   }
 
-  if (pool.length === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
-    SCANNING = false;
-    return;
-  }
-
-  // Exact 1-minute intervals from start time
+  // Time Distribution - exact 1-min intervals
   let startTime = new Date().toDateString() + " " + document.getElementById('start').value;
   let current = new Date(startTime).getTime();
 
@@ -271,6 +263,8 @@ async function deepNeuralScan() {
     let idx = i % pool.length;
     let asset = pool[idx];
 
+    if (asset.dir === "HOLD") continue; // Skip weak
+
     FINAL_LIST.push({
       time: new Date(current).toTimeString().slice(0,5),
       pair: asset.pair,
@@ -278,7 +272,11 @@ async function deepNeuralScan() {
     });
   }
 
-  renderResult();
+  if (FINAL_LIST.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+  } else {
+    renderResult();
+  }
   SCANNING = false;
 }
 
