@@ -243,4 +243,96 @@ async function deepNeuralScan() {
   let pool = [];
   for (let i = 0; i < pairs.length; i++) {
     try {
-      let res = await fetch(API + pairs[i
+      let res = await fetch(API + pairs[i]);
+      let json = await res.json();
+      let candles = json.data || [];
+      let decision = analyzeBrain(candles);
+      if (decision) {
+        pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision, lastTime: candles[candles.length - 1].time });
+      }
+      let p = ((i + 1) / pairs.length) * 100;
+      document.querySelector('#pb').style.width = p + "%";
+      document.getElementById('perc').innerText = Math.round(p) + "%";
+    } catch (e) { console.error(e); }
+  }
+
+  if (pool.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+    SCANNING = false;
+    return;
+  }
+
+  // API based timings - last candle time se shuru
+  let baseTime = Math.max(...pool.map(p => p.lastTime || new Date().getTime()));
+  let current = baseTime;
+
+  for (let i = 0; i < 15; i++) {
+    current += 60000; // exactly 1 minute next
+    let idx = i % pool.length;
+    let asset = pool[idx];
+
+    FINAL_LIST.push({
+      time: new Date(current).toTimeString().slice(0,5),
+      pair: asset.pair,
+      dir: asset.dir
+    });
+  }
+
+  renderResult();
+  SCANNING = false;
+}
+
+function renderResult() {
+  let h = "APX ULTRA V46 PRO SIGNALS\n";
+  h += "━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "UTC+6 | 1 MIN EXP\n\n";
+
+  FINAL_LIST.forEach(s => {
+    h += `✦ ${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
+  });
+
+  h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX\n";
+  document.getElementById('output').innerText = h;
+}
+
+async function sendToTG() {
+  if (FINAL_LIST.length === 0) return alert("Scan first!");
+
+  try {
+    // Single animated loading message with moving bar
+    let loadingMsg = "✦═╡ APX NEURAL V46 ╞═✦\n";
+    loadingMsg += "Scanning Deep Brain...\n";
+    loadingMsg += "🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ Moving...\n";
+    loadingMsg += "📡 API Processing...";
+
+    await fetch(TG, { method: "POST", body: loadingMsg });
+
+    await new Promise(r => setTimeout(r, 60000)); // 1 minute delay
+
+    // Real signals with perfect alignment
+    let finalMsg = "✅ APX BRAIN V6 VERIFIED ✅\n";
+    finalMsg += "━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "ZONE: GMT+6 | 1 MIN EXP\n\n";
+
+    FINAL_LIST.forEach(s => {
+      finalMsg += `✦ ${s.time.padEnd(6)} | ${s.pair.padEnd(8)} | ${s.dir}\n`;
+    });
+
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "RULES:\n";
+    finalMsg += "• Trade exact time\n";
+    finalMsg += "• 1 Step Martingale Only\n";
+    finalMsg += "• Avoid News\n";
+    finalMsg += "• Stop after 2 losses\n\n";
+    finalMsg += "POWERED BY APX PREMIUM AI";
+
+    await fetch(TG, { method: "POST", body: finalMsg });
+    alert("Signals Sent!");
+  } catch (e) {
+    alert("Telegram Error!");
+  }
+}
+</script>
+</body>
+</html>
