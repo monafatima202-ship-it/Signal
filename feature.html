@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V51 - PERFECT TELEGRAM</title>
+<title>APX NEURAL V51 - MORE PAIRS</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -148,7 +148,7 @@ function analyzeBrain(candles) {
   if (last.close > high) breakoutScore = 4;
   if (last.close < low) breakoutScore = -4;
 
-  // ADX filter
+  // ADX filter (relaxed to 22)
   let adxData = calculateADX(candles);
   let adxScore = 0;
   if (adxData.adx > 22) {
