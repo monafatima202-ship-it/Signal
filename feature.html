@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V50 - BEST BALANCE</title>
+<title>APX NEURAL V51 - PERFECT TELEGRAM</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V50 - BEST BALANCE</div></header>
+<header><div class="logo">APX NEURAL V51 - PERFECT TELEGRAM</div></header>
 
 <div class="container">
   <div class="panel">
@@ -148,7 +148,7 @@ function analyzeBrain(candles) {
   if (last.close > high) breakoutScore = 4;
   if (last.close < low) breakoutScore = -4;
 
-  // ADX filter (relaxed to 22)
+  // ADX filter
   let adxData = calculateADX(candles);
   let adxScore = 0;
   if (adxData.adx > 22) {
@@ -298,23 +298,27 @@ async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
 
   try {
-    // Single animated loading message with moving bar
-    let loadingMsg = "✦═╡ APX NEURAL V50 ╞═✦\n";
-    loadingMsg += "Scanning Deep Brain...\n";
-    loadingMsg += "🟩🟩🟩🟩🟩⬜⬜⬜⬜⬜ Moving...\n";
-    loadingMsg += "📡 API Processing...";
+    // Loading stages
+    const stages = [
+      "✦═╡ APX NEURAL V51 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V51 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V51 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
+    ];
 
-    await fetch(TG, { method: "POST", body: loadingMsg });
+    for (let msg of stages) {
+      await fetch(TG, { method: "POST", body: msg });
+      await new Promise(r => setTimeout(r, 20000));
+    }
 
-    await new Promise(r => setTimeout(r, 60000)); // 1 minute delay
-
-    // Real signals with perfect alignment
-    let finalMsg = "✅ APX BRAIN V6 VERIFIED ✅\n";
-    finalMsg += "━━━━━━━━━━━━━━━━━━━━━━\n";
-    finalMsg += "ZONE: GMT+6 | 1 MIN EXP\n\n";
+    // Final premium Telegram format (tere example jaisa)
+    let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
+    finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
+    finalMsg += "➡️Follow rules & 💵 Management ♾\n";
+    finalMsg += "⏰ TIME ZONE > UTC+6\n";
+    finalMsg += "📢 ✖️USE 1 STEP MTG➕\n\n";
 
     FINAL_LIST.forEach(s => {
-      finalMsg += `✦ ${s.time.padEnd(6)} | ${s.pair.padEnd(8)} | ${s.dir}\n`;
+      finalMsg += `❒ ${s.pair.toUpperCase()}_𝙾𝚃𝙲 ➪ ${s.time} ➪ ${s.dir}\n`;
     });
 
     finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
@@ -326,7 +330,7 @@ async function sendToTG() {
     finalMsg += "POWERED BY APX PREMIUM AI";
 
     await fetch(TG, { method: "POST", body: finalMsg });
-    alert("Signals Sent!");
+    alert("Signals Sent in Perfect Premium Style!");
   } catch (e) {
     alert("Telegram Error!");
   }
