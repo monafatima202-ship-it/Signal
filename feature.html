@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V52 - 14-18 SIGNALS</title>
+<title>APX NEURAL V53 - PAST TIMED</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V52 - 14-18 SIGNALS</div></header>
+<header><div class="logo">APX NEURAL V53 - PAST TIMED</div></header>
 
 <div class="container">
   <div class="panel">
@@ -107,7 +107,6 @@ function analyzeBrain(candles) {
 
   let recent = candles.slice(-200);
 
-  // EMA Stack
   let ema20 = EMA(recent, 20);
   let ema50 = EMA(recent, 50);
   let ema100 = EMA(recent, 100);
@@ -119,13 +118,11 @@ function analyzeBrain(candles) {
   else if (ema20 > ema50) trendScore = 2;
   else if (ema20 < ema50) trendScore = -2;
 
-  // RSI
   let rsi = getRSI(candles);
   let rsiScore = 0;
   if (rsi < 35) rsiScore = 4;
   if (rsi > 65) rsiScore = -4;
 
-  // Momentum
   let momentum = 0;
   let weight = 1;
   for (let i = recent.length - 30; i < recent.length; i++) {
@@ -134,21 +131,18 @@ function analyzeBrain(candles) {
     weight += 0.05;
   }
 
-  // Candle strength
   let last = recent[recent.length - 1];
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
   let strength = body / range;
   let strengthScore = strength > 0.7 ? 4 : (strength > 0.5 ? 1 : 0);
 
-  // Breakout
   let high = Math.max(...recent.slice(-20).map(x => x.high));
   let low = Math.min(...recent.slice(-20).map(x => x.low));
   let breakoutScore = 0;
   if (last.close > high) breakoutScore = 4;
   if (last.close < low) breakoutScore = -4;
 
-  // ADX filter (relaxed to 20)
   let adxData = calculateADX(candles);
   let adxScore = 0;
   if (adxData.adx > 20) {
@@ -158,7 +152,6 @@ function analyzeBrain(candles) {
     adxScore = 0;
   }
 
-  // Final balanced score
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
   if (totalScore >= 9) return "CALL";
@@ -241,29 +234,41 @@ async function deepNeuralScan() {
   output.innerHTML = `<div class="loader-box">DEEP SCAN 200+ CANDLES...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
 
   let pool = [];
+  let latestCandleTime = 0;
+
   for (let i = 0; i < pairs.length; i++) {
     try {
       let res = await fetch(API + pairs[i]);
       let json = await res.json();
       let candles = json.data || [];
-      let decision = analyzeBrain(candles);
-      pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision || "HOLD" });
+      if (candles.length > 0) {
+        let lastTime = candles[candles.length - 1].time || 0;
+        latestCandleTime = Math.max(latestCandleTime, lastTime);
+        let decision = analyzeBrain(candles);
+        if (decision) {
+          pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision });
+        }
+      }
       let p = ((i + 1) / pairs.length) * 100;
       document.querySelector('#pb').style.width = p + "%";
       document.getElementById('perc').innerText = Math.round(p) + "%";
     } catch (e) { console.error(e); }
   }
 
-  // Exact 1-min intervals from start time
-  let startTime = new Date().toDateString() + " " + document.getElementById('start').value;
-  let current = new Date(startTime).getTime();
+  if (pool.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+    SCANNING = false;
+    return;
+  }
 
+  // Start from the latest candle time among all selected pairs
+  let current = latestCandleTime || new Date().getTime();
+
+  // Generate 20 possible slots (2 hours = 120 min, but we take only strong ones)
   for (let i = 0; i < 20; i++) {
-    current += 60000; // exactly 1 minute
+    current += 60000; // exactly 1 minute step
     let idx = i % pool.length;
     let asset = pool[idx];
-
-    if (asset.dir === "HOLD") continue;
 
     FINAL_LIST.push({
       time: new Date(current).toTimeString().slice(0,5),
@@ -272,11 +277,7 @@ async function deepNeuralScan() {
     });
   }
 
-  if (FINAL_LIST.length === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
-  } else {
-    renderResult();
-  }
+  renderResult();
   SCANNING = false;
 }
 
@@ -298,7 +299,6 @@ async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
 
   try {
-    // Loading stages
     const stages = [
       "✦═╡ APX NEURAL V52 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
       "✦═╡ APX NEURAL V52 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
@@ -310,7 +310,6 @@ async function sendToTG() {
       await new Promise(r => setTimeout(r, 20000));
     }
 
-    // Premium Telegram format (tere example jaisa)
     let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
     finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
     finalMsg += "➡️Follow rules & 💵 Management ♾\n";
