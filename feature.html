@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V60 - REAL BRAIN PERFECT</title>
+<title>APX NEURAL V61 - REAL MIX & SCATTER</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -37,19 +37,12 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 .telegram { background:#0088cc; color:white; }
 
 #output { margin-top:25px; background:#01040a; padding:20px; border-radius:15px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:200px; box-shadow:0 0 20px rgba(0,255,136,.15); }
-
-/* Progress Bar */
-.loader-box { padding:25px; text-align:center; }
-.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #1a3a2a; }
-.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff, #00ff88); background-size:200% 100%; animation:move 1.8s linear infinite; transition:width 0.5s; box-shadow:var(--glow); }
-@keyframes move { 0% { background-position:0% 0; } 100% { background-position:200% 0; } }
-.percent { margin-top:8px; font-size:13px; color:var(--neon); text-shadow:0 0 8px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX NEURAL V60 - REAL BRAIN PERFECT</div></header>
+<header><div class="logo">APX NEURAL V61 - REAL MIX & SCATTER</div></header>
 
 <div class="container">
   <div class="panel">
@@ -101,16 +94,16 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// Advance real brain logic
+// Real brain analysis (high accuracy)
 function analyzeBrain(candles) {
-  if (candles.length < 200) return { dir: "HOLD", score: 0, atr: 0 };
+  if (candles.length < 200) return { dir: "HOLD", score: 0 };
 
   let recent = candles.slice(-200);
 
   let ema8 = EMA(recent, 8);
   let ema21 = EMA(recent, 21);
   let ema55 = EMA(recent, 55);
-  if (!ema8 || !ema21 || !ema55) return { dir: "HOLD", score: 0, atr: 0 };
+  if (!ema8 || !ema21 || !ema55) return { dir: "HOLD", score: 0 };
 
   let trendScore = 0;
   if (ema8 > ema21 && ema21 > ema55) trendScore = 8;
@@ -122,15 +115,15 @@ function analyzeBrain(candles) {
   let rsiScore = 0;
   if (rsi < 30) rsiScore = 6;
   if (rsi > 70) rsiScore = -6;
-  if (rsi < 40 && trendScore > 0) rsiScore += 3;
-  if (rsi > 60 && trendScore < 0) rsiScore -= 3;
+  if (rsi < 40 && trendScore > 0) rsiScore += 4;
+  if (rsi > 60 && trendScore < 0) rsiScore -= 4;
 
   let momentum = 0;
   let weight = 1;
   for (let i = recent.length - 40; i < recent.length; i++) {
     let diff = recent[i].close - recent[i-1].close;
     momentum += diff * weight;
-    weight += 0.1;
+    weight += 0.08;
   }
 
   let last = recent[recent.length - 1];
@@ -156,79 +149,9 @@ function analyzeBrain(candles) {
 
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
-  // ATR for natural gap calculation
-  let atr = 0;
-  for (let i = 1; i < recent.length; i++) {
-    let tr = Math.max(
-      recent[i].high - recent[i].low,
-      Math.abs(recent[i].high - recent[i-1].close),
-      Math.abs(recent[i].low - recent[i-1].close)
-    );
-    atr += tr;
-  }
-  atr /= (recent.length - 1);
-
-  if (totalScore >= 12) return { dir: "CALL", score: totalScore, atr };
-  if (totalScore <= -12) return { dir: "PUT", score: Math.abs(totalScore), atr };
-  return { dir: "HOLD", score: totalScore, atr };
-}
-
-function getRSI(data, period = 14) {
-  if (data.length < period + 1) return 50;
-  let gains = 0, losses = 0;
-  for (let i = data.length - period; i < data.length; i++) {
-    let diff = data[i].close - data[i-1].close;
-    if (diff >= 0) gains += diff; else losses -= diff;
-  }
-  let avgGain = gains / period;
-  let avgLoss = losses / period || 0.0001;
-  let rs = avgGain / avgLoss;
-  return 100 - (100 / (1 + rs));
-}
-
-function EMA(data, period) {
-  if (data.length < period) return null;
-  let k = 2 / (period + 1);
-  let ema = data[data.length - period].close;
-  for (let i = data.length - period + 1; i < data.length; i++) {
-    ema = data[i].close * k + ema * (1 - k);
-  }
-  return ema;
-}
-
-function calculateADX(candles, period = 14) {
-  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
-
-  let tr = [];
-  let dmPlus = [];
-  let dmMinus = [];
-
-  for (let i = 1; i < candles.length; i++) {
-    let high = candles[i].high;
-    let low = candles[i].low;
-    let prevHigh = candles[i-1].high;
-    let prevLow = candles[i-1].low;
-    let prevClose = candles[i-1].close;
-
-    let tr1 = high - low;
-    let tr2 = Math.abs(high - prevClose);
-    let tr3 = Math.abs(low - prevClose);
-    tr.push(Math.max(tr1, tr2, tr3));
-
-    let upMove = high - prevHigh;
-    let downMove = prevLow - low;
-    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
-    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
-  }
-
-  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
-  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
-
-  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
-  let adx = dx;
-
-  return { adx, pdi: diPlus, mdi: diMinus };
+  if (totalScore >= 12) return { dir: "CALL", score: totalScore };
+  if (totalScore <= -12) return { dir: "PUT", score: Math.abs(totalScore) };
+  return { dir: "HOLD", score: totalScore };
 }
 
 async function deepNeuralScan() {
@@ -264,7 +187,6 @@ async function deepNeuralScan() {
             pair: pairs[i].replace(/-otc|-OTC/gi, '').toUpperCase(),
             dir: brain.dir,
             score: brain.score,
-            atr: brain.atr || 0.0001,
             lastTime
           });
         }
@@ -298,20 +220,21 @@ async function deepNeuralScan() {
   let maxSignals = 25;
 
   while (current < endT && signalCount < maxSignals && pool.length > 0) {
-    // Natural gap based on ATR + momentum
+    // Natural gap based on ATR + momentum (no fixed, no pure random)
     let totalAtr = 0;
     let totalMom = 0;
     pool.forEach(asset => {
-      totalAtr += asset.atr;
-      totalMom += Math.abs(asset.score);
+      totalAtr += asset.atr || 0.0001;
+      totalMom += Math.abs(asset.score || 0);
     });
     let avgAtr = totalAtr / pool.length;
     let avgMom = totalMom / pool.length;
-    let gap = 60000 + (avgAtr * 200000) + (avgMom * 30000);
-    gap = Math.max(60000, Math.min(240000, gap)); // 1-4 min range
+    let gap = 60000 + (avgAtr * 250000) + (avgMom * 40000);
+    gap = Math.max(60000, Math.min(300000, gap)); // 1-5 min realistic range
 
     current += gap;
 
+    // Rotate through pool
     let idx = signalCount % pool.length;
     let asset = pool[idx];
 
