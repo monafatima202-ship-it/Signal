@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V52 - BALANCED SIGNALS</title>
+<title>APX NEURAL V52 - CLUSTER & PREMIUM</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V52 - BALANCED SIGNALS</div></header>
+<header><div class="logo">APX NEURAL V52 - CLUSTER & PREMIUM</div></header>
 
 <div class="container">
   <div class="panel">
@@ -107,7 +107,6 @@ function analyzeBrain(candles) {
 
   let recent = candles.slice(-200);
 
-  // EMA Stack
   let ema20 = EMA(recent, 20);
   let ema50 = EMA(recent, 50);
   let ema100 = EMA(recent, 100);
@@ -119,13 +118,11 @@ function analyzeBrain(candles) {
   else if (ema20 > ema50) trendScore = 2;
   else if (ema20 < ema50) trendScore = -2;
 
-  // RSI
   let rsi = getRSI(candles);
   let rsiScore = 0;
   if (rsi < 35) rsiScore = 4;
   if (rsi > 65) rsiScore = -4;
 
-  // Momentum
   let momentum = 0;
   let weight = 1;
   for (let i = recent.length - 30; i < recent.length; i++) {
@@ -134,21 +131,18 @@ function analyzeBrain(candles) {
     weight += 0.05;
   }
 
-  // Candle strength
   let last = recent[recent.length - 1];
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
   let strength = body / range;
   let strengthScore = strength > 0.7 ? 4 : (strength > 0.5 ? 1 : 0);
 
-  // Breakout
   let high = Math.max(...recent.slice(-20).map(x => x.high));
   let low = Math.min(...recent.slice(-20).map(x => x.low));
   let breakoutScore = 0;
   if (last.close > high) breakoutScore = 4;
   if (last.close < low) breakoutScore = -4;
 
-  // ADX filter (relaxed to 20)
   let adxData = calculateADX(candles);
   let adxScore = 0;
   if (adxData.adx > 20) {
@@ -158,7 +152,6 @@ function analyzeBrain(candles) {
     adxScore = 0;
   }
 
-  // Final balanced score
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
   if (totalScore >= 9) return "CALL";
@@ -258,18 +251,38 @@ async function deepNeuralScan() {
   let startTime = new Date().toDateString() + " " + document.getElementById('start').value;
   let current = new Date(startTime).getTime();
 
-  for (let i = 0; i < 18; i++) {
+  let lastDir = "";
+  let alternateCount = 0;
+
+  for (let i = 0; i < 25; i++) {
     current += 60000; // exactly 1 minute
     let idx = i % pool.length;
     let asset = pool[idx];
 
     if (asset.dir === "HOLD") continue;
 
+    // Force cluster if alternate too many times
+    if (alternateCount >= 2 && asset.dir !== lastDir) {
+      alternateCount = 0;
+      // Try to pick same as last if possible
+      for (let j = 0; j < pool.length; j++) {
+        if (pool[j].dir === lastDir) {
+          asset = pool[j];
+          break;
+        }
+      }
+    }
+
     FINAL_LIST.push({
       time: new Date(current).toTimeString().slice(0,5),
       pair: asset.pair,
       dir: asset.dir
     });
+
+    if (asset.dir !== lastDir) alternateCount++;
+    else alternateCount = 0;
+
+    lastDir = asset.dir;
   }
 
   if (FINAL_LIST.length === 0) {
@@ -281,7 +294,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V50 PRO SIGNALS\n";
+  let h = "APX ULTRA V51 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -310,7 +323,7 @@ async function sendToTG() {
       await new Promise(r => setTimeout(r, 20000));
     }
 
-    // Final premium Telegram format (tere example jaisa)
+    // Premium Telegram format (tere example jaisa)
     let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
     finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
     finalMsg += "➡️Follow rules & 💵 Management ♾\n";
@@ -330,7 +343,7 @@ async function sendToTG() {
     finalMsg += "POWERED BY APX PREMIUM AI";
 
     await fetch(TG, { method: "POST", body: finalMsg });
-    alert("Signals Sent in Perfect Premium Style!");
+    alert("Signals Sent in Premium Style!");
   } catch (e) {
     alert("Telegram Error!");
   }
