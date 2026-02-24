@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V57 - PREMIUM LOADING</title>
+<title>APX NEURAL V58 - HIGH SIGNALS</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -102,7 +101,7 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// High accuracy brain logic (threshold flexible for more signals)
+// High accuracy brain logic (threshold relaxed for more signals)
 function analyzeBrain(candles) {
   if (candles.length < 200) return { dir: "HOLD", score: 0 };
 
@@ -146,19 +145,75 @@ function analyzeBrain(candles) {
 
   let adxData = calculateADX(candles);
   let adxScore = 0;
-  if (adxData.adx > 20) {
+  if (adxData.adx > 18) {  // Relaxed ADX
     if (adxData.pdi > adxData.mdi) adxScore = 4;
     if (adxData.mdi > adxData.pdi) adxScore = -4;
   }
 
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
-  if (totalScore >= 9) return { dir: "CALL", score: totalScore };
-  if (totalScore <= -9) return { dir: "PUT", score: Math.abs(totalScore) };
+  if (totalScore >= 6) return { dir: "CALL", score: totalScore };
+  if (totalScore <= -6) return { dir: "PUT", score: Math.abs(totalScore) };
   return { dir: "HOLD", score: totalScore };
 }
 
-// RSI, EMA, ADX functions same as before
+function getRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    let diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period || 0.0001;
+  let rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+function EMA(data, period) {
+  if (data.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = data[data.length - period].close;
+  for (let i = data.length - period + 1; i < data.length; i++) {
+    ema = data[i].close * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
+}
 
 async function deepNeuralScan() {
   if (SCANNING) return;
@@ -203,13 +258,13 @@ async function deepNeuralScan() {
     }
   }
 
+  output.innerHTML = `<div class="loader-box">Reading Candles Pattern...<div class="bar-bg"><div class="bar-fill" id="pb" style="width:100%"></div></div><span id="perc">100%</span></div>`;
+
   if (pool.length === 0 || latestCandleTime === 0) {
     output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.\n\nMarket abhi bohot weak hai ya data load nahi ho raha.\nSubah 8–11 AM PKT try karo (volatility zyada hoti hai).";
     SCANNING = false;
     return;
   }
-
-  output.innerHTML = `<div class="loader-box">Reading Candles Pattern...<div class="bar-bg"><div class="bar-fill" id="pb" style="width:100%"></div></div><span id="perc">100%</span></div>`;
 
   // Start from user selected start time or latest candle
   let startVal = document.getElementById('start').value;
@@ -217,13 +272,13 @@ async function deepNeuralScan() {
   let current = Math.max(new Date(startTime).getTime(), latestCandleTime);
 
   let signalCount = 0;
-  let maxSignals = 20;
+  let maxSignals = 25;
 
   while (signalCount < maxSignals && pool.length > 0) {
     let totalScoreSum = 0;
     pool.forEach(asset => totalScoreSum += Math.abs(asset.score || 0));
     let avgScore = totalScoreSum / pool.length;
-    let gap = 60000 + (avgScore * 150000); // 1 min base + score/volatility factor
+    let gap = 60000 + (avgScore * 120000); // 1 min base + score/volatility factor
     gap = Math.max(60000, Math.min(300000, gap)); // 1-5 min range
 
     current += gap;
@@ -231,19 +286,18 @@ async function deepNeuralScan() {
     let idx = signalCount % pool.length;
     let asset = pool[idx];
 
-    if (Math.abs(asset.score || 0) >= 9) { // Only strong signals
-      FINAL_LIST.push({
-        time: new Date(current).toTimeString().slice(0,5),
-        pair: asset.pair,
-        dir: asset.dir,
-        score: asset.score
-      });
-      signalCount++;
-    }
+    FINAL_LIST.push({
+      time: new Date(current).toTimeString().slice(0,5),
+      pair: asset.pair,
+      dir: asset.dir,
+      score: asset.score
+    });
+
+    signalCount++;
   }
 
   if (FINAL_LIST.length === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND.\n\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.\nThoda wait karo ya subah try karo.";
+    output.innerText = "NO STRONG SETUPS FOUND.\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.\nThoda wait karo ya subah try karo.";
   } else {
     renderResult();
   }
