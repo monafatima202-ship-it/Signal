@@ -1,41 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEON V63 - BALANCED PRO</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
+<title>APX NEON BALANCED PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500&display=swap" rel="stylesheet">
 <style>
 :root{
- --bg:#02060c;
- --panel:#0a111f;
- --neon:#00ff88;
- --cyan:#00ccff;
- --glow:0 0 15px #00ff88,0 0 25px #00ccff;
- --text:#e0fbee;
+--bg:#02060c;
+--panel:#0a111f;
+--neon:#00ff88;
+--cyan:#00ccff;
+--glow:0 0 15px #00ff88,0 0 25px #00ccff;
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
-header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
+body{margin:0;background:var(--bg);color:white;font-family:'Rajdhani';}
+header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';color:var(--neon);font-size:24px;}
 .container{max-width:480px;margin:20px auto;padding:15px;}
-.panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,.3);box-shadow:0 0 50px rgba(0,255,136,.2);}
-.tabs{display:flex;gap:10px;margin-bottom:20px;}
-.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-weight:bold;cursor:pointer;font-family:'Orbitron';font-size:12px;}
-.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;}
-button{width:100%;padding:16px;margin-top:10px;border:none;border-radius:14px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+.panel{background:var(--panel);border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.3);}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{flex:1;padding:10px;border:1px solid var(--neon);background:transparent;color:var(--neon);cursor:pointer;border-radius:8px;font-weight:bold;}
+.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;}
+select,input{width:100%;padding:12px;margin-bottom:12px;background:#061021;border:1px solid #123;border-radius:10px;color:white;}
+button{width:100%;padding:14px;margin-top:8px;border:none;border-radius:10px;font-weight:bold;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);}
 .telegram{background:#0088cc;color:white;}
-#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;min-height:180px;}
-.loader{height:10px;background:#0d1e13;border-radius:8px;overflow:hidden;margin-top:10px;}
-.loader div{height:100%;width:0%;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);background-size:200% 100%;animation:move 1.5s linear infinite;}
-@keyframes move{0%{background-position:0%}100%{background-position:200%}}
+#output{margin-top:15px;background:#01040a;padding:15px;border-radius:10px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;}
+.loader{height:8px;background:#123;border-radius:6px;overflow:hidden;margin-top:10px;}
+.loader div{height:100%;width:0%;background:linear-gradient(90deg,#00ff88,#00ccff);transition:width .3s;}
 </style>
 </head>
 
 <body>
-<header><div class="logo">APX NEON V63 - BALANCED PRO</div></header>
+<header><div class="logo">APX NEON BALANCED</div></header>
 
 <div class="container">
 <div class="panel">
@@ -51,10 +47,10 @@ button{width:100%;padding:16px;margin-top:10px;border:none;border-radius:14px;fo
 <input type="time" id="start" value="21:00">
 <input type="time" id="end" value="23:00">
 
-<button class="generate" onclick="scan()">DEEP BRAIN SCAN</button>
-<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
+<button class="generate" onclick="scan()">SCAN MARKET</button>
+<button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
 
-<div id="output">SYSTEM READY...</div>
+<div id="output">READY...</div>
 
 </div>
 </div>
@@ -62,13 +58,14 @@ button{width:100%;padding:16px;margin-top:10px;border:none;border-radius:14px;fo
 <script>
 const API="https://apx.mkapi009.workers.dev?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
-let FINAL=[];
 
 const ASSETS={
 OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
 STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
 CRYPTO:["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 };
+
+let FINAL=[];
 
 function setMarket(type,btn){
 document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
@@ -94,62 +91,45 @@ return ema;
 }
 
 function RSI(data,p=14){
-let gain=0,loss=0;
+let g=0,l=0;
 for(let i=data.length-p;i<data.length;i++){
 let d=data[i].close-data[i-1].close;
-d>0?gain+=d:loss-=d;
+d>0?g+=d:l-=d;
 }
-let rs=gain/(loss||1);
+let rs=g/(l||1);
 return 100-(100/(1+rs));
 }
 
 function analyze(c){
-if(c.length<200)return null;
-
+if(c.length<150)return null;
 let ema20=EMA(c,20);
 let ema50=EMA(c,50);
-let ema100=EMA(c,100);
 let rsi=RSI(c);
+let last=c[c.length-1].close;
 
-let score=0;
-
-if(ema20>ema50&&ema50>ema100)score+=4;
-if(ema20<ema50&&ema50<ema100)score-=4;
-
-if(rsi<35)score+=3;
-if(rsi>65)score-=3;
-
-let momentum=0;
-for(let i=c.length-20;i<c.length;i++){
-momentum+=c[i].close-c[i-1].close;
-}
-score+=momentum>0?2:-2;
-
-if(score>=7)return {dir:"CALL",strength:score};
-if(score<=-7)return {dir:"PUT",strength:Math.abs(score)};
+if(ema20>ema50 && rsi<60) return "CALL";
+if(ema20<ema50 && rsi>40) return "PUT";
 return null;
 }
 
 async function scan(){
 FINAL=[];
 let out=document.getElementById("output");
-out.innerHTML="SCANNING MARKET...<div class='loader'><div id='bar'></div></div>";
+out.innerHTML="Scanning...<div class='loader'><div id='bar'></div></div>";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 let pool=[];
 
 for(let i=0;i<selected.length;i++){
-let res=await fetch(API+selected[i]);
-let j=await res.json();
-let sig=analyze(j.data||[]);
-if(sig){
-pool.push({pair:selected[i].replace(/-otc/gi,"").toUpperCase(),...sig});
-}
+let r=await fetch(API+selected[i]);
+let j=await r.json();
+let dir=analyze(j.data||[]);
+if(dir) pool.push({pair:selected[i].replace(/-otc/gi,"").toUpperCase(),dir});
 document.getElementById("bar").style.width=((i+1)/selected.length*100)+"%";
 }
 
 if(pool.length===0){
-out.innerText="NO STRONG STRUCTURE FOUND.";
+out.innerText="Market currently ranging / weak.";
 return;
 }
 
@@ -160,53 +140,30 @@ let t=new Date(start).getTime();
 let endT=new Date(end).getTime();
 if(endT<=t)endT+=86400000;
 
-let exposure={};
-let directionCount={CALL:0,PUT:0};
-
-while(t<endT && FINAL.length<18){
-
-let avgStrength=pool.reduce((a,b)=>a+b.strength,0)/pool.length;
-let gap=90000+(avgStrength*15000); // adaptive 1.5m+
-t+=gap;
-
-let sorted=[...pool].sort((a,b)=>b.strength-a.strength);
-let asset=sorted[Math.floor(Math.random()*sorted.length/2)];
-
-if(exposure[asset.pair] && exposure[asset.pair]>=4)continue;
-
-if(directionCount[asset.dir]>FINAL.length*0.65)continue;
-
+let i=0;
+while(t<endT && FINAL.length<15){
+t+=90000+Math.random()*60000;
+let asset=pool[i%pool.length];
 FINAL.push({time:new Date(t).toTimeString().slice(0,5),pair:asset.pair,dir:asset.dir});
-exposure[asset.pair]=(exposure[asset.pair]||0)+1;
-directionCount[asset.dir]++;
+i++;
 }
 
 render();
 }
 
 function render(){
-let txt="APX NEON V63 PRO\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
+let txt="APX NEON BALANCED\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
 FINAL.forEach(s=>{
 txt+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
 });
-txt+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\n1 Step Martingale\nStop after 2 losses\nPowered by APX Premium";
+txt+="\n━━━━━━━━━━━━━━━━━━\nFor educational analysis only.";
 document.getElementById("output").innerText=txt;
 }
 
 async function sendTG(){
-if(FINAL.length===0)return alert("Generate first!");
-
-let loading="APX PRO ENGINE\nScanning...\n🟩⬜⬜⬜⬜";
-await fetch(TG,{method:"POST",body:loading});
-
-let msg="APX NEON V63 PRO\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
-FINAL.forEach(s=>{
-msg+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
-});
-msg+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\nStop after 2 losses\nPowered by APX Premium";
-
-await fetch(TG,{method:"POST",body:msg});
-alert("Sent!");
+if(FINAL.length===0)return alert("Generate first");
+await fetch(TG,{method:"POST",body:document.getElementById("output").innerText});
+alert("Sent");
 }
 </script>
 </body>
