@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V57 - NATURAL GAPS BRAIN</title>
+<title>APX NEURAL V57 - PREMIUM LOADING</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -37,12 +38,19 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 .telegram { background:#0088cc; color:white; }
 
 #output { margin-top:25px; background:#01040a; padding:20px; border-radius:15px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:200px; box-shadow:0 0 20px rgba(0,255,136,.15); }
+
+/* Progress Bar */
+.loader-box { padding:25px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff, #00ff88); background-size:200% 100%; animation:move 1.8s linear infinite; transition:width 0.5s; box-shadow:var(--glow); }
+@keyframes move { 0% { background-position:0% 0; } 100% { background-position:200% 0; } }
+.percent { margin-top:8px; font-size:13px; color:var(--neon); text-shadow:0 0 8px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX NEURAL V57 - NATURAL GAPS BRAIN</div></header>
+<header><div class="logo">APX NEURAL V57 - PREMIUM LOADING</div></header>
 
 <div class="container">
   <div class="panel">
@@ -94,16 +102,16 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// High accuracy brain logic
+// High accuracy brain logic (threshold flexible for more signals)
 function analyzeBrain(candles) {
-  if (candles.length < 200) return { dir: "HOLD", score: 0, atr: 0 };
+  if (candles.length < 200) return { dir: "HOLD", score: 0 };
 
   let recent = candles.slice(-200);
 
   let ema20 = EMA(recent, 20);
   let ema50 = EMA(recent, 50);
   let ema100 = EMA(recent, 100);
-  if (!ema20 || !ema50 || !ema100) return { dir: "HOLD", score: 0, atr: 0 };
+  if (!ema20 || !ema50 || !ema100) return { dir: "HOLD", score: 0 };
 
   let trendScore = 0;
   if (ema20 > ema50 && ema50 > ema100) trendScore = 5;
@@ -145,24 +153,12 @@ function analyzeBrain(candles) {
 
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
-  // Calculate ATR for gap logic
-  let atr = 0;
-  for (let i = 1; i < recent.length; i++) {
-    let tr = Math.max(
-      recent[i].high - recent[i].low,
-      Math.abs(recent[i].high - recent[i-1].close),
-      Math.abs(recent[i].low - recent[i-1].close)
-    );
-    atr += tr;
-  }
-  atr /= (recent.length - 1);
-
-  if (totalScore >= 12) return { dir: "CALL", score: totalScore, atr };
-  if (totalScore <= -12) return { dir: "PUT", score: Math.abs(totalScore), atr };
-  return { dir: "HOLD", score: totalScore, atr };
+  if (totalScore >= 9) return { dir: "CALL", score: totalScore };
+  if (totalScore <= -9) return { dir: "PUT", score: Math.abs(totalScore) };
+  return { dir: "HOLD", score: totalScore };
 }
 
-// RSI, EMA, ADX functions same as before (copy if needed)
+// RSI, EMA, ADX functions same as before
 
 async function deepNeuralScan() {
   if (SCANNING) return;
@@ -177,7 +173,7 @@ async function deepNeuralScan() {
   }
 
   const output = document.getElementById('output');
-  output.innerHTML = `<div class="loader-box">DEEP SCAN 200+ CANDLES...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
+  output.innerHTML = `<div class="loader-box">API Loading...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
 
   let pool = [];
   let latestCandleTime = 0;
@@ -196,7 +192,6 @@ async function deepNeuralScan() {
           pair: pairs[i].replace(/-otc|-OTC/gi, '').toUpperCase(),
           dir: brain.dir,
           score: brain.score,
-          atr: brain.atr || 0.0001,
           lastTime
         });
       }
@@ -209,12 +204,14 @@ async function deepNeuralScan() {
   }
 
   if (pool.length === 0 || latestCandleTime === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.";
+    output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.\n\nMarket abhi bohot weak hai ya data load nahi ho raha.\nSubah 8–11 AM PKT try karo (volatility zyada hoti hai).";
     SCANNING = false;
     return;
   }
 
-  // Start from user selected start time or latest candle (whichever later)
+  output.innerHTML = `<div class="loader-box">Reading Candles Pattern...<div class="bar-bg"><div class="bar-fill" id="pb" style="width:100%"></div></div><span id="perc">100%</span></div>`;
+
+  // Start from user selected start time or latest candle
   let startVal = document.getElementById('start').value;
   let startTime = new Date().toDateString() + " " + startVal;
   let current = Math.max(new Date(startTime).getTime(), latestCandleTime);
@@ -223,20 +220,18 @@ async function deepNeuralScan() {
   let maxSignals = 20;
 
   while (signalCount < maxSignals && pool.length > 0) {
-    // Calculate natural gap based on average ATR (volatility)
-    let totalAtr = 0;
-    pool.forEach(asset => totalAtr += asset.atr);
-    let avgAtr = totalAtr / pool.length;
-    let gap = 60000 + (avgAtr * 300000); // 1 min base + volatility factor
-    gap = Math.max(60000, Math.min(360000, gap)); // 1-6 min range
+    let totalScoreSum = 0;
+    pool.forEach(asset => totalScoreSum += Math.abs(asset.score || 0));
+    let avgScore = totalScoreSum / pool.length;
+    let gap = 60000 + (avgScore * 150000); // 1 min base + score/volatility factor
+    gap = Math.max(60000, Math.min(300000, gap)); // 1-5 min range
 
     current += gap;
 
     let idx = signalCount % pool.length;
     let asset = pool[idx];
 
-    // Only add strong signals (skip HOLD)
-    if (asset.dir !== "HOLD") {
+    if (Math.abs(asset.score || 0) >= 9) { // Only strong signals
       FINAL_LIST.push({
         time: new Date(current).toTimeString().slice(0,5),
         pair: asset.pair,
@@ -248,7 +243,7 @@ async function deepNeuralScan() {
   }
 
   if (FINAL_LIST.length === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+    output.innerText = "NO STRONG SETUPS FOUND.\n\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.\nThoda wait karo ya subah try karo.";
   } else {
     renderResult();
   }
@@ -256,7 +251,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V56 PRO SIGNALS\n";
+  let h = "APX ULTRA V57 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -265,11 +260,38 @@ function renderResult() {
   });
 
   h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX + ATR GAP\n";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX\n";
   document.getElementById('output').innerText = h;
 }
 
-// sendToTG function same as before
+async function sendToTG() {
+  if (FINAL_LIST.length === 0) return alert("Scan first!");
+
+  try {
+    let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
+    finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
+    finalMsg += "➡️Follow rules & 💵 Management ♾\n";
+    finalMsg += "⏰ TIME ZONE > UTC+6\n";
+    finalMsg += "📢 ✖️USE 1 STEP MTG➕\n\n";
+
+    FINAL_LIST.forEach(s => {
+      finalMsg += `❒ ${s.pair}_𝙾𝚃𝙲 ➪ ${s.time} ➪ ${s.dir}\n`;
+    });
+
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "RULES:\n";
+    finalMsg += "• Trade exact time\n";
+    finalMsg += "• 1 Step Martingale Only\n";
+    finalMsg += "• Avoid News\n";
+    finalMsg += "• Stop after 2 losses\n\n";
+    finalMsg += "POWERED BY APX PREMIUM AI";
+
+    await fetch(TG, { method: "POST", body: finalMsg });
+    alert("Signals Sent!");
+  } catch (e) {
+    alert("Telegram Error!");
+  }
+}
 </script>
 </body>
 </html>
