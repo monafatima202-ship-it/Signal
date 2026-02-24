@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V60 - NATURAL TIMINGS</title>
+<title>APX NEURAL V60 - REAL BRAIN PERFECT</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -37,12 +37,19 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 .telegram { background:#0088cc; color:white; }
 
 #output { margin-top:25px; background:#01040a; padding:20px; border-radius:15px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:200px; box-shadow:0 0 20px rgba(0,255,136,.15); }
+
+/* Progress Bar */
+.loader-box { padding:25px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff, #00ff88); background-size:200% 100%; animation:move 1.8s linear infinite; transition:width 0.5s; box-shadow:var(--glow); }
+@keyframes move { 0% { background-position:0% 0; } 100% { background-position:200% 0; } }
+.percent { margin-top:8px; font-size:13px; color:var(--neon); text-shadow:0 0 8px var(--neon); }
 </style>
 </head>
 
 <body>
 
-<header><div class="logo">APX NEURAL V60 - NATURAL TIMINGS</div></header>
+<header><div class="logo">APX NEURAL V60 - REAL BRAIN PERFECT</div></header>
 
 <div class="container">
   <div class="panel">
@@ -57,7 +64,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
     <div class="time-row">
       <div><small>START</small><input type="time" id="start" value="18:00"></div>
-      <div><small>END</small><input type="time" id="end" value="18:30"></div>
+      <div><small>END</small><input type="time" id="end" value="19:00"></div>
     </div>
 
     <button class="generate" onclick="deepNeuralScan()">DEEP BRAIN SCAN</button>
@@ -94,60 +101,134 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// Real analysis (same as before)
+// Advance real brain logic
 function analyzeBrain(candles) {
-  if (candles.length < 200) return { dir: "HOLD", score: 0 };
+  if (candles.length < 200) return { dir: "HOLD", score: 0, atr: 0 };
 
   let recent = candles.slice(-200);
 
-  let ema20 = EMA(recent, 20);
-  let ema50 = EMA(recent, 50);
-  let ema100 = EMA(recent, 100);
-  if (!ema20 || !ema50 || !ema100) return { dir: "HOLD", score: 0 };
+  let ema8 = EMA(recent, 8);
+  let ema21 = EMA(recent, 21);
+  let ema55 = EMA(recent, 55);
+  if (!ema8 || !ema21 || !ema55) return { dir: "HOLD", score: 0, atr: 0 };
 
   let trendScore = 0;
-  if (ema20 > ema50 && ema50 > ema100) trendScore = 6;
-  else if (ema20 < ema50 && ema50 < ema100) trendScore = -6;
-  else if (ema20 > ema50) trendScore = 3;
-  else if (ema20 < ema50) trendScore = -3;
+  if (ema8 > ema21 && ema21 > ema55) trendScore = 8;
+  else if (ema8 < ema21 && ema21 < ema55) trendScore = -8;
+  else if (ema8 > ema21) trendScore = 4;
+  else if (ema8 < ema21) trendScore = -4;
 
   let rsi = getRSI(candles);
   let rsiScore = 0;
-  if (rsi < 35) rsiScore = 5;
-  if (rsi > 65) rsiScore = -5;
+  if (rsi < 30) rsiScore = 6;
+  if (rsi > 70) rsiScore = -6;
+  if (rsi < 40 && trendScore > 0) rsiScore += 3;
+  if (rsi > 60 && trendScore < 0) rsiScore -= 3;
 
   let momentum = 0;
   let weight = 1;
-  for (let i = recent.length - 30; i < recent.length; i++) {
+  for (let i = recent.length - 40; i < recent.length; i++) {
     let diff = recent[i].close - recent[i-1].close;
-    momentum += diff > 0 ? weight : (diff < 0 ? -weight : 0);
-    weight += 0.05;
+    momentum += diff * weight;
+    weight += 0.1;
   }
 
   let last = recent[recent.length - 1];
   let body = Math.abs(last.close - last.open);
   let range = last.high - last.low || 0.0001;
   let strength = body / range;
-  let strengthScore = strength > 0.7 ? 5 : (strength > 0.5 ? 2 : 0);
+  let strengthScore = strength > 0.75 ? 6 : (strength > 0.6 ? 3 : 0);
 
-  let high = Math.max(...recent.slice(-20).map(x => x.high));
-  let low = Math.min(...recent.slice(-20).map(x => x.low));
+  let high = Math.max(...recent.slice(-15).map(x => x.high));
+  let low = Math.min(...recent.slice(-15).map(x => x.low));
   let breakoutScore = 0;
-  if (last.close > high) breakoutScore = 5;
-  if (last.close < low) breakoutScore = -5;
+  if (last.close > high && momentum > 0) breakoutScore = 7;
+  if (last.close < low && momentum < 0) breakoutScore = -7;
 
   let adxData = calculateADX(candles);
   let adxScore = 0;
-  if (adxData.adx > 22) {
-    if (adxData.pdi > adxData.mdi) adxScore = 6;
-    if (adxData.mdi > adxData.pdi) adxScore = -6;
+  if (adxData.adx > 25) {
+    if (adxData.pdi > adxData.mdi + 5) adxScore = 8;
+    if (adxData.mdi > adxData.pdi + 5) adxScore = -8;
+  } else if (adxData.adx > 18) {
+    adxScore = (adxData.pdi - adxData.mdi) * 2;
   }
 
   let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
 
-  if (totalScore >= 10) return { dir: "CALL", score: totalScore };
-  if (totalScore <= -10) return { dir: "PUT", score: Math.abs(totalScore) };
-  return { dir: "HOLD", score: totalScore };
+  // ATR for natural gap calculation
+  let atr = 0;
+  for (let i = 1; i < recent.length; i++) {
+    let tr = Math.max(
+      recent[i].high - recent[i].low,
+      Math.abs(recent[i].high - recent[i-1].close),
+      Math.abs(recent[i].low - recent[i-1].close)
+    );
+    atr += tr;
+  }
+  atr /= (recent.length - 1);
+
+  if (totalScore >= 12) return { dir: "CALL", score: totalScore, atr };
+  if (totalScore <= -12) return { dir: "PUT", score: Math.abs(totalScore), atr };
+  return { dir: "HOLD", score: totalScore, atr };
+}
+
+function getRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    let diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period || 0.0001;
+  let rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+function EMA(data, period) {
+  if (data.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = data[data.length - period].close;
+  for (let i = data.length - period + 1; i < data.length; i++) {
+    ema = data[i].close * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
 }
 
 async function deepNeuralScan() {
@@ -183,6 +264,7 @@ async function deepNeuralScan() {
             pair: pairs[i].replace(/-otc|-OTC/gi, '').toUpperCase(),
             dir: brain.dir,
             score: brain.score,
+            atr: brain.atr || 0.0001,
             lastTime
           });
         }
@@ -196,7 +278,7 @@ async function deepNeuralScan() {
   }
 
   if (pool.length === 0 || latestCandleTime === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.\n\nMarket abhi bohot weak hai ya data load nahi ho raha.\nSubah 8–11 AM PKT try karo.";
+    output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.\n\nMarket abhi bohot weak hai ya data load nahi ho raha.\nSubah 8–11 AM PKT try karo (volatility zyada hoti hai).";
     SCANNING = false;
     return;
   }
@@ -213,10 +295,21 @@ async function deepNeuralScan() {
   if (endT <= current) endT += 86400000;
 
   let signalCount = 0;
-  let maxSignals = 20;
+  let maxSignals = 25;
 
   while (current < endT && signalCount < maxSignals && pool.length > 0) {
-    let gap = 60000 + Math.floor(Math.random() * 120000); // 1-3 min natural
+    // Natural gap based on ATR + momentum
+    let totalAtr = 0;
+    let totalMom = 0;
+    pool.forEach(asset => {
+      totalAtr += asset.atr;
+      totalMom += Math.abs(asset.score);
+    });
+    let avgAtr = totalAtr / pool.length;
+    let avgMom = totalMom / pool.length;
+    let gap = 60000 + (avgAtr * 200000) + (avgMom * 30000);
+    gap = Math.max(60000, Math.min(240000, gap)); // 1-4 min range
+
     current += gap;
 
     let idx = signalCount % pool.length;
@@ -233,7 +326,7 @@ async function deepNeuralScan() {
   }
 
   if (FINAL_LIST.length === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND IN SELECTED TIME RANGE.\n\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.";
+    output.innerText = "NO STRONG SETUPS FOUND IN SELECTED TIME RANGE.\n\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.\nSubah 8–11 AM PKT try karo.";
   } else {
     renderResult();
   }
@@ -241,7 +334,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V59 PRO SIGNALS\n";
+  let h = "APX ULTRA V60 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -250,7 +343,7 @@ function renderResult() {
   });
 
   h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX\n";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX + ATR GAP\n";
   document.getElementById('output').innerText = h;
 }
 
