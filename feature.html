@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V53 - PAST TIMED</title>
+<title>APX NEURAL V54 - FIXED & BALANCED</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -261,13 +261,16 @@ async function deepNeuralScan() {
     return;
   }
 
-  // Start from the latest candle time among all selected pairs
+  // Start from the latest candle time among selected pairs
   let current = latestCandleTime || new Date().getTime();
 
-  // Generate 20 possible slots (2 hours = 120 min, but we take only strong ones)
-  for (let i = 0; i < 20; i++) {
-    current += 60000; // exactly 1 minute step
-    let idx = i % pool.length;
+  // Generate signals only from selected pairs, rotate properly
+  let signalCount = 0;
+  let maxSignals = 20; // target 14-18
+
+  while (signalCount < maxSignals && pool.length > 0) {
+    current += 60000; // 1 minute step
+    let idx = signalCount % pool.length;
     let asset = pool[idx];
 
     FINAL_LIST.push({
@@ -275,9 +278,15 @@ async function deepNeuralScan() {
       pair: asset.pair,
       dir: asset.dir
     });
+
+    signalCount++;
   }
 
-  renderResult();
+  if (FINAL_LIST.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND. MARKET TOO WEAK.";
+  } else {
+    renderResult();
+  }
   SCANNING = false;
 }
 
@@ -299,10 +308,11 @@ async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
 
   try {
+    // Loading stages
     const stages = [
-      "✦═╡ APX NEURAL V52 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
-      "✦═╡ APX NEURAL V52 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
-      "✦═╡ APX NEURAL V52 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
+      "✦═╡ APX NEURAL V53 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V53 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V53 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
     ];
 
     for (let msg of stages) {
@@ -310,6 +320,7 @@ async function sendToTG() {
       await new Promise(r => setTimeout(r, 20000));
     }
 
+    // Premium Telegram format
     let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
     finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
     finalMsg += "➡️Follow rules & 💵 Management ♾\n";
