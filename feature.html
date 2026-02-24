@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V55 - PAST CANDLE TIMED</title>
+<title>APX NEURAL V55 - VOLATILITY TIMED</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V54 - PAST CANDLE TIMED</div></header>
+<header><div class="logo">APX NEURAL V55 - VOLATILITY TIMED</div></header>
 
 <div class="container">
   <div class="panel">
@@ -242,11 +242,11 @@ async function deepNeuralScan() {
       let json = await res.json();
       let candles = json.data || [];
       if (candles.length > 0) {
-        let lastTime = candles[candles.length - 1].time || 0;
+        let lastTime = candles[candles.length - 1].time * 1000; // Fix: Unix seconds to milliseconds
         latestCandleTime = Math.max(latestCandleTime, lastTime);
         let decision = analyzeBrain(candles);
         if (decision) {
-          pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision, lastTime });
+          pool.push({ pair: pairs[i].replace(/-otc|-OTC/gi, ''), dir: decision });
         }
       }
       let p = ((i + 1) / pairs.length) * 100;
@@ -261,33 +261,25 @@ async function deepNeuralScan() {
     return;
   }
 
-  // Start from the latest candle time among selected pairs
+  // Start from the latest candle time
   let current = latestCandleTime;
 
-  // Generate signals with natural gaps based on past candles
+  // Generate signals with volatility-based gaps
   let signalCount = 0;
-  let maxSignals = 20; // target 12-20
-  let lastDir = "";
-  let alternateCount = 0;
+  let maxSignals = 20; // target 14-20
 
   while (signalCount < maxSignals && pool.length > 0) {
-    // Natural gap: 60-180 seconds (1-3 min) to avoid minute-by-minute
-    let gap = 60000 + Math.floor(Math.random() * 120000);
+    // Calculate gap based on past candles volatility (std dev of last 20 closes)
+    let recentCloses = candles.slice(-20).map(c => c.close);
+    let avgClose = recentCloses.reduce((a, b) => a + b, 0) / 20;
+    let variance = recentCloses.reduce((a, b) => a + Math.pow(b - avgClose, 2), 0) / 20;
+    let stdDev = Math.sqrt(variance);
+    let gap = 60000 + (stdDev * 100000); // higher volatility = shorter gap (1-5 min)
+
     current += gap;
 
-    // Rotate through selected pairs
     let idx = signalCount % pool.length;
     let asset = pool[idx];
-
-    // Cluster preference: if 2 alternates, prefer same direction
-    if (alternateCount >= 2 && asset.dir !== lastDir) {
-      for (let j = 0; j < pool.length; j++) {
-        if (pool[j].dir === lastDir) {
-          asset = pool[j];
-          break;
-        }
-      }
-    }
 
     FINAL_LIST.push({
       time: new Date(current).toTimeString().slice(0,5),
@@ -295,10 +287,6 @@ async function deepNeuralScan() {
       dir: asset.dir
     });
 
-    if (asset.dir !== lastDir) alternateCount++;
-    else alternateCount = 0;
-
-    lastDir = asset.dir;
     signalCount++;
   }
 
@@ -311,7 +299,7 @@ async function deepNeuralScan() {
 }
 
 function renderResult() {
-  let h = "APX ULTRA V54 PRO SIGNALS\n";
+  let h = "APX ULTRA V55 PRO SIGNALS\n";
   h += "━━━━━━━━━━━━━━━━━━━━━━\n";
   h += "UTC+6 | 1 MIN EXP\n\n";
 
@@ -328,11 +316,10 @@ async function sendToTG() {
   if (FINAL_LIST.length === 0) return alert("Scan first!");
 
   try {
-    // Loading stages
     const stages = [
-      "✦═╡ APX NEURAL V54 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
-      "✦═╡ APX NEURAL V54 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
-      "✦═╡ APX NEURAL V54 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
+      "✦═╡ APX NEURAL V55 ╞═✦\nScanning Market...\n🟩⬜⬜⬜⬜ 35%\n📡 Connecting API...",
+      "✦═╡ APX NEURAL V55 ╞═✦\nAnalyzing 200+ Candles...\n🟩🟩🟩⬜⬜ 70%\n🧠 Brain Processing...",
+      "✦═╡ APX NEURAL V55 ╞═✦\nFinal Filtering...\n🟩🟩🟩🟩🟩 100%\n✅ Signals Ready!"
     ];
 
     for (let msg of stages) {
@@ -340,7 +327,6 @@ async function sendToTG() {
       await new Promise(r => setTimeout(r, 20000));
     }
 
-    // Premium Telegram format
     let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
     finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
     finalMsg += "➡️Follow rules & 💵 Management ♾\n";
