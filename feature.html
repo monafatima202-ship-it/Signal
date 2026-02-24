@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V56 - TIME FIXED</title>
+<title>APX NEURAL V56 - TIME FIXED FINAL</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -49,7 +49,7 @@ button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:1
 
 <body>
 
-<header><div class="logo">APX NEURAL V56 - TIME FIXED</div></header>
+<header><div class="logo">APX NEURAL V56 - TIME FIXED FINAL</div></header>
 
 <div class="container">
   <div class="panel">
@@ -241,6 +241,7 @@ async function deepNeuralScan() {
       if (candles.length > 0) {
         // Fix: time is Unix seconds → multiply by 1000 for milliseconds
         let lastTime = (candles[candles.length - 1].time || 0) * 1000;
+        if (isNaN(lastTime) || lastTime <= 0) lastTime = Date.now(); // Fallback if time invalid
         latestCandleTime = Math.max(latestCandleTime, lastTime);
         let brain = analyzeBrain(candles);
         pool.push({
@@ -269,7 +270,7 @@ async function deepNeuralScan() {
 
   // Generate signals with natural volatility-based gaps
   let signalCount = 0;
-  let maxSignals = 20; // target 14-20
+  let maxSignals = 20; // target 12-20
 
   while (signalCount < maxSignals && pool.length > 0) {
     // Calculate gap based on average volatility (std dev proxy from score)
