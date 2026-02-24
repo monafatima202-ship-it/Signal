@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEON V60 - STRUCTURE ENGINE</title>
+<title>APX NEON V63 - BALANCED PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -15,29 +15,27 @@
  --glow:0 0 15px #00ff88,0 0 25px #00ccff;
  --text:#e0fbee;
 }
-body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani'}
-header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow)}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon)}
-.container{max-width:480px;margin:20px auto;padding:15px}
-.panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,.3)}
-.tabs{display:flex;gap:8px;margin-bottom:15px}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);cursor:pointer;font-family:'Orbitron'}
-.tab.active{background:linear-gradient(135deg,#00ff88,#00ccff);color:black}
-select,input{width:100%;padding:12px;margin-bottom:12px;background:#050d1a;border:2px solid #1a3a3a;color:white}
-button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;font-family:'Orbitron';cursor:pointer}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black}
-.telegram{background:#0088cc;color:white}
-#output{margin-top:20px;background:#01040a;padding:20px;border-radius:12px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace}
-.loader{margin-top:15px}
-.bar-bg{width:100%;height:10px;background:#0d1e13;border-radius:10px;overflow:hidden}
-.bar-fill{width:0;height:100%;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);background-size:200% 100%;animation:move 1.5s linear infinite}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
+header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
+.container{max-width:480px;margin:20px auto;padding:15px;}
+.panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,.3);box-shadow:0 0 50px rgba(0,255,136,.2);}
+.tabs{display:flex;gap:10px;margin-bottom:20px;}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-weight:bold;cursor:pointer;font-family:'Orbitron';font-size:12px;}
+.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;box-shadow:var(--glow);}
+select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;}
+button{width:100%;padding:16px;margin-top:10px;border:none;border-radius:14px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+.telegram{background:#0088cc;color:white;}
+#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;min-height:180px;}
+.loader{height:10px;background:#0d1e13;border-radius:8px;overflow:hidden;margin-top:10px;}
+.loader div{height:100%;width:0%;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);background-size:200% 100%;animation:move 1.5s linear infinite;}
 @keyframes move{0%{background-position:0%}100%{background-position:200%}}
 </style>
 </head>
 
 <body>
-
-<header><div class="logo">APX NEON V60 - STRUCTURE ENGINE</div></header>
+<header><div class="logo">APX NEON V63 - BALANCED PRO</div></header>
 
 <div class="container">
 <div class="panel">
@@ -50,20 +48,13 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;fo
 
 <select id="pairs" multiple size="6"></select>
 
-<label>START</label>
 <input type="time" id="start" value="21:00">
-
-<label>END</label>
 <input type="time" id="end" value="23:00">
 
-<button class="generate" onclick="scan()">DEEP STRUCTURE SCAN</button>
-<button class="telegram" onclick="sendToTG()">SEND TO TELEGRAM</button>
+<button class="generate" onclick="scan()">DEEP BRAIN SCAN</button>
+<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
 <div id="output">SYSTEM READY...</div>
-
-<div class="loader">
-<div class="bar-bg"><div class="bar-fill" id="bar"></div></div>
-</div>
 
 </div>
 </div>
@@ -71,9 +62,7 @@ button{width:100%;padding:15px;margin-top:10px;border:none;border-radius:12px;fo
 <script>
 const API="https://apx.mkapi009.workers.dev?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
-
 let FINAL=[];
-let SCANNING=false;
 
 const ASSETS={
 OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
@@ -84,132 +73,141 @@ CRYPTO:["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 function setMarket(type,btn){
 document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
 btn.classList.add("active");
-let select=document.getElementById("pairs");
-select.innerHTML="";
+let s=document.getElementById("pairs");
+s.innerHTML="";
 ASSETS[type].forEach(p=>{
 let o=document.createElement("option");
 o.value=p;
-o.textContent=p.replace(/-otc|-OTC/gi,'').toUpperCase();
-select.appendChild(o);
+o.textContent=p.replace(/-otc/gi,"").toUpperCase();
+s.appendChild(o);
 });
 }
 setMarket("OTC",document.querySelector(".tab.active"));
 
-function EMA(d,p){
-if(d.length<p)return null;
-let k=2/(p+1),ema=d[d.length-p].close;
-for(let i=d.length-p+1;i<d.length;i++) ema=d[i].close*k+ema*(1-k);
+function EMA(data,p){
+let k=2/(p+1);
+let ema=data[data.length-p].close;
+for(let i=data.length-p+1;i<data.length;i++){
+ema=data[i].close*k+ema*(1-k);
+}
 return ema;
 }
-function RSI(d,p=14){
-if(d.length<p+1)return 50;
-let g=0,l=0;
-for(let i=d.length-p;i<d.length;i++){
-let diff=d[i].close-d[i-1].close;
-diff>=0?g+=diff:l-=diff;
+
+function RSI(data,p=14){
+let gain=0,loss=0;
+for(let i=data.length-p;i<data.length;i++){
+let d=data[i].close-data[i-1].close;
+d>0?gain+=d:loss-=d;
 }
-let rs=(g/p)/((l/p)||0.0001);
+let rs=gain/(loss||1);
 return 100-(100/(1+rs));
-}
-function ATR(d,p=14){
-if(d.length<p+1)return 0;
-let sum=0;
-for(let i=d.length-p;i<d.length;i++){
-let tr=Math.max(
-d[i].high-d[i].low,
-Math.abs(d[i].high-d[i-1].close),
-Math.abs(d[i].low-d[i-1].close));
-sum+=tr;
-}
-return sum/p;
 }
 
 function analyze(c){
 if(c.length<200)return null;
-let r=c.slice(-200);
-let ema20=EMA(r,20);
-let ema50=EMA(r,50);
-let rsi=RSI(r);
-let atr=ATR(r);
 
-if(!ema20||!ema50)return null;
+let ema20=EMA(c,20);
+let ema50=EMA(c,50);
+let ema100=EMA(c,100);
+let rsi=RSI(c);
 
-let trend=ema20>ema50?"CALL":"PUT";
-let strength=Math.abs(ema20-ema50)+Math.abs(rsi-50)/100;
+let score=0;
 
-if(strength<0.002)return null;
+if(ema20>ema50&&ema50>ema100)score+=4;
+if(ema20<ema50&&ema50<ema100)score-=4;
 
-return{dir:trend,strength,atr};
+if(rsi<35)score+=3;
+if(rsi>65)score-=3;
+
+let momentum=0;
+for(let i=c.length-20;i<c.length;i++){
+momentum+=c[i].close-c[i-1].close;
+}
+score+=momentum>0?2:-2;
+
+if(score>=7)return {dir:"CALL",strength:score};
+if(score<=-7)return {dir:"PUT",strength:Math.abs(score)};
+return null;
 }
 
 async function scan(){
-if(SCANNING)return;
-SCANNING=true;
 FINAL=[];
-document.getElementById("bar").style.width="0%";
-document.getElementById("output").innerText="SCANNING STRUCTURE...";
+let out=document.getElementById("output");
+out.innerHTML="SCANNING MARKET...<div class='loader'><div id='bar'></div></div>";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(!selected.length){SCANNING=false;return;}
+let pool=[];
 
 for(let i=0;i<selected.length;i++){
-try{
 let res=await fetch(API+selected[i]);
-let json=await res.json();
-let result=analyze(json.data||[]);
-if(result){
-FINAL.push({
-pair:selected[i].replace(/-otc|-OTC/gi,'').toUpperCase(),
-...result});
+let j=await res.json();
+let sig=analyze(j.data||[]);
+if(sig){
+pool.push({pair:selected[i].replace(/-otc/gi,"").toUpperCase(),...sig});
 }
-}catch(e){}
 document.getElementById("bar").style.width=((i+1)/selected.length*100)+"%";
 }
 
-if(!FINAL.length){
-document.getElementById("output").innerText="NO STRONG STRUCTURE FOUND.";
-SCANNING=false;
+if(pool.length===0){
+out.innerText="NO STRONG STRUCTURE FOUND.";
 return;
 }
 
-FINAL.sort((a,b)=>b.strength-a.strength);
+let start=new Date().toDateString()+" "+document.getElementById("start").value;
+let end=new Date().toDateString()+" "+document.getElementById("end").value;
 
-let start=new Date(new Date().toDateString()+" "+document.getElementById("start").value).getTime();
-let end=new Date(new Date().toDateString()+" "+document.getElementById("end").value).getTime();
-if(end<=start)end+=86400000;
+let t=new Date(start).getTime();
+let endT=new Date(end).getTime();
+if(endT<=t)endT+=86400000;
 
-let current=start;
-let text="APX NEON V60\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n\n";
+let exposure={};
+let directionCount={CALL:0,PUT:0};
 
-let count=0;
-while(current<end&&count<18){
-let asset=FINAL[count%FINAL.length];
-let gap=60000+(asset.atr*200000);
-current+=gap;
-if(current>=end)break;
-text+=`${asset.pair.padEnd(10)} ${new Date(current).toTimeString().slice(0,5)}   ${asset.dir}\n`;
-count++;
+while(t<endT && FINAL.length<18){
+
+let avgStrength=pool.reduce((a,b)=>a+b.strength,0)/pool.length;
+let gap=90000+(avgStrength*15000); // adaptive 1.5m+
+t+=gap;
+
+let sorted=[...pool].sort((a,b)=>b.strength-a.strength);
+let asset=sorted[Math.floor(Math.random()*sorted.length/2)];
+
+if(exposure[asset.pair] && exposure[asset.pair]>=4)continue;
+
+if(directionCount[asset.dir]>FINAL.length*0.65)continue;
+
+FINAL.push({time:new Date(t).toTimeString().slice(0,5),pair:asset.pair,dir:asset.dir});
+exposure[asset.pair]=(exposure[asset.pair]||0)+1;
+directionCount[asset.dir]++;
 }
 
-text+="\n━━━━━━━━━━━━━━━━━━\n";
-text+="Trade exact time\n1 Step Martingale\nStop after 2 losses\n";
-text+="Powered by APX Premium";
-
-document.getElementById("output").innerText=text;
-SCANNING=false;
+render();
 }
 
-async function sendToTG(){
-if(!FINAL.length)return alert("Scan first!");
+function render(){
+let txt="APX NEON V63 PRO\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
+FINAL.forEach(s=>{
+txt+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
+});
+txt+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\n1 Step Martingale\nStop after 2 losses\nPowered by APX Premium";
+document.getElementById("output").innerText=txt;
+}
 
-let msg=document.getElementById("output").innerText;
+async function sendTG(){
+if(FINAL.length===0)return alert("Generate first!");
 
-await fetch(TG,{method:"POST",body:"Scanning Structure...\n🟩🟩🟩🟩🟩"});
-await new Promise(r=>setTimeout(r,2000));
-await fetch(TG,{method:"POST",body:"```text\n"+msg+"\n```"});
+let loading="APX PRO ENGINE\nScanning...\n🟩⬜⬜⬜⬜";
+await fetch(TG,{method:"POST",body:loading});
+
+let msg="APX NEON V63 PRO\n━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN EXP\n━━━━━━━━━━━━━━━━━━\n\n";
+FINAL.forEach(s=>{
+msg+=`${s.pair.padEnd(10)} ${s.time}   ${s.dir}\n`;
+});
+msg+="\n━━━━━━━━━━━━━━━━━━\nTrade exact time\nStop after 2 losses\nPowered by APX Premium";
+
+await fetch(TG,{method:"POST",body:msg});
 alert("Sent!");
 }
 </script>
-
 </body>
 </html>
