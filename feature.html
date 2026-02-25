@@ -2,283 +2,85 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V62 - TERI EXAMPLE STYLE</title>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
+<title>APX SIMPLE WORKING</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* same style as previous */
+body { margin:0; background:#000; color:#0f0; font-family:'Rajdhani',sans-serif; }
+header { text-align:center; padding:15px; background:#111; }
+.container { max-width:500px; margin:20px auto; padding:20px; background:#0a0a0a; border:1px solid #0f0; border-radius:10px; }
+select, input, button { width:100%; margin:10px 0; padding:12px; font-size:16px; }
+button { background:#0f0; color:#000; border:none; font-weight:bold; cursor:pointer; }
+#output { margin-top:20px; white-space:pre-wrap; font-size:14px; line-height:1.5; }
+.debug { color:#ff0; }
 </style>
 </head>
-
 <body>
-
-<header><div class="logo">APX NEURAL V62 - TERI EXAMPLE STYLE</div></header>
+<header><h2>APX SIMPLE WORKING</h2></header>
 
 <div class="container">
-  <div class="panel">
-    <div class="tabs">
-      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-      <button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
-      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-    </div>
+  <select id="pairs" multiple size="6">
+    <option value="USDPKR-otc">USDPKR</option>
+    <option value="USDBDT-otc">USDBDT</option>
+    <option value="USDINR-otc">USDINR</option>
+    <option value="USDARS-otc">USDARS</option>
+    <option value="USDNGN-otc">USDNGN</option>
+  </select>
 
-    <label style="font-size:13px; color:var(--neon)">SELECT ASSETS (3-6):</label>
-    <select id="pairs" multiple size="6"></select>
+  <input type="time" id="start" value="18:00">
+  <input type="time" id="end" value="19:00">
 
-    <div class="time-row">
-      <div><small>START</small><input type="time" id="start" value="18:00"></div>
-      <div><small>END</small><input type="time" id="end" value="19:00"></div>
-    </div>
+  <button onclick="runScan()">RUN SCAN</button>
 
-    <button class="generate" onclick="deepNeuralScan()">DEEP BRAIN SCAN</button>
-    <button class="telegram" onclick="sendToTG()">SEND TO TELEGRAM</button>
-
-    <div id="output">SYSTEM STATUS: READY...</div>
-  </div>
+  <div id="output">Waiting for scan...</div>
 </div>
 
 <script>
 const API = "https://apx.mkapi009.workers.dev?pair=";
-const TG = "https://signal.mkapi009.workers.dev/send";
 
-let FINAL_LIST = [];
-let SCANNING = false;
+async function runScan() {
+  const output = document.getElementById('output');
+  output.innerHTML = "<span class='debug'>Scanning API...</span><br>";
 
-const ASSETS = {
-  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
-  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
-  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
-};
-
-function setMarket(type, btn) {
-  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  const select = document.getElementById('pairs');
-  select.innerHTML = "";
-  ASSETS[type].forEach(p => {
-    let opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p.replace(/-otc|-OTC/gi, '').toUpperCase();
-    select.appendChild(opt);
-  });
-}
-setMarket("OTC", document.querySelector(".tab.active"));
-
-// Real brain analysis (same high accuracy)
-function analyzeBrain(candles) {
-  if (candles.length < 200) return { dir: "HOLD", score: 0, atr: 0, momentum: 0 };
-
-  let recent = candles.slice(-200);
-
-  let ema8 = EMA(recent, 8);
-  let ema21 = EMA(recent, 21);
-  let ema55 = EMA(recent, 55);
-  if (!ema8 || !ema21 || !ema55) return { dir: "HOLD", score: 0, atr: 0, momentum: 0 };
-
-  let trendScore = 0;
-  if (ema8 > ema21 && ema21 > ema55) trendScore = 8;
-  else if (ema8 < ema21 && ema21 < ema55) trendScore = -8;
-  else if (ema8 > ema21) trendScore = 4;
-  else if (ema8 < ema21) trendScore = -4;
-
-  let rsi = getRSI(candles);
-  let rsiScore = 0;
-  if (rsi < 30) rsiScore = 6;
-  if (rsi > 70) rsiScore = -6;
-  if (rsi < 40 && trendScore > 0) rsiScore += 4;
-  if (rsi > 60 && trendScore < 0) rsiScore -= 4;
-
-  let momentum = 0;
-  let weight = 1;
-  for (let i = recent.length - 40; i < recent.length; i++) {
-    let diff = recent[i].close - recent[i-1].close;
-    momentum += diff * weight;
-    weight += 0.08;
-  }
-
-  let last = recent[recent.length - 1];
-  let body = Math.abs(last.close - last.open);
-  let range = last.high - last.low || 0.0001;
-  let strength = body / range;
-  let strengthScore = strength > 0.75 ? 6 : (strength > 0.6 ? 3 : 0);
-
-  let high = Math.max(...recent.slice(-15).map(x => x.high));
-  let low = Math.min(...recent.slice(-15).map(x => x.low));
-  let breakoutScore = 0;
-  if (last.close > high && momentum > 0) breakoutScore = 7;
-  if (last.close < low && momentum < 0) breakoutScore = -7;
-
-  let adxData = calculateADX(candles);
-  let adxScore = 0;
-  if (adxData.adx > 25) {
-    if (adxData.pdi > adxData.mdi + 5) adxScore = 8;
-    if (adxData.mdi > adxData.pdi + 5) adxScore = -8;
-  } else if (adxData.adx > 18) {
-    adxScore = (adxData.pdi - adxData.mdi) * 2;
-  }
-
-  let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
-
-  let atr = 0;
-  for (let i = 1; i < recent.length; i++) {
-    let tr = Math.max(
-      recent[i].high - recent[i].low,
-      Math.abs(recent[i].high - recent[i-1].close),
-      Math.abs(recent[i].low - recent[i-1].close)
-    );
-    atr += tr;
-  }
-  atr /= (recent.length - 1);
-
-  if (totalScore >= 12) return { dir: "CALL", score: totalScore, atr, momentum };
-  if (totalScore <= -12) return { dir: "PUT", score: Math.abs(totalScore), atr, momentum };
-  return { dir: "HOLD", score: totalScore, atr, momentum };
-}
-
-async function deepNeuralScan() {
-  if (SCANNING) return;
-  SCANNING = true;
-  FINAL_LIST = [];
-
-  const pairs = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-  if (pairs.length < 1) {
-    document.getElementById('output').innerText = "Select at least 1 asset!";
-    SCANNING = false;
+  const pairs = Array.from(document.getElementById('pairs').selectedOptions).map(o => o.value);
+  if (pairs.length === 0) {
+    output.innerHTML += "Koi pair select nahi kiya!";
     return;
   }
 
-  const output = document.getElementById('output');
-  output.innerHTML = `<div class="loader-box">API Loading...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
+  let signals = "";
+  let startTime = new Date().toDateString() + " " + document.getElementById('start').value;
+  let current = new Date(startTime).getTime();
 
-  let pool = [];
-  let latestCandleTime = 0;
-
-  for (let i = 0; i < pairs.length; i++) {
+  for (let pair of pairs) {
     try {
-      let res = await fetch(API + pairs[i]);
+      let res = await fetch(API + pair);
       let json = await res.json();
       let candles = json.data || [];
-      if (candles.length > 0) {
-        let lastTime = (candles[candles.length - 1].time || 0) * 1000;
-        if (isNaN(lastTime) || lastTime <= 0) lastTime = Date.now();
-        latestCandleTime = Math.max(latestCandleTime, lastTime);
-        let brain = analyzeBrain(candles);
-        if (Math.abs(brain.score) >= 10) {
-          pool.push({
-            pair: pairs[i].replace(/-otc|-OTC/gi, '').toUpperCase(),
-            dir: brain.dir,
-            score: brain.score,
-            atr: brain.atr || 0.0001,
-            momentum: brain.momentum || 0,
-            lastTime
-          });
-        }
+      output.innerHTML += `<span class='debug'>${pair} - ${candles.length} candles loaded</span><br>`;
+
+      if (candles.length < 50) continue;
+
+      let last = candles[candles.length - 1];
+      let prev = candles[candles.length - 2];
+
+      let direction = "HOLD";
+      if (last.close > prev.close && last.close > last.open) direction = "CALL";
+      if (last.close < prev.close && last.close < last.open) direction = "PUT";
+
+      if (direction !== "HOLD") {
+        let timeStr = new Date(current).toTimeString().slice(0,5);
+        signals += `M1;\( {pair.replace('-otc','')}; \){timeStr};${direction}\n`;
+        current += (60 + Math.floor(Math.random() * 300)) * 1000; // 1-5 min gap
       }
-      let p = ((i + 1) / pairs.length) * 100;
-      document.querySelector('#pb').style.width = p + "%";
-      document.getElementById('perc').innerText = Math.round(p) + "%";
     } catch (e) {
-      console.error("Pair fetch error:", e);
+      output.innerHTML += `<span style='color:red'>Error on ${pair}: ${e.message}</span><br>`;
     }
   }
 
-  if (pool.length === 0 || latestCandleTime === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.\n\nMarket abhi bohot weak hai ya data load nahi ho raha.\nSubah 8–11 AM PKT try karo (volatility zyada hoti hai).";
-    SCANNING = false;
-    return;
-  }
-
-  output.innerHTML = `<div class="loader-box">Analyzing Patterns & Volatility...<div class="bar-bg"><div class="bar-fill" id="pb" style="width:100%"></div></div><span id="perc">100%</span></div>`;
-
-  // Start from user selected start time
-  let startVal = document.getElementById('start').value;
-  let endVal = document.getElementById('end').value;
-  let startTime = new Date().toDateString() + " " + startVal;
-  let endTime = new Date().toDateString() + " " + endVal;
-  let current = new Date(startTime).getTime();
-  let endT = new Date(endTime).getTime();
-  if (endT <= current) endT += 86400000;
-
-  let signalCount = 0;
-  let maxSignals = 25;
-
-  while (current < endT && signalCount < maxSignals && pool.length > 0) {
-    // Natural gap: last candle size + momentum influence
-    let totalAtr = 0;
-    let totalMom = 0;
-    pool.forEach(asset => {
-      totalAtr += asset.atr;
-      totalMom += Math.abs(asset.momentum);
-    });
-    let avgAtr = totalAtr / pool.length;
-    let avgMom = totalMom / pool.length;
-    let gap = 60000 + (avgAtr * 200000) + (avgMom * 30000);
-    gap = Math.max(60000, Math.min(420000, gap)); // 1-7 min range (tere example jaisa)
-
-    current += gap;
-
-    let idx = signalCount % pool.length;
-    let asset = pool[idx];
-
-    FINAL_LIST.push({
-      time: new Date(current).toTimeString().slice(0,5),
-      pair: asset.pair,
-      dir: asset.dir,
-      score: asset.score
-    });
-
-    signalCount++;
-  }
-
-  if (FINAL_LIST.length === 0) {
-    output.innerText = "NO STRONG SETUPS FOUND IN SELECTED TIME RANGE.\n\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.\nSubah 8–11 AM PKT try karo.";
+  if (signals === "") {
+    output.innerHTML += "No strong signals found right now.\nSubah 8-11 try karo ya different time range daal ke dekho.";
   } else {
-    renderResult();
-  }
-  SCANNING = false;
-}
-
-function renderResult() {
-  let h = "APX ULTRA V61 PRO SIGNALS\n";
-  h += "━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += "UTC+6 | 1 MIN EXP\n\n";
-
-  FINAL_LIST.forEach(s => {
-    h += `✦ ${s.pair.padEnd(10)} ${s.time}   ${s.dir} (score: ${Math.round(s.score || 0)})\n`;
-  });
-
-  h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX + ATR GAP\n";
-  document.getElementById('output').innerText = h;
-}
-
-async function sendToTG() {
-  if (FINAL_LIST.length === 0) return alert("Scan first!");
-
-  try {
-    let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
-    finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
-    finalMsg += "➡️Follow rules & 💵 Management ♾\n";
-    finalMsg += "⏰ TIME ZONE > UTC+6\n";
-    finalMsg += "📢 ✖️USE 1 STEP MTG➕\n\n";
-
-    FINAL_LIST.forEach(s => {
-      finalMsg += `❒ ${s.pair}_𝙾𝚃𝙲 ➪ ${s.time} ➪ ${s.dir}\n`;
-    });
-
-    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-    finalMsg += "RULES:\n";
-    finalMsg += "• Trade exact time\n";
-    finalMsg += "• 1 Step Martingale Only\n";
-    finalMsg += "• Avoid News\n";
-    finalMsg += "• Stop after 2 losses\n\n";
-    finalMsg += "POWERED BY APX PREMIUM AI";
-
-    await fetch(TG, { method: "POST", body: finalMsg });
-    alert("Signals Sent!");
-  } catch (e) {
-    alert("Telegram Error!");
+    output.innerHTML += "\nGenerated Signals:\n" + signals;
   }
 }
 </script>
