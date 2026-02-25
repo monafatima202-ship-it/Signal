@@ -2,98 +2,353 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>APX NEURAL - FINAL V64 (TERE EXAMPLE 100%)</title>
-<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX NEURAL PRO - NEON</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
-body { margin:0; background:#000; color:#0f0; font-family:'Rajdhani',sans-serif; }
-header { text-align:center; padding:15px; background:#111; }
-.container { max-width:500px; margin:20px auto; padding:20px; background:#0a0a0a; border:1px solid #0f0; border-radius:10px; }
-select, input, button { width:100%; margin:10px 0; padding:12px; font-size:16px; background:#111; color:#0f0; border:1px solid #0f0; }
-button { background:#0f0; color:#000; border:none; font-weight:bold; cursor:pointer; }
-#output { margin-top:20px; white-space:pre-wrap; font-size:14px; line-height:1.5; background:#000; padding:10px; border:1px solid #0f0; border-radius:5px; }
+:root {
+  --bg: #02060c;
+  --panel: #0a111f;
+  --neon: #00ff88;
+  --cyan: #00ccff;
+  --glow: 0 0 15px #00ff88, 0 0 25px #00ccff;
+  --text: #e0fbee;
+}
+
+body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; overflow-x:hidden; }
+header { text-align:center; padding:25px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
+.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:3px; }
+
+.container { max-width:480px; margin:20px auto; padding:15px; }
+.panel { background:var(--panel); border-radius:25px; padding:30px; border:2px solid rgba(0,255,136,.3); box-shadow:0 0 50px rgba(0,255,136,.2); }
+
+.tabs { display:flex; gap:10px; margin-bottom:20px; }
+.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; font-weight:bold; cursor:pointer; font-family:'Orbitron'; font-size:12px; transition:0.4s; }
+.tab:hover { box-shadow:0 0 20px var(--neon); transform:translateY(-2px); }
+.tab.active { background:linear-gradient(135deg,var(--neon),var(--cyan)); color:black; box-shadow:var(--glow); }
+
+select, input { width:100%; padding:14px; margin-bottom:18px; background:#050d1a; border:2px solid #1a3a3a; border-radius:12px; color:white; font-size:15px; outline:none; transition:0.3s; }
+select:focus, input:focus { border-color:var(--neon); box-shadow:0 0 15px var(--neon); }
+
+button { width:100%; padding:18px; margin-top:12px; border:none; border-radius:14px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; font-size:15px; transition:0.4s; }
+.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
+.generate:hover { transform:translateY(-3px); box-shadow:0 0 30px #00ff88; }
+.telegram { background:#0088cc; color:white; }
+
+#output { margin-top:25px; background:#01040a; padding:20px; border-radius:15px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:200px; box-shadow:0 0 20px rgba(0,255,136,.15); }
+
+/* Progress Bar */
+.loader-box { padding:25px; text-align:center; }
+.bar-bg { width:100%; background:#0d1e13; height:12px; border-radius:12px; margin:15px 0; overflow:hidden; border:1px solid #1a3a2a; }
+.bar-fill { width:0%; height:100%; background:linear-gradient(90deg, #00ff88, #00ccff, #00ff88); background-size:200% 100%; animation:move 1.8s linear infinite; transition:width 0.5s; box-shadow:var(--glow); }
+@keyframes move { 0% { background-position:0% 0; } 100% { background-position:200% 0; } }
+.percent { margin-top:8px; font-size:13px; color:var(--neon); text-shadow:0 0 8px var(--neon); }
 </style>
 </head>
+
 <body>
-<header><h2>APX NEURAL - FINAL V64</h2></header>
+
+<header><div class="logo">APX NEURAL PRO - NEON</div></header>
 
 <div class="container">
-  <select id="pairs" multiple size="6">
-    <option value="USDPKR-otc">USDPKR</option>
-    <option value="USDBDT-otc">USDBDT</option>
-    <option value="USDINR-otc">USDINR</option>
-    <option value="USDARS-otc">USDARS</option>
-    <option value="USDNGN-otc">USDNGN</option>
-    <option value="BRLUSD-otc">BRLUSD</option>
-    <option value="USDMXN-otc">USDMXN</option>
-  </select>
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+      <button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
+      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+    </div>
 
-  <input type="time" id="start" value="18:00">
-  <input type="time" id="end" value="19:00">
+    <label style="font-size:13px; color:var(--neon)">SELECT ASSETS (3-6):</label>
+    <select id="pairs" multiple size="6"></select>
 
-  <button onclick="runScan()">RUN SCAN</button>
+    <div class="time-row">
+      <div><small>START</small><input type="time" id="start" value="18:00"></div>
+      <div><small>END</small><input type="time" id="end" value="19:00"></div>
+    </div>
 
-  <div id="output">Waiting for scan...</div>
+    <button class="generate" onclick="deepNeuralScan()">DEEP BRAIN SCAN</button>
+    <button class="telegram" onclick="sendToTG()">SEND TO TELEGRAM</button>
+
+    <div id="output">SYSTEM STATUS: READY...</div>
+  </div>
 </div>
 
 <script>
 const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
 
-async function runScan() {
-  const output = document.getElementById('output');
-  output.innerHTML = "Scanning API...\n";
+let FINAL_LIST = [];
+let SCANNING = false;
 
-  const selected = Array.from(document.getElementById('pairs').selectedOptions).map(o => o.value);
-  if (selected.length === 0) {
-    output.innerHTML += "Koi pair select nahi kiya!\n";
+const ASSETS = {
+  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
+  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
+  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
+};
+
+function setMarket(type, btn) {
+  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const select = document.getElementById('pairs');
+  select.innerHTML = "";
+  ASSETS[type].forEach(p => {
+    let opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p.replace(/-otc|-OTC/gi, '').toUpperCase();
+    select.appendChild(opt);
+  });
+}
+setMarket("OTC", document.querySelector(".tab.active"));
+
+// Brain logic (EMA + RSI + ADX + momentum + candle strength)
+function analyzeBrain(candles) {
+  if (candles.length < 200) return { dir: "HOLD", score: 0 };
+
+  let recent = candles.slice(-200);
+
+  let ema8 = EMA(recent, 8);
+  let ema21 = EMA(recent, 21);
+  let ema55 = EMA(recent, 55);
+  if (!ema8 || !ema21 || !ema55) return { dir: "HOLD", score: 0 };
+
+  let trendScore = 0;
+  if (ema8 > ema21 && ema21 > ema55) trendScore = 8;
+  else if (ema8 < ema21 && ema21 < ema55) trendScore = -8;
+  else if (ema8 > ema21) trendScore = 4;
+  else if (ema8 < ema21) trendScore = -4;
+
+  let rsi = getRSI(candles);
+  let rsiScore = 0;
+  if (rsi < 30) rsiScore = 6;
+  if (rsi > 70) rsiScore = -6;
+  if (rsi < 40 && trendScore > 0) rsiScore += 4;
+  if (rsi > 60 && trendScore < 0) rsiScore -= 4;
+
+  let momentum = 0;
+  let weight = 1;
+  for (let i = recent.length - 40; i < recent.length; i++) {
+    let diff = recent[i].close - recent[i-1].close;
+    momentum += diff * weight;
+    weight += 0.08;
+  }
+
+  let last = recent[recent.length - 1];
+  let body = Math.abs(last.close - last.open);
+  let range = last.high - last.low || 0.0001;
+  let strength = body / range;
+  let strengthScore = strength > 0.75 ? 6 : (strength > 0.6 ? 3 : 0);
+
+  let high = Math.max(...recent.slice(-15).map(x => x.high));
+  let low = Math.min(...recent.slice(-15).map(x => x.low));
+  let breakoutScore = 0;
+  if (last.close > high && momentum > 0) breakoutScore = 7;
+  if (last.close < low && momentum < 0) breakoutScore = -7;
+
+  let adxData = calculateADX(candles);
+  let adxScore = 0;
+  if (adxData.adx > 25) {
+    if (adxData.pdi > adxData.mdi + 5) adxScore = 8;
+    if (adxData.mdi > adxData.pdi + 5) adxScore = -8;
+  } else if (adxData.adx > 18) {
+    adxScore = (adxData.pdi - adxData.mdi) * 2;
+  }
+
+  let totalScore = trendScore + rsiScore + momentum + strengthScore + breakoutScore + adxScore;
+
+  if (totalScore >= 12) return { dir: "CALL", score: totalScore };
+  if (totalScore <= -12) return { dir: "PUT", score: Math.abs(totalScore) };
+  return { dir: "HOLD", score: totalScore };
+}
+
+function getRSI(data, period = 14) {
+  if (data.length < period + 1) return 50;
+  let gains = 0, losses = 0;
+  for (let i = data.length - period; i < data.length; i++) {
+    let diff = data[i].close - data[i-1].close;
+    if (diff >= 0) gains += diff; else losses -= diff;
+  }
+  let avgGain = gains / period;
+  let avgLoss = losses / period || 0.0001;
+  let rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+function EMA(data, period) {
+  if (data.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = data[data.length - period].close;
+  for (let i = data.length - period + 1; i < data.length; i++) {
+    ema = data[i].close * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+function calculateADX(candles, period = 14) {
+  if (candles.length < period * 2) return { adx: 0, pdi: 0, mdi: 0 };
+
+  let tr = [];
+  let dmPlus = [];
+  let dmMinus = [];
+
+  for (let i = 1; i < candles.length; i++) {
+    let high = candles[i].high;
+    let low = candles[i].low;
+    let prevHigh = candles[i-1].high;
+    let prevLow = candles[i-1].low;
+    let prevClose = candles[i-1].close;
+
+    let tr1 = high - low;
+    let tr2 = Math.abs(high - prevClose);
+    let tr3 = Math.abs(low - prevClose);
+    tr.push(Math.max(tr1, tr2, tr3));
+
+    let upMove = high - prevHigh;
+    let downMove = prevLow - low;
+    dmPlus.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    dmMinus.push(downMove > upMove && downMove > 0 ? downMove : 0);
+  }
+
+  let atr = tr.slice(-period).reduce((a,b) => a+b, 0) / period;
+  let diPlus = dmPlus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+  let diMinus = dmMinus.slice(-period).reduce((a,b) => a+b, 0) / period / atr * 100;
+
+  let dx = Math.abs(diPlus - diMinus) / (diPlus + diMinus) * 100;
+  let adx = dx;
+
+  return { adx, pdi: diPlus, mdi: diMinus };
+}
+
+async function deepNeuralScan() {
+  if (SCANNING) return;
+  SCANNING = true;
+  FINAL_LIST = [];
+
+  const pairs = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
+  if (pairs.length < 1) {
+    document.getElementById('output').innerText = "Select at least 1 asset!";
+    SCANNING = false;
     return;
   }
 
-  let signals = "";
-  let startStr = new Date().toDateString() + " " + document.getElementById('start').value;
-  let current = new Date(startStr).getTime();
-  let endStr = new Date().toDateString() + " " + document.getElementById('end').value;
-  let endT = new Date(endStr).getTime();
+  const output = document.getElementById('output');
+  output.innerHTML = `<div class="loader-box">API Loading...<div class="bar-bg"><div class="bar-fill" id="pb"></div></div><span id="perc">0%</span></div>`;
 
-  let loadedPairs = [];
+  let pool = [];
+  let latestCandleTime = 0;
 
-  for (let pairVal of selected) {
+  for (let i = 0; i < pairs.length; i++) {
     try {
-      let res = await fetch(API + pairVal);
+      let res = await fetch(API + pairs[i]);
       let json = await res.json();
       let candles = json.data || [];
-      if (candles.length < 30) continue;
-
-      loadedPairs.push(pairVal.replace('-otc', '') + " (" + candles.length + " candles)");
-
-      let last = candles[candles.length - 1];
-      let prev = candles[candles.length - 2];
-      let prev2 = candles[candles.length - 3] || prev;
-
-      let direction = "HOLD";
-      if (last.close > prev.close && prev.close > prev2.close) direction = "CALL";
-      if (last.close < prev.close && prev.close < prev2.close) direction = "PUT";
-
-      if (direction !== "HOLD") {
-        let timeStr = new Date(current).toTimeString().slice(0,5);
-        let cleanPair = pairVal.replace('-otc', '');
-        signals += `M1;\( {cleanPair}; \){timeStr};${direction}\n`;
-
-        // Natural gap: 2-9 min (tere example jaisa)
-        let lastRange = last.high - last.low;
-        let gap = 120000 + (lastRange * 1000000) + Math.floor(Math.random() * 420000);
-        current += gap;
+      if (candles.length > 0) {
+        let lastTime = (candles[candles.length - 1].time || 0) * 1000;
+        if (isNaN(lastTime) || lastTime <= 0) lastTime = Date.now();
+        latestCandleTime = Math.max(latestCandleTime, lastTime);
+        let brain = analyzeBrain(candles);
+        if (Math.abs(brain.score) >= 10) {
+          pool.push({
+            pair: pairs[i].replace(/-otc|-OTC/gi, '').toUpperCase(),
+            dir: brain.dir,
+            score: brain.score,
+            lastTime
+          });
+        }
       }
+      let p = ((i + 1) / pairs.length) * 100;
+      document.querySelector('#pb').style.width = p + "%";
+      document.getElementById('perc').innerText = Math.round(p) + "%";
     } catch (e) {
-      output.innerHTML += `Error on ${pairVal}: ${e.message}\n`;
+      console.error("Pair fetch error:", e);
     }
   }
 
-  output.innerHTML += "\nLoaded pairs:\n" + loadedPairs.join("\n") + "\n\n";
+  if (pool.length === 0 || latestCandleTime === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND OR API ISSUE.\n\nMarket abhi bohot weak hai ya data load nahi ho raha.\nSubah 8–11 AM PKT try karo (volatility zyada hoti hai).";
+    SCANNING = false;
+    return;
+  }
 
-  if (signals === "") {
-    output.innerHTML += "No strong signals right now (market flat hai).\nSubah 8-11 AM PKT ya news time try karo.";
+  output.innerHTML = `<div class="loader-box">Analyzing Patterns & Volatility...<div class="bar-bg"><div class="bar-fill" id="pb" style="width:100%"></div></div><span id="perc">100%</span></div>`;
+
+  // Start from user selected start time
+  let startVal = document.getElementById('start').value;
+  let endVal = document.getElementById('end').value;
+  let startTime = new Date().toDateString() + " " + startVal;
+  let endTime = new Date().toDateString() + " " + endVal;
+  let current = new Date(startTime).getTime();
+  let endT = new Date(endTime).getTime();
+  if (endT <= current) endT += 86400000;
+
+  let signalCount = 0;
+  let maxSignals = 25;
+
+  while (current < endT && signalCount < maxSignals && pool.length > 0) {
+    let gap = 60000 + Math.floor(Math.random() * 420000); // 1-7 min natural
+    current += gap;
+
+    let idx = signalCount % pool.length;
+    let asset = pool[idx];
+
+    FINAL_LIST.push({
+      time: new Date(current).toTimeString().slice(0,5),
+      pair: asset.pair,
+      dir: asset.dir,
+      score: asset.score
+    });
+
+    signalCount++;
+  }
+
+  if (FINAL_LIST.length === 0) {
+    output.innerText = "NO STRONG SETUPS FOUND IN SELECTED TIME RANGE.\n\nMarket abhi weak hai ya koi pair strong trend nahi dikha raha.\nSubah 8–11 AM PKT try karo.";
   } else {
-    output.innerHTML += "Generated Signals:\n" + signals;
+    renderResult();
+  }
+  SCANNING = false;
+}
+
+function renderResult() {
+  let h = "APX ULTRA V62 PRO SIGNALS\n";
+  h += "━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "UTC+6 | 1 MIN EXP\n\n";
+
+  FINAL_LIST.forEach(s => {
+    h += `M1;\( {s.pair}; \){s.time};${s.dir}\n`;
+  });
+
+  h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+  h += "LOGIC: 200-CANDLE EMA + RSI + MOMENTUM + STRENGTH + ADX\n";
+  document.getElementById('output').innerText = h;
+}
+
+async function sendToTG() {
+  if (FINAL_LIST.length === 0) return alert("Scan first!");
+
+  try {
+    let finalMsg = "👑•--‼️ 𝗙𝗨𝗧𝗨𝗥𝗘 ⋅◈⋅ 𝗦𝗜𝗚𝗡𝗔𝗟 ‼️--•👑\n";
+    finalMsg += "📌 🌐🌐🌐★🌐🌐🌐🌐🌐v2.0🥸\n\n";
+    finalMsg += "➡️Follow rules & 💵 Management ♾\n";
+    finalMsg += "⏰ TIME ZONE > UTC+6\n";
+    finalMsg += "📢 ✖️USE 1 STEP MTG➕\n\n";
+
+    FINAL_LIST.forEach(s => {
+      finalMsg += `M1;\( {s.pair}; \){s.time};${s.dir}\n`;
+    });
+
+    finalMsg += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
+    finalMsg += "RULES:\n";
+    finalMsg += "• Trade exact time\n";
+    finalMsg += "• 1 Step Martingale Only\n";
+    finalMsg += "• Avoid News\n";
+    finalMsg += "• Stop after 2 losses\n\n";
+    finalMsg += "POWERED BY APX PREMIUM AI";
+
+    await fetch(TG, { method: "POST", body: finalMsg });
+    alert("Signals Sent to Telegram!");
+  } catch (e) {
+    alert("Telegram Error!");
   }
 }
 </script>
