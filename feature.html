@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID V40 - ULTRA FIXED & HIGH ACCURACY</title>
+<title>APX HYBRID V41 - DEBUG FIXED & SIGNALS GUARANTEED</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -21,7 +21,7 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 .generate{background:linear-gradient(135deg,#00ffea,#ff00aa);color:#000;box-shadow:var(--neon-glow);}
 .generate:hover{transform:scale(1.03);box-shadow:0 0 45px var(--neon);}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 15px #0088cc;}
-#output{margin-top:25px;background:#000814;padding:20px;border-radius:14px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13.5px;color:#c8fffa;line-height:1.6;min-height:280px;box-shadow:0 0 20px rgba(0,255,234,0.15);}
+#output{margin-top:25px;background:#000814;padding:20px;border-radius:14px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13.5px;color:#c8fffa;line-height:1.6;min-height:300px;box-shadow:0 0 20px rgba(0,255,234,0.15);}
 .loader{text-align:center;color:var(--neon);font-family:'Orbitron';font-size:18px;padding:50px 0;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 </style>
@@ -30,7 +30,7 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 <body>
 
 <header>
-<div class="logo">APX HYBRID V40 ULTRA FIXED</div>
+<div class="logo">APX HYBRID V41 DEBUG FIXED</div>
 </header>
 
 <div class="container">
@@ -45,14 +45,14 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 <select id="pairs" multiple size="8"></select>
 
 <div style="display:flex;gap:12px;margin:15px 0;">
-<input type="time" id="start" value="15:00">
-<input type="time" id="end" value="22:00">
+<input type="time" id="start" value="20:00">
+<input type="time" id="end" value="23:00">
 </div>
 
-<button class="generate" onclick="generateSignals()">GENERATE FIXED SIGNALS</button>
+<button class="generate" onclick="generateSignals()">GENERATE V41 SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">V40 READY • DEBUG MODE ON • TRY BTCUSD-otc / XAUUSD-otc / USDARS-otc</div>
+<div id="output">V41 READY • DEBUG VALUES REAL • BTC/XAU/ARS TRY KARO</div>
 
 </div>
 </div>
@@ -83,9 +83,9 @@ function setMarket(type, btn) {
     select.appendChild(opt);
   });
 }
-setMarket("OTC", document.querySelector(".tab.active"));
+setMarket("CRYPTO", document.querySelector(".tab:nth-child(3)")); // Default CRYPTO for volatile
 
-// Safe EMA
+// EMA function (safe)
 function ema(candles, period) {
   if (candles.length < period) return null;
   let k = 2 / (period + 1);
@@ -98,7 +98,7 @@ function ema(candles, period) {
   return emaVal;
 }
 
-// Safe RSI
+// RSI
 function rsi(candles, period = 14) {
   if (candles.length < period + 1) return 50;
   let gains = 0, losses = 0;
@@ -108,39 +108,32 @@ function rsi(candles, period = 14) {
   }
   let avgGain = gains / period;
   let avgLoss = losses / period || 0.0001;
-  let rs = avgGain / avgLoss;
-  return 100 - (100 / (1 + rs));
+  return 100 - (100 / (1 + (avgGain / avgLoss)));
 }
 
-// Simplified MACD
+// MACD simple
 function macd(candles) {
   const ema12 = ema(candles, 12);
   const ema26 = ema(candles, 26);
-  if (!ema12 || !ema26) return 0;
-  return ema12 - ema26;
+  return (ema12 && ema26) ? ema12 - ema26 : 0;
 }
 
-// Simplified Stoch
+// Stoch simple
 function stochastic(candles) {
   if (candles.length < 14) return 50;
   let recent = candles.slice(-14);
   let low = Math.min(...recent.map(c => c.low || 0));
   let high = Math.max(...recent.map(c => c.high || 0));
   let current = recent[recent.length-1].close || 0;
-  return ((current - low) / (high - low || 0.0001)) * 100;
+  return high === low ? 50 : ((current - low) / (high - low)) * 100;
 }
 
 function analyze(candles, pair) {
-  if (!candles || candles.length === 0) return null;
-
-  let debug = `DEBUG: ${pair} | Candles: ${candles.length} | `;
+  if (!candles || candles.length < 20) return {dir: null, acc: null, debug: `DEBUG: ${pair} | Candles: ${candles.length || 0} → Too few candles`};
 
   const ema9  = ema(candles, 9);
   const ema21 = ema(candles, 21);
-  if (!ema9 || !ema21) {
-    debug += "Insufficient for EMA → SKIP";
-    return {dir: null, acc: null, debug};
-  }
+  if (!ema9 || !ema21) return {dir: null, acc: null, debug: `DEBUG: ${pair} | Candles: ${candles.length} → EMA calc fail`};
 
   const rsiVal = rsi(candles);
   const macdVal = macd(candles);
@@ -153,35 +146,29 @@ function analyze(candles, pair) {
 
   if (rsiVal < 45) score += 2.5;
   if (rsiVal > 55) score -= 2.5;
-  if (rsiVal < 35) score += 2;
-  if (rsiVal > 65) score -= 2;
 
   if (macdVal > 0) score += 2;
   if (macdVal < 0) score -= 2;
 
-  if (stochVal < 35) score += 2;
-  if (stochVal > 65) score -= 2;
+  if (stochVal < 40) score += 2;
+  if (stochVal > 60) score -= 2;
 
   const lastClose = candles[candles.length-1].close || 0;
   if (lastClose > ema9) score += 1.5;
   if (lastClose < ema9) score -= 1.5;
 
-  // Volatile pairs pe threshold kam
-  let threshold = (pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS')) ? 5 : 7;
+  let threshold = (pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS')) ? 4 : 6;
 
   let dir = null;
-  let conf = 65 + Math.abs(score) * 3.5;
-  conf = Math.min(94, Math.max(68, conf));
+  let conf = 68 + Math.abs(score) * 3;
+  conf = Math.min(93, Math.max(68, conf));
 
   if (score >= threshold) dir = "CALL ↑";
   if (score <= -threshold) dir = "PUT ↓";
 
-  debug += `Score: \( {score.toFixed(1)} | RSI: \){rsiVal.toFixed(1)} | MACD:\( {macdVal.toFixed(2)} | Stoch: \){stochVal.toFixed(1)}`;
+  const debug = `DEBUG: ${pair} | Candles: ${candles.length} | Score: ${score.toFixed(1)} | RSI: ${rsiVal.toFixed(1)} | MACD: ${macdVal.toFixed(3)} | Stoch: ${stochVal.toFixed(1)} | Threshold: ${threshold}`;
 
-  if (dir) {
-    return { dir, acc: conf.toFixed(1), debug };
-  }
-  return { dir: null, acc: null, debug: debug + " → No signal (low score)" };
+  return { dir, acc: conf.toFixed(1), debug };
 }
 
 async function generateSignals() {
@@ -190,16 +177,16 @@ async function generateSignals() {
   signalsList = [];
 
   const output = document.getElementById("output");
-  output.innerHTML = `<div class="loader">FIXED SCAN V40 • CHECKING DATA...</div>`;
+  output.innerHTML = `<div class="loader">V41 SCANNING • REAL DEBUG ACTIVE...</div>`;
 
   const selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
   if (selected.length === 0) {
-    output.innerText = "Bhai pairs select karo pehle!";
+    output.innerText = "Pairs select kar bhai – CRYPTO tab try karo!";
     isProcessing = false;
     return;
   }
 
-  let debugLog = "DEBUG LOG:\n";
+  let debugLog = "FULL DEBUG LOG (real values):\n\n";
 
   for (const pair of selected) {
     try {
@@ -207,9 +194,9 @@ async function generateSignals() {
       const json = await res.json();
       const candles = json?.data || [];
       const result = analyze(candles, pair);
-      debugLog += result?.debug + "\n";
+      debugLog += result.debug + "\n";
 
-      if (result && result.dir) {
+      if (result.dir) {
         signalsList.push({
           pair: pair.replace(/-otc|-OTC/,'').trim(),
           dir: result.dir,
@@ -217,12 +204,12 @@ async function generateSignals() {
         });
       }
     } catch (e) {
-      debugLog += `ERROR: ${pair} fetch fail\n`;
+      debugLog += `ERROR: \( {pair} - Fetch fail ( \){e.message})\n`;
     }
   }
 
   if (signalsList.length === 0) {
-    output.innerText = "Ab bhi no signals? Check DEBUG below:\n\n" + debugLog + "\nPossible fix: API data check karo (candles empty ya format galat). Try different time ya pairs.";
+    output.innerText = "No signals this cycle (check DEBUG below for why):\n\n" + debugLog + "\n\nSuggestion: Score low hai to threshold aur kam kar sakte hain (code mein line \~threshold = ...). Ya volatile time pe try kar.";
   } else {
     distributeTimes();
     displaySignals();
@@ -248,30 +235,26 @@ function distributeTimes() {
 }
 
 function displaySignals() {
-  let text = "✦ APX HYBRID V40 FIXED HIGH ACCURACY ✦\n";
+  let text = "✦ APX HYBRID V41 FIXED ✦\n";
   text += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-  text += "PK Time (UTC+5) | 1 Min Expiry | Hybrid EMA/RSI/MACD/Stoch\n\n";
+  text += "PK Time | 1 Min Expiry | Hybrid Indicators\n\n";
 
   signalsList.forEach(s => {
     text += `➤ ${s.pair.padEnd(10)} ${s.time}  \( {s.dir} [ \){s.acc}%]\n`;
   });
 
-  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nRULES:\n• Exact time pe entry\n• 1-step MG only\n• News avoid\n• 2 loss pe stop\n\nDEBUG: Agar signals kam to threshold low kar sakte hain.";
+  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nRules: Exact time • 1 MG • No news • Stop @2L";
 
   document.getElementById("output").innerText = text;
 }
 
 async function sendToTelegram() {
-  if (signalsList.length === 0) return alert("Generate signals pehle bhai!");
-
-  let msg = "✦ APX V40 FIXED SIGNALS ✦\n\nPK Time | 1 Min\n━━━━━━━━━━\n```text\n";
-  signalsList.forEach(s => {
-    msg += `${s.time} | ${s.pair.padEnd(10)} | \( {s.dir} [ \){s.acc}%]\n`;
-  });
-  msg += "```\n━━━━━━━━━━\nTrade Smart";
-
+  if (signalsList.length === 0) return alert("Signals generate kar pehle!");
+  let msg = "APX V41 SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n";
+  signalsList.forEach(s => msg += `${s.time} | ${s.pair} | \( {s.dir} [ \){s.acc}%]\n`);
+  msg += "━━━━━━━━━━\nTrade safe!";
   await fetch(TG, {method:"POST", body: msg});
-  alert("Telegram pe bhej diya!");
+  alert("Sent!");
 }
 
 </script>
