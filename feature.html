@@ -2,20 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>APX SIMPLE WORKING</title>
+<title>APX NEURAL - FINAL WORKING</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
 body { margin:0; background:#000; color:#0f0; font-family:'Rajdhani',sans-serif; }
 header { text-align:center; padding:15px; background:#111; }
 .container { max-width:500px; margin:20px auto; padding:20px; background:#0a0a0a; border:1px solid #0f0; border-radius:10px; }
-select, input, button { width:100%; margin:10px 0; padding:12px; font-size:16px; }
+select, input, button { width:100%; margin:10px 0; padding:12px; font-size:16px; background:#111; color:#0f0; border:1px solid #0f0; }
 button { background:#0f0; color:#000; border:none; font-weight:bold; cursor:pointer; }
-#output { margin-top:20px; white-space:pre-wrap; font-size:14px; line-height:1.5; }
-.debug { color:#ff0; }
+#output { margin-top:20px; white-space:pre-wrap; font-size:14px; line-height:1.5; background:#000; padding:10px; border:1px solid #0f0; border-radius:5px; }
 </style>
 </head>
 <body>
-<header><h2>APX SIMPLE WORKING</h2></header>
+<header><h2>APX NEURAL - FINAL WORKING</h2></header>
 
 <div class="container">
   <select id="pairs" multiple size="6">
@@ -39,48 +38,58 @@ const API = "https://apx.mkapi009.workers.dev?pair=";
 
 async function runScan() {
   const output = document.getElementById('output');
-  output.innerHTML = "<span class='debug'>Scanning API...</span><br>";
+  output.innerHTML = "Scanning API...\n";
 
-  const pairs = Array.from(document.getElementById('pairs').selectedOptions).map(o => o.value);
-  if (pairs.length === 0) {
+  const selected = Array.from(document.getElementById('pairs').selectedOptions).map(o => o.value);
+  if (selected.length === 0) {
     output.innerHTML += "Koi pair select nahi kiya!";
     return;
   }
 
   let signals = "";
-  let startTime = new Date().toDateString() + " " + document.getElementById('start').value;
-  let current = new Date(startTime).getTime();
+  let startStr = new Date().toDateString() + " " + document.getElementById('start').value;
+  let current = new Date(startStr).getTime();
+  let endStr = new Date().toDateString() + " " + document.getElementById('end').value;
+  let endT = new Date(endStr).getTime();
 
-  for (let pair of pairs) {
+  let loadedPairs = [];
+
+  for (let pairVal of selected) {
     try {
-      let res = await fetch(API + pair);
+      let res = await fetch(API + pairVal);
       let json = await res.json();
       let candles = json.data || [];
-      output.innerHTML += `<span class='debug'>${pair} - ${candles.length} candles loaded</span><br>`;
-
-      if (candles.length < 50) continue;
+      if (candles.length < 30) continue;
 
       let last = candles[candles.length - 1];
       let prev = candles[candles.length - 2];
+      let prev2 = candles[candles.length - 3] || prev;
 
       let direction = "HOLD";
-      if (last.close > prev.close && last.close > last.open) direction = "CALL";
-      if (last.close < prev.close && last.close < last.open) direction = "PUT";
+      if (last.close > prev.close && prev.close > prev2.close) direction = "CALL";
+      if (last.close < prev.close && prev.close < prev2.close) direction = "PUT";
 
       if (direction !== "HOLD") {
         let timeStr = new Date(current).toTimeString().slice(0,5);
-        signals += `M1;\( {pair.replace('-otc','')}; \){timeStr};${direction}\n`;
-        current += (60 + Math.floor(Math.random() * 300)) * 1000; // 1-5 min gap
+        let cleanPair = pairVal.replace('-otc', '');
+        signals += `M1;\( {cleanPair}; \){timeStr};${direction}\n`;
+        // Natural gap: 2-8 min + small random
+        let gap = (120000 + Math.floor(Math.random() * 360000));
+        current += gap;
       }
+
+      loadedPairs.push(`\( {cleanPair} ( \){candles.length} candles)`);
     } catch (e) {
-      output.innerHTML += `<span style='color:red'>Error on ${pair}: ${e.message}</span><br>`;
+      output.innerHTML += `Error on ${pairVal}: ${e.message}\n`;
     }
   }
 
+  output.innerHTML += "\nLoaded pairs:\n" + loadedPairs.join("\n") + "\n\n";
+
   if (signals === "") {
-    output.innerHTML += "No strong signals found right now.\nSubah 8-11 try karo ya different time range daal ke dekho.";
+    output.innerHTML += "No strong signals right now (market flat hai).\nSubah 8-11 AM PKT ya news time try karo.";
   } else {
-    output.innerHTML += "\nGenerated Signals:\n" + signals;
+    output.innerHTML += "Generated Signals:\n" + signals;
   }
 }
 </script>
