@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>APX NEURAL - FINAL WORKING</title>
+<title>APX NEURAL - FINAL WORKING V63</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
 body { margin:0; background:#000; color:#0f0; font-family:'Rajdhani',sans-serif; }
@@ -42,7 +42,7 @@ async function runScan() {
 
   const selected = Array.from(document.getElementById('pairs').selectedOptions).map(o => o.value);
   if (selected.length === 0) {
-    output.innerHTML += "Koi pair select nahi kiya!";
+    output.innerHTML += "Koi pair select nahi kiya!\n";
     return;
   }
 
@@ -61,6 +61,8 @@ async function runScan() {
       let candles = json.data || [];
       if (candles.length < 30) continue;
 
+      loadedPairs.push(pairVal.replace('-otc', '') + " (" + candles.length + " candles)");
+
       let last = candles[candles.length - 1];
       let prev = candles[candles.length - 2];
       let prev2 = candles[candles.length - 3] || prev;
@@ -73,12 +75,12 @@ async function runScan() {
         let timeStr = new Date(current).toTimeString().slice(0,5);
         let cleanPair = pairVal.replace('-otc', '');
         signals += `M1;\( {cleanPair}; \){timeStr};${direction}\n`;
-        // Natural gap: 2-8 min + small random
-        let gap = (120000 + Math.floor(Math.random() * 360000));
+
+        // Natural gap: 2-8 min based on last candle range
+        let lastRange = last.high - last.low;
+        let gap = 120000 + (lastRange * 1000000) + Math.floor(Math.random() * 180000); // 2-8 min
         current += gap;
       }
-
-      loadedPairs.push(`\( {cleanPair} ( \){candles.length} candles)`);
     } catch (e) {
       output.innerHTML += `Error on ${pairVal}: ${e.message}\n`;
     }
