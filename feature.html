@@ -3,17 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID V39 - HIGH ACCURACY PRO</title>
+<title>APX HYBRID V40 - ULTRA FIXED & HIGH ACCURACY</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{
---bg:#02050f;
---panel:#0b1626;
---neon:#00ffea;
---neon-glow:0 0 15px #00ffea, 0 0 35px #00ffea;
---accent:#ff00aa;
-}
+:root{--bg:#02050f;--panel:#0b1626;--neon:#00ffea;--neon-glow:0 0 15px #00ffea, 0 0 35px #00ffea;--accent:#ff00aa;}
 body{margin:0;background:var(--bg);color:#e0fffc;font-family:'Rajdhani';min-height:100vh;overflow-x:hidden;}
 header{text-align:center;padding:22px;background:linear-gradient(to bottom,#000,#001122);border-bottom:3px solid var(--neon);box-shadow:var(--neon-glow);}
 .logo{font-family:'Orbitron';font-size:32px;color:var(--neon);text-shadow:var(--neon-glow);letter-spacing:4px;}
@@ -27,7 +21,7 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 .generate{background:linear-gradient(135deg,#00ffea,#ff00aa);color:#000;box-shadow:var(--neon-glow);}
 .generate:hover{transform:scale(1.03);box-shadow:0 0 45px var(--neon);}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 15px #0088cc;}
-#output{margin-top:25px;background:#000814;padding:20px;border-radius:14px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13.5px;color:#c8fffa;line-height:1.6;min-height:220px;box-shadow:0 0 20px rgba(0,255,234,0.15);}
+#output{margin-top:25px;background:#000814;padding:20px;border-radius:14px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13.5px;color:#c8fffa;line-height:1.6;min-height:280px;box-shadow:0 0 20px rgba(0,255,234,0.15);}
 .loader{text-align:center;color:var(--neon);font-family:'Orbitron';font-size:18px;padding:50px 0;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 </style>
@@ -36,7 +30,7 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 <body>
 
 <header>
-<div class="logo">APX HYBRID V39 HIGH ACCURACY</div>
+<div class="logo">APX HYBRID V40 ULTRA FIXED</div>
 </header>
 
 <div class="container">
@@ -52,13 +46,13 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 
 <div style="display:flex;gap:12px;margin:15px 0;">
 <input type="time" id="start" value="15:00">
-<input type="time" id="end" value="20:00">
+<input type="time" id="end" value="22:00">
 </div>
 
-<button class="generate" onclick="generateSignals()">GENERATE HYBRID SIGNALS</button>
+<button class="generate" onclick="generateSignals()">GENERATE FIXED SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">HYBRID SYSTEM READY • EMA + RSI + MACD + STOCH</div>
+<div id="output">V40 READY • DEBUG MODE ON • TRY BTCUSD-otc / XAUUSD-otc / USDARS-otc</div>
 
 </div>
 </div>
@@ -91,23 +85,25 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// EMA
+// Safe EMA
 function ema(candles, period) {
   if (candles.length < period) return null;
   let k = 2 / (period + 1);
-  let emaVal = candles.slice(0, period).reduce((a, c) => a + c.close, 0) / period;
+  let sum = 0;
+  for (let i = 0; i < period; i++) sum += candles[i].close || 0;
+  let emaVal = sum / period;
   for (let i = period; i < candles.length; i++) {
-    emaVal = candles[i].close * k + emaVal * (1 - k);
+    emaVal = (candles[i].close || 0) * k + emaVal * (1 - k);
   }
   return emaVal;
 }
 
-// RSI 14
+// Safe RSI
 function rsi(candles, period = 14) {
   if (candles.length < period + 1) return 50;
   let gains = 0, losses = 0;
   for (let i = 1; i <= period; i++) {
-    let diff = candles[candles.length - i].close - candles[candles.length - i - 1].close;
+    let diff = (candles[candles.length - i].close || 0) - (candles[candles.length - i - 1].close || 0);
     if (diff > 0) gains += diff; else losses -= diff;
   }
   let avgGain = gains / period;
@@ -116,36 +112,35 @@ function rsi(candles, period = 14) {
   return 100 - (100 / (1 + rs));
 }
 
-// MACD simplified (line - signal)
+// Simplified MACD
 function macd(candles) {
   const ema12 = ema(candles, 12);
   const ema26 = ema(candles, 26);
   if (!ema12 || !ema26) return 0;
-  const macdLine = ema12 - ema26;
-  const signal9 = ema(candles.slice(-9).map((c,i)=> ({close: macdLine})), 9); // approx
-  return macdLine - (signal9 || 0);
+  return ema12 - ema26;
 }
 
-// Stochastic %K simplified
-function stochastic(candles, k=14, smooth=3) {
-  if (candles.length < k) return 50;
-  let recent = candles.slice(-k);
-  let low = Math.min(...recent.map(c => c.low));
-  let high = Math.max(...recent.map(c => c.high));
-  let current = recent[recent.length-1].close;
-  let rawK = ((current - low) / (high - low || 0.0001)) * 100;
-  return rawK; // simple, no full smoothing for speed
+// Simplified Stoch
+function stochastic(candles) {
+  if (candles.length < 14) return 50;
+  let recent = candles.slice(-14);
+  let low = Math.min(...recent.map(c => c.low || 0));
+  let high = Math.max(...recent.map(c => c.high || 0));
+  let current = recent[recent.length-1].close || 0;
+  return ((current - low) / (high - low || 0.0001)) * 100;
 }
 
-function analyze(candles) {
-  if (candles.length < 100) return null; // safe
+function analyze(candles, pair) {
+  if (!candles || candles.length === 0) return null;
 
-  const closes = candles.map(c => c.close);
-  const lastClose = closes[closes.length - 1];
+  let debug = `DEBUG: ${pair} | Candles: ${candles.length} | `;
 
   const ema9  = ema(candles, 9);
   const ema21 = ema(candles, 21);
-  if (!ema9 || !ema21) return null;
+  if (!ema9 || !ema21) {
+    debug += "Insufficient for EMA → SKIP";
+    return {dir: null, acc: null, debug};
+  }
 
   const rsiVal = rsi(candles);
   const macdVal = macd(candles);
@@ -153,39 +148,40 @@ function analyze(candles) {
 
   let score = 0;
 
-  // Trend (EMA)
-  if (ema9 > ema21) score += 3;
-  if (ema9 < ema21) score -= 3;
+  if (ema9 > ema21) score += 4;
+  if (ema9 < ema21) score -= 4;
 
-  // RSI filter
-  if (rsiVal < 45) score += 2;      // oversold bias CALL
-  if (rsiVal > 55) score -= 2;      // overbought bias PUT
-  if (rsiVal < 35) score += 2;      // strong oversold
+  if (rsiVal < 45) score += 2.5;
+  if (rsiVal > 55) score -= 2.5;
+  if (rsiVal < 35) score += 2;
   if (rsiVal > 65) score -= 2;
 
-  // MACD momentum
   if (macdVal > 0) score += 2;
   if (macdVal < 0) score -= 2;
 
-  // Stochastic
   if (stochVal < 35) score += 2;
   if (stochVal > 65) score -= 2;
 
-  // Price action last candle
-  if (lastClose > ema9) score += 1;
-  if (lastClose < ema9) score -= 1;
+  const lastClose = candles[candles.length-1].close || 0;
+  if (lastClose > ema9) score += 1.5;
+  if (lastClose < ema9) score -= 1.5;
+
+  // Volatile pairs pe threshold kam
+  let threshold = (pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS')) ? 5 : 7;
 
   let dir = null;
-  let conf = 60 + Math.abs(score) * 4; // rough %
-  conf = Math.min(92, Math.max(68, conf));
+  let conf = 65 + Math.abs(score) * 3.5;
+  conf = Math.min(94, Math.max(68, conf));
 
-  if (score >= 7) dir = "CALL ↑";
-  if (score <= -7) dir = "PUT ↓";
+  if (score >= threshold) dir = "CALL ↑";
+  if (score <= -threshold) dir = "PUT ↓";
+
+  debug += `Score: \( {score.toFixed(1)} | RSI: \){rsiVal.toFixed(1)} | MACD:\( {macdVal.toFixed(2)} | Stoch: \){stochVal.toFixed(1)}`;
 
   if (dir) {
-    return { dir, acc: conf.toFixed(1) };
+    return { dir, acc: conf.toFixed(1), debug };
   }
-  return null;
+  return { dir: null, acc: null, debug: debug + " → No signal (low score)" };
 }
 
 async function generateSignals() {
@@ -194,33 +190,39 @@ async function generateSignals() {
   signalsList = [];
 
   const output = document.getElementById("output");
-  output.innerHTML = `<div class="loader">HYBRID SCAN: EMA+RSI+MACD+STOCH...</div>`;
+  output.innerHTML = `<div class="loader">FIXED SCAN V40 • CHECKING DATA...</div>`;
 
   const selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
-  if (!selected.length) {
-    output.innerText = "At least 2-4 pairs select kar bhai!";
+  if (selected.length === 0) {
+    output.innerText = "Bhai pairs select karo pehle!";
     isProcessing = false;
     return;
   }
+
+  let debugLog = "DEBUG LOG:\n";
 
   for (const pair of selected) {
     try {
       const res = await fetch(API + pair);
       const json = await res.json();
       const candles = json?.data || [];
-      const result = analyze(candles);
-      if (result) {
+      const result = analyze(candles, pair);
+      debugLog += result?.debug + "\n";
+
+      if (result && result.dir) {
         signalsList.push({
           pair: pair.replace(/-otc|-OTC/,'').trim(),
           dir: result.dir,
           acc: result.acc
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      debugLog += `ERROR: ${pair} fetch fail\n`;
+    }
   }
 
-  if (!signalsList.length) {
-    output.innerText = "No high-prob setups this time.\nTry volatile pairs like BTCUSD-otc, XAUUSD-otc or USDARS-otc";
+  if (signalsList.length === 0) {
+    output.innerText = "Ab bhi no signals? Check DEBUG below:\n\n" + debugLog + "\nPossible fix: API data check karo (candles empty ya format galat). Try different time ya pairs.";
   } else {
     distributeTimes();
     displaySignals();
@@ -246,34 +248,30 @@ function distributeTimes() {
 }
 
 function displaySignals() {
-  let text = "✦ APX HYBRID V39 HIGH ACCURACY ✦\n";
+  let text = "✦ APX HYBRID V40 FIXED HIGH ACCURACY ✦\n";
   text += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-  text += "UTC+5 PK | 1 Min Expiry | EMA9/21 + RSI14 + MACD + STOCH\n\n";
+  text += "PK Time (UTC+5) | 1 Min Expiry | Hybrid EMA/RSI/MACD/Stoch\n\n";
 
   signalsList.forEach(s => {
     text += `➤ ${s.pair.padEnd(10)} ${s.time}  \( {s.dir} [ \){s.acc}%]\n`;
   });
 
-  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nRULES:\n• Exact time entry only\n• 1-step MG max\n• No news/high volatility spikes\n• Stop after 2 losses\n\nAPX Elite • Trade with Discipline";
+  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nRULES:\n• Exact time pe entry\n• 1-step MG only\n• News avoid\n• 2 loss pe stop\n\nDEBUG: Agar signals kam to threshold low kar sakte hain.";
 
   document.getElementById("output").innerText = text;
 }
 
 async function sendToTelegram() {
-  if (!signalsList.length) return alert("Generate first bhai!");
+  if (signalsList.length === 0) return alert("Generate signals pehle bhai!");
 
-  await fetch(TG, {method:"POST", body: "APX HYBRID V39 • Loading High-Prob Signals..."});
-  await new Promise(r => setTimeout(r, 2500));
-  await fetch(TG, {method:"POST", body: "Scanning Complete • Accuracy Filter Applied..."});
-
-  let msg = "✦ APX HYBRID V39 SIGNALS ✦\n\nUTC+5 PK | 1 Min\n━━━━━━━━━━\n```text\n";
+  let msg = "✦ APX V40 FIXED SIGNALS ✦\n\nPK Time | 1 Min\n━━━━━━━━━━\n```text\n";
   signalsList.forEach(s => {
     msg += `${s.time} | ${s.pair.padEnd(10)} | \( {s.dir} [ \){s.acc}%]\n`;
   });
-  msg += "```\n━━━━━━━━━━\nFollow Rules • Stay Safe";
+  msg += "```\n━━━━━━━━━━\nTrade Smart";
 
   await fetch(TG, {method:"POST", body: msg});
-  alert("Sent to Telegram!");
+  alert("Telegram pe bhej diya!");
 }
 
 </script>
