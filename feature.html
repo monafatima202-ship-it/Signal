@@ -3,235 +3,196 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID V44 - BRAIN SIGNALS</title>
+<title>APX NEON V62 PRO</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{--bg:#02050f;--panel:#0b1626;--neon:#00ffea;--neon-glow:0 0 15px #00ffea, 0 0 35px #00ffea;}
-body{margin:0;background:var(--bg);color:#e0fffc;font-family:'Rajdhani';min-height:100vh;}
-header{text-align:center;padding:20px;background:linear-gradient(to bottom,#000,#001122);border-bottom:3px solid var(--neon);box-shadow:var(--neon-glow);}
-.logo{font-family:'Orbitron';font-size:30px;color:var(--neon);text-shadow:var(--neon-glow);letter-spacing:3px;}
+:root{
+--bg:#02060c;
+--panel:#0a111f;
+--neon:#00ff88;
+--cyan:#00ccff;
+--glow:0 0 15px #00ff88,0 0 25px #00ccff;
+--text:#e0fbee;
+}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
+header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
 .container{max-width:500px;margin:20px auto;padding:15px;}
-.panel{background:var(--panel);border-radius:18px;padding:20px;border:2px solid rgba(0,255,234,0.2);box-shadow:0 0 25px rgba(0,255,234,0.15);}
-select,input[type="time"]{width:100%;padding:12px;margin:10px 0;background:#051021;border:1px solid #1a3a5a;border-radius:10px;color:#fff;}
-button{width:100%;padding:15px;margin:12px 0;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;}
-.generate{background:linear-gradient(135deg,#00ffea,#ff00aa);color:#000;box-shadow:var(--neon-glow);}
+.panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,.3);box-shadow:0 0 40px rgba(0,255,136,.2);}
+.tabs{display:flex;gap:10px;margin-bottom:20px;}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-weight:bold;cursor:pointer;font-family:'Orbitron';}
+.tab.active{background:linear-gradient(135deg,var(--neon),var(--cyan));color:black;box-shadow:var(--glow);}
+select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:2px solid #1a3a3a;border-radius:12px;color:white;font-size:15px;}
+button{width:100%;padding:16px;margin-top:10px;border:none;border-radius:14px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
 .telegram{background:#0088cc;color:white;}
-#output{margin-top:20px;background:#000814;padding:18px;border-radius:12px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#c8fffa;min-height:300px;}
-.loader{text-align:center;color:var(--neon);padding:40px 0;font-size:18px;}
+#output{margin-top:25px;background:#01040a;padding:20px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;line-height:1.6;min-height:260px;}
+.loader{text-align:center;font-family:'Orbitron';color:var(--neon);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 </style>
 </head>
+
 <body>
 
-<header><div class="logo">APX HYBRID V44 BRAIN</div></header>
+<header><div class="logo">APX NEON V62 PROFESSIONAL</div></header>
 
 <div class="container">
 <div class="panel">
 
-<select id="pairs" multiple size="8"></select>
-
-<div style="display:flex;gap:10px;margin:15px 0;">
-<input type="time" id="start" value="22:30">
-<input type="time" id="end" value="02:00">
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCKS</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
 </div>
 
-<button class="generate" onclick="generateSignals()">GENERATE BRAIN SIGNALS</button>
-<button class="telegram" onclick="sendToTelegram()">SEND TELEGRAM</button>
+<select id="pairs" multiple size="7"></select>
 
-<div id="output">V44 READY • PAST CANDLES ONLY • VOLATILE PAIRS SELECT KARO</div>
+<input type="time" id="start" value="21:00">
+<input type="time" id="end" value="23:30">
+
+<button class="generate" onclick="generateSignals()">DEEP BRAIN SCAN</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+
+<div id="output">SYSTEM READY • SELECT PAIRS</div>
 
 </div>
 </div>
 
 <script>
+const API="https://apx.mkapi009.workers.dev?pair=";
+const TG="https://signal.mkapi009.workers.dev/send";
 
-const API = "https://apx.mkapi009.workers.dev?pair=";
-const TG = "https://signal.mkapi009.workers.dev/send";
+let signals=[];
 
-let signalsList = [];
-let isProcessing = false;
-
-const PAIRS_LIST = {
-  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
-  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
+const PAIRS={
+OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
+STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"],
+CRYPTO:["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 };
 
-function loadPairs() {
-  const select = document.getElementById("pairs");
-  select.innerHTML = "";
-  [...PAIRS_LIST.OTC, ...PAIRS_LIST.CRYPTO].forEach(p => {
-    let opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p.replace(/-otc|-OTC/,'').trim();
-    select.appendChild(opt);
-  });
+function setMarket(type,btn){
+document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+btn.classList.add("active");
+const sel=document.getElementById("pairs");
+sel.innerHTML="";
+PAIRS[type].forEach(p=>{
+let o=document.createElement("option");
+o.value=p;
+o.textContent=p.replace(/-otc|-OTC/,'');
+sel.appendChild(o);
+});
 }
-loadPairs();
+setMarket("OTC",document.querySelector(".tab.active"));
 
-// Fast EMA
-function ema(candles, period) {
-  if (candles.length < period) return null;
-  let k = 2 / (period + 1);
-  let emaVal = candles.slice(0, period).reduce((s, c) => s + c.close, 0) / period;
-  for (let i = period; i < candles.length; i++) {
-    emaVal = c.close * k + emaVal * (1 - k);
-  }
-  return emaVal;
+function EMA(data,p){
+if(data.length<p) return null;
+let k=2/(p+1), ema=data[0].close;
+for(let i=1;i<data.length;i++) ema=data[i].close*k+ema*(1-k);
+return ema;
 }
-
-// RSI 9
-function rsi(candles) {
-  if (candles.length < 10) return 50;
-  let gains = 0, losses = 0;
-  for (let i = 1; i <= 9; i++) {
-    let diff = candles[candles.length - i].close - candles[candles.length - i - 1].close;
-    if (diff > 0) gains += diff; else losses -= diff;
-  }
-  let ag = gains / 9;
-  let al = losses / 9 || 0.0001;
-  return 100 - (100 / (1 + ag / al));
+function RSI(data){
+if(data.length<15) return 50;
+let g=0,l=0;
+for(let i=data.length-14;i<data.length;i++){
+let d=data[i].close-data[i-1].close;
+if(d>0) g+=d; else l-=d;
 }
-
-// MACD simple
-function macdHist(candles) {
-  let ema12 = ema(candles, 12);
-  let ema26 = ema(candles, 26);
-  if (!ema12 || !ema26) return 0;
-  return ema12 - ema26;
+let rs=g/(l||.0001);
+return 100-(100/(1+rs));
+}
+function MOM(data){
+let m=0;
+for(let i=data.length-10;i<data.length;i++)
+m+=data[i].close-data[i-1].close;
+return m;
 }
 
-function analyze(candles, pair) {
-  if (candles.length < 60) return null;
-
-  const ema5 = ema(candles, 5);
-  const ema13 = ema(candles, 13);
-  if (!ema5 || !ema13) return null;
-
-  const rsiVal = rsi(candles);
-  const macdVal = macdHist(candles);
-
-  // Momentum last 10
-  let mom = 0;
-  for (let i = candles.length - 10; i < candles.length - 1; i++) {
-    mom += candles[i+1].close - candles[i].close;
-  }
-  mom /= 9;
-
-  // Breakout
-  let recentHigh = Math.max(...candles.slice(-20).map(c => c.high));
-  let recentLow = Math.min(...candles.slice(-20).map(c => c.low));
-  let breakout = 0;
-  let lastClose = candles[candles.length-1].close;
-  if (lastClose > recentHigh) breakout = 3;
-  if (lastClose < recentLow) breakout = -3;
-
-  let score = 0;
-  score += (ema5 > ema13 ? 5 : -5);                // strong weight
-  score += (rsiVal < 42 ? 3 : rsiVal > 58 ? -3 : 0);
-  score += (macdVal > 0 ? 2.5 : -2.5);
-  score += (mom > 0.0003 ? 3 : mom < -0.0003 ? -3 : 0);
-  score += breakout;
-  score += (lastClose > ema5 ? 2 : lastClose < ema5 ? -2 : 0);
-
-  let thresh = (pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN')) ? 2.2 : 3.2;
-
-  let dir = null;
-  let acc = 70 + Math.abs(score) * 2.5;
-  acc = Math.min(93, Math.max(70, acc));
-
-  if (Math.abs(score) >= thresh) {
-    dir = score > 0 ? "CALL ↑" : "PUT ↓";
-  } else if (Math.abs(score) >= 1.2) {
-    dir = score > 0 ? "CALL ↑" : "PUT ↓";
-    acc -= 10;
-  }
-
-  if (dir) {
-    return {dir, acc: acc.toFixed(1)};
-  }
-  return null;
+function analyze(c){
+if(c.length<60) return null;
+let e9=EMA(c,9), e21=EMA(c,21);
+let r=RSI(c), m=MOM(c);
+let score=0;
+if(e9>e21) score+=2; else score-=2;
+if(r<45) score+=1.5; else if(r>55) score-=1.5;
+if(m>0) score+=1.5; else score-=1.5;
+if(score>=3) return "CALL";
+if(score<=-3) return "PUT";
+return null;
 }
 
-async function generateSignals() {
-  if (isProcessing) return;
-  isProcessing = true;
-  signalsList = [];
+async function generateSignals(){
+signals=[];
+const out=document.getElementById("output");
+out.innerHTML='<div class="loader">SCANNING LIVE CANDLES...</div>';
 
-  const output = document.getElementById("output");
-  output.innerHTML = `<div class="loader">BRAIN SCANNING PAST CANDLES...</div>`;
+const selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+if(!selected.length){out.innerText="Select pairs first";return;}
 
-  const selected = Array.from(document.getElementById("pairs").selectedOptions).map(o => o.value);
-  if (selected.length === 0) {
-    output.innerText = "At least 4-6 pairs select kar bhai (BTC, XAU, ARS, MXN best)";
-    isProcessing = false;
-    return;
-  }
-
-  for (const pair of selected) {
-    try {
-      let res = await fetch(API + pair);
-      let json = await res.json();
-      let candles = json?.data || [];
-      let result = analyze(candles, pair);
-      if (result) {
-        signalsList.push({
-          pair: pair.replace(/-otc|-OTC/,'').trim(),
-          dir: result.dir,
-          acc: result.acc
-        });
-      }
-    } catch (e) {}
-  }
-
-  if (signalsList.length === 0) {
-    output.innerText = "No clear setups this moment.\nTry: BTCUSD-otc, XAUUSD-otc, USDARS-otc, USDMXN-otc\nWider time range ya thodi der baad try kar.";
-  } else {
-    distributeTimes();
-    displaySignals();
-  }
-  isProcessing = false;
+for(const pair of selected){
+try{
+let r=await fetch(API+pair);
+let j=await r.json();
+let dir=analyze(j.data||[]);
+if(dir){
+let last=j.data[j.data.length-1].time;
+let d=new Date(last+"Z");
+d.setHours(d.getHours()+5);
+signals.push({pair:pair.replace(/-otc|-OTC/,''),dir,time:d});
+}
+}catch(e){}
 }
 
-function distributeTimes() {
-  const s = document.getElementById("start").value;
-  const e = document.getElementById("end").value;
-  const now = new Date();
-  let startMs = new Date(now.toDateString() + " " + s + ":00").getTime();
-  let endMs = new Date(now.toDateString() + " " + e + ":00").getTime();
-  if (endMs <= startMs) endMs += 86400000;
-
-  const gap = (endMs - startMs) / (signalsList.length + 1);
-  let cur = startMs + gap;
-
-  signalsList.forEach(sig => {
-    sig.time = new Date(cur).toTimeString().slice(0,5);
-    cur += gap;
-  });
+distributeTimes();
+display();
 }
 
-function displaySignals() {
-  let text = "✦ APX HYBRID V44 BRAIN SIGNALS ✦\n";
-  text += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-  text += "PK Time | 1 Min Expiry | Past Candles Only\n\n";
-
-  signalsList.forEach(s => {
-    text += `➤ ${s.pair.padEnd(10)} ${s.time}  \( {s.dir} [ \){s.acc}%]\n`;
-  });
-
-  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\n• Exact time pe trade\n• 1 step MG max\n• News time avoid\n• 2 loss pe ruk jao";
-
-  document.getElementById("output").innerText = text;
+function distributeTimes(){
+if(!signals.length) return;
+let s=document.getElementById("start").value;
+let e=document.getElementById("end").value;
+let base=new Date().toDateString();
+let start=new Date(base+" "+s).getTime();
+let end=new Date(base+" "+e).getTime();
+if(end<=start) end+=86400000;
+let gap=(end-start)/(signals.length+1);
+let t=start+gap;
+signals.forEach(sig=>{
+sig.timeStr=new Date(t).toTimeString().slice(0,5);
+t+=gap;
+});
 }
 
-async function sendToTelegram() {
-  if (signalsList.length === 0) return alert("Generate signals pehle!");
-  let msg = "APX V44 BRAIN SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n";
-  signalsList.forEach(s => msg += `${s.time} | ${s.pair.padEnd(10)} | \( {s.dir} [ \){s.acc}%]\n`);
-  msg += "━━━━━━━━━━\nDiscipline rakho bhai";
-  await fetch(TG, {method:"POST", body: msg});
-  alert("Telegram pe bhej diya!");
+function display(){
+const out=document.getElementById("output");
+if(!signals.length){out.innerText="NO STRONG STRUCTURE FOUND";return;}
+
+let txt="╔══════════════════╗\n";
+txt+="   APX NEON V62 PRO\n";
+txt+="   UTC+5 | 1 MIN\n";
+txt+="╚══════════════════╝\n\n";
+
+signals.forEach(s=>{
+let arrow=s.dir==="CALL"?"🔺":"🔻";
+txt+=`⟡ M1 │ ${s.pair.padEnd(8)} │ ${s.timeStr} │ ${s.dir} ${arrow}\n`;
+});
+
+txt+="\n──────── RULES ────────\n";
+txt+="• Exact minute entry\n";
+txt+="• 1 Martingale max\n";
+txt+="• Stop after 2 losses\n";
+txt+="• Avoid news\n";
+
+out.innerText=txt;
 }
 
+async function sendToTelegram(){
+if(!signals.length) return alert("Generate first");
+let msg=document.getElementById("output").innerText;
+await fetch(TG,{method:"POST",body:msg});
+alert("Sent to Telegram");
+}
 </script>
 </body>
 </html>
