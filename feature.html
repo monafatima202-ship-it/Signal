@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>APX NEURAL - FINAL WORKING V63</title>
+<title>APX NEURAL - FINAL V63 (TERE EXAMPLE STYLE)</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
 body { margin:0; background:#000; color:#0f0; font-family:'Rajdhani',sans-serif; }
@@ -14,7 +14,7 @@ button { background:#0f0; color:#000; border:none; font-weight:bold; cursor:poin
 </style>
 </head>
 <body>
-<header><h2>APX NEURAL - FINAL WORKING</h2></header>
+<header><h2>APX NEURAL - FINAL V63</h2></header>
 
 <div class="container">
   <select id="pairs" multiple size="6">
@@ -23,6 +23,8 @@ button { background:#0f0; color:#000; border:none; font-weight:bold; cursor:poin
     <option value="USDINR-otc">USDINR</option>
     <option value="USDARS-otc">USDARS</option>
     <option value="USDNGN-otc">USDNGN</option>
+    <option value="BRLUSD-otc">BRLUSD</option>
+    <option value="USDMXN-otc">USDMXN</option>
   </select>
 
   <input type="time" id="start" value="18:00">
@@ -76,9 +78,9 @@ async function runScan() {
         let cleanPair = pairVal.replace('-otc', '');
         signals += `M1;\( {cleanPair}; \){timeStr};${direction}\n`;
 
-        // Natural gap: 2-8 min based on last candle range
+        // Natural gap: 2-8 min based on last candle range + small random
         let lastRange = last.high - last.low;
-        let gap = 120000 + (lastRange * 1000000) + Math.floor(Math.random() * 180000); // 2-8 min
+        let gap = 120000 + (lastRange * 1000000) + Math.floor(Math.random() * 180000);
         current += gap;
       }
     } catch (e) {
