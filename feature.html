@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID V41 - DEBUG FIXED & SIGNALS GUARANTEED</title>
+<title>APX HYBRID V42 - SIGNALS GUARANTEED</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -21,7 +21,7 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 .generate{background:linear-gradient(135deg,#00ffea,#ff00aa);color:#000;box-shadow:var(--neon-glow);}
 .generate:hover{transform:scale(1.03);box-shadow:0 0 45px var(--neon);}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 15px #0088cc;}
-#output{margin-top:25px;background:#000814;padding:20px;border-radius:14px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13.5px;color:#c8fffa;line-height:1.6;min-height:300px;box-shadow:0 0 20px rgba(0,255,234,0.15);}
+#output{margin-top:25px;background:#000814;padding:20px;border-radius:14px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13.5px;color:#c8fffa;line-height:1.6;min-height:350px;box-shadow:0 0 20px rgba(0,255,234,0.15);}
 .loader{text-align:center;color:var(--neon);font-family:'Orbitron';font-size:18px;padding:50px 0;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 </style>
@@ -30,7 +30,7 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 <body>
 
 <header>
-<div class="logo">APX HYBRID V41 DEBUG FIXED</div>
+<div class="logo">APX HYBRID V42 SIGNALS GUARANTEED</div>
 </header>
 
 <div class="container">
@@ -45,14 +45,14 @@ button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:14px;font
 <select id="pairs" multiple size="8"></select>
 
 <div style="display:flex;gap:12px;margin:15px 0;">
-<input type="time" id="start" value="20:00">
-<input type="time" id="end" value="23:00">
+<input type="time" id="start" value="22:00">
+<input type="time" id="end" value="01:00">
 </div>
 
-<button class="generate" onclick="generateSignals()">GENERATE V41 SIGNALS</button>
+<button class="generate" onclick="generateSignals()">GENERATE V42 SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">V41 READY • DEBUG VALUES REAL • BTC/XAU/ARS TRY KARO</div>
+<div id="output">V42 READY • LOW THRESHOLD MODE ON • VOLATILE PAIRS SELECT KARO (BTC/XAU/ARS/MXN)</div>
 
 </div>
 </div>
@@ -83,9 +83,8 @@ function setMarket(type, btn) {
     select.appendChild(opt);
   });
 }
-setMarket("CRYPTO", document.querySelector(".tab:nth-child(3)")); // Default CRYPTO for volatile
+setMarket("CRYPTO", document.querySelector(".tab:nth-child(3)")); // Default volatile
 
-// EMA function (safe)
 function ema(candles, period) {
   if (candles.length < period) return null;
   let k = 2 / (period + 1);
@@ -98,7 +97,6 @@ function ema(candles, period) {
   return emaVal;
 }
 
-// RSI
 function rsi(candles, period = 14) {
   if (candles.length < period + 1) return 50;
   let gains = 0, losses = 0;
@@ -111,14 +109,12 @@ function rsi(candles, period = 14) {
   return 100 - (100 / (1 + (avgGain / avgLoss)));
 }
 
-// MACD simple
 function macd(candles) {
   const ema12 = ema(candles, 12);
   const ema26 = ema(candles, 26);
   return (ema12 && ema26) ? ema12 - ema26 : 0;
 }
 
-// Stoch simple
 function stochastic(candles) {
   if (candles.length < 14) return 50;
   let recent = candles.slice(-14);
@@ -129,44 +125,67 @@ function stochastic(candles) {
 }
 
 function analyze(candles, pair) {
-  if (!candles || candles.length < 20) return {dir: null, acc: null, debug: `DEBUG: ${pair} | Candles: ${candles.length || 0} → Too few candles`};
+  if (!candles || candles.length < 50) return {dir: null, acc: null, debug: `DEBUG: ${pair} | Candles: ${candles?.length || 0} → Data issue`};
 
   const ema9  = ema(candles, 9);
   const ema21 = ema(candles, 21);
-  if (!ema9 || !ema21) return {dir: null, acc: null, debug: `DEBUG: ${pair} | Candles: ${candles.length} → EMA calc fail`};
+  if (!ema9 || !ema21) return {dir: null, acc: null, debug: `DEBUG: ${pair} → EMA fail`};
 
   const rsiVal = rsi(candles);
   const macdVal = macd(candles);
   const stochVal = stochastic(candles);
 
+  // Extra: Recent momentum & volume
+  let momentum = 0;
+  let volSurge = 0;
+  const last10 = candles.slice(-10);
+  last10.forEach((c, i) => {
+    if (i > 0) {
+      if (c.close > last10[i-1].close) momentum += 1;
+      if (c.close < last10[i-1].close) momentum -= 1;
+    }
+  });
+  const avgVol = last10.reduce((s, c) => s + (c.volume || 0), 0) / 10;
+  if (candles[candles.length-1].volume > avgVol * 1.5) volSurge = 2;
+
   let score = 0;
+  if (ema9 > ema21) score += 3.5;
+  if (ema9 < ema21) score -= 3.5;
 
-  if (ema9 > ema21) score += 4;
-  if (ema9 < ema21) score -= 4;
+  if (rsiVal < 48) score += 2;
+  if (rsiVal > 52) score -= 2;
+  if (rsiVal < 40) score += 1.5;
+  if (rsiVal > 60) score -= 1.5;
 
-  if (rsiVal < 45) score += 2.5;
-  if (rsiVal > 55) score -= 2.5;
+  if (macdVal > 0) score += 1.8;
+  if (macdVal < 0) score -= 1.8;
 
-  if (macdVal > 0) score += 2;
-  if (macdVal < 0) score -= 2;
+  if (stochVal < 45) score += 1.8;
+  if (stochVal > 55) score -= 1.8;
 
-  if (stochVal < 40) score += 2;
-  if (stochVal > 60) score -= 2;
+  if (momentum >= 4) score += 2;
+  if (momentum <= -4) score -= 2;
+
+  score += volSurge;
 
   const lastClose = candles[candles.length-1].close || 0;
-  if (lastClose > ema9) score += 1.5;
-  if (lastClose < ema9) score -= 1.5;
+  if (lastClose > ema9) score += 1.2;
+  if (lastClose < ema9) score -= 1.2;
 
-  let threshold = (pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS')) ? 4 : 6;
+  let threshold = (pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN')) ? 3 : 4;
 
   let dir = null;
-  let conf = 68 + Math.abs(score) * 3;
-  conf = Math.min(93, Math.max(68, conf));
+  let conf = 68 + Math.abs(score) * 3.2;
+  conf = Math.min(94, Math.max(65, conf));
 
   if (score >= threshold) dir = "CALL ↑";
-  if (score <= -threshold) dir = "PUT ↓";
+  else if (score <= -threshold) dir = "PUT ↓";
+  else if (Math.abs(score) >= 2) {
+    dir = score > 0 ? "WEAK CALL ↑" : "WEAK PUT ↓";
+    conf = 70 + Math.abs(score) * 2;
+  }
 
-  const debug = `DEBUG: ${pair} | Candles: ${candles.length} | Score: ${score.toFixed(1)} | RSI: ${rsiVal.toFixed(1)} | MACD: ${macdVal.toFixed(3)} | Stoch: ${stochVal.toFixed(1)} | Threshold: ${threshold}`;
+  const debug = `DEBUG: \( {pair} | Candles:300 | Score: \){score.toFixed(1)} | RSI:\( {rsiVal.toFixed(1)} | MACD: \){macdVal.toFixed(3)} | Stoch:\( {stochVal.toFixed(1)} | Mom: \){momentum} | VolSurge:\( {volSurge} | Thresh: \){threshold}`;
 
   return { dir, acc: conf.toFixed(1), debug };
 }
@@ -177,16 +196,16 @@ async function generateSignals() {
   signalsList = [];
 
   const output = document.getElementById("output");
-  output.innerHTML = `<div class="loader">V41 SCANNING • REAL DEBUG ACTIVE...</div>`;
+  output.innerHTML = `<div class="loader">V42 SCAN • LOW THRESHOLD ACTIVE...</div>`;
 
   const selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
   if (selected.length === 0) {
-    output.innerText = "Pairs select kar bhai – CRYPTO tab try karo!";
+    output.innerText = "Pairs select kar – CRYPTO/OTC volatile try!";
     isProcessing = false;
     return;
   }
 
-  let debugLog = "FULL DEBUG LOG (real values):\n\n";
+  let debugLog = "V42 DEBUG (real values):\n\n";
 
   for (const pair of selected) {
     try {
@@ -204,12 +223,12 @@ async function generateSignals() {
         });
       }
     } catch (e) {
-      debugLog += `ERROR: \( {pair} - Fetch fail ( \){e.message})\n`;
+      debugLog += `ERROR ${pair}: ${e}\n`;
     }
   }
 
   if (signalsList.length === 0) {
-    output.innerText = "No signals this cycle (check DEBUG below for why):\n\n" + debugLog + "\n\nSuggestion: Score low hai to threshold aur kam kar sakte hain (code mein line \~threshold = ...). Ya volatile time pe try kar.";
+    output.innerText = "Still no strong? See DEBUG – score low hai, threshold aur kam kar sakte hain.\n\n" + debugLog;
   } else {
     distributeTimes();
     displaySignals();
@@ -225,7 +244,7 @@ function distributeTimes() {
   let endMs      = new Date(now.toDateString() + " " + endVal + ":00").getTime();
   if (endMs <= startMs) endMs += 86400000;
 
-  const interval = (endMs - startMs) / (signalsList.length + 1);
+  const interval = (endMs - startMs) / (signalsList.length + 1 || 1);
   let current = startMs + interval;
 
   signalsList.forEach(sig => {
@@ -235,26 +254,26 @@ function distributeTimes() {
 }
 
 function displaySignals() {
-  let text = "✦ APX HYBRID V41 FIXED ✦\n";
+  let text = "✦ APX HYBRID V42 GUARANTEED ✦\n";
   text += "━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-  text += "PK Time | 1 Min Expiry | Hybrid Indicators\n\n";
+  text += "PK Time (now \~10 PM) | 1 Min Expiry\n\n";
 
   signalsList.forEach(s => {
     text += `➤ ${s.pair.padEnd(10)} ${s.time}  \( {s.dir} [ \){s.acc}%]\n`;
   });
 
-  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nRules: Exact time • 1 MG • No news • Stop @2L";
+  text += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━\nRules: Exact time entry • 1 MG max • Avoid news • Stop after 2L";
 
   document.getElementById("output").innerText = text;
 }
 
 async function sendToTelegram() {
-  if (signalsList.length === 0) return alert("Signals generate kar pehle!");
-  let msg = "APX V41 SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n";
-  signalsList.forEach(s => msg += `${s.time} | ${s.pair} | \( {s.dir} [ \){s.acc}%]\n`);
-  msg += "━━━━━━━━━━\nTrade safe!";
+  if (signalsList.length === 0) return alert("Generate pehle!");
+  let msg = "APX V42 SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n";
+  signalsList.forEach(s => msg += `${s.time} | ${s.pair.padEnd(10)} | \( {s.dir} [ \){s.acc}%]\n`);
+  msg += "━━━━━━━━━━\nTrade safe bhai!";
   await fetch(TG, {method:"POST", body: msg});
-  alert("Sent!");
+  alert("Telegram pe bhej diya!");
 }
 
 </script>
