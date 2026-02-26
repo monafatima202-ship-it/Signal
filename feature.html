@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V71</title>
+<title>APX NEURAL V72</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -16,14 +16,14 @@
  --text:#e0fbee;
 }
 body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:0 0 25px #00ff88;}
-.logo{font-family:'Orbitron';font-size:24px;color:var(--neon);letter-spacing:2px;}
+header{text-align:center;padding:22px;background:black;border-bottom:4px solid var(--neon);box-shadow:0 0 25px #00ff88;}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);letter-spacing:3px;}
 .container{max-width:520px;margin:20px auto;padding:10px;}
-.panel{background:var(--panel);padding:25px;border-radius:20px;box-shadow:0 0 20px rgba(0,255,136,.2);}
+.panel{background:var(--panel);border-radius:20px;padding:25px;box-shadow:0 0 25px rgba(0,255,136,.2);}
 .tabs{display:flex;gap:8px;margin-bottom:15px;}
 .tab{
  flex:1;
- padding:10px;
+ padding:12px;
  border:2px solid var(--neon);
  background:transparent;
  color:var(--neon);
@@ -36,51 +36,49 @@ header{text-align:center;padding:20px;background:black;border-bottom:3px solid v
  background:var(--neon);
  color:black;
  box-shadow:0 0 20px #00ff88;
+ transform:scale(1.05);
 }
 select,input{
  width:100%;
- padding:12px;
- margin-bottom:12px;
+ padding:14px;
+ margin-bottom:15px;
  background:#050d1a;
  border:1px solid #1a3a3a;
- border-radius:10px;
+ border-radius:12px;
  color:white;
 }
 button{
  width:100%;
- padding:15px;
- margin:8px 0;
+ padding:18px;
  border:none;
- border-radius:12px;
+ border-radius:15px;
  font-family:'Orbitron';
- font-weight:bold;
+ font-weight:900;
  cursor:pointer;
+ text-transform:uppercase;
+ transition:.3s;
+ margin:8px 0;
 }
-.generate{
- background:linear-gradient(135deg,#00ff88,#00ccff);
- color:black;
-}
-.telegram{
- background:#0088cc;
- color:white;
-}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:0 0 20px #00ff88;}
+.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 20px #0088cc;}
 #output{
- margin-top:15px;
+ margin-top:20px;
  background:#01040a;
- padding:15px;
- border-radius:12px;
+ padding:20px;
+ border-radius:15px;
  border:1px dashed var(--neon);
  white-space:pre-wrap;
- min-height:280px;
  font-family:monospace;
  font-size:13px;
+ line-height:1.6;
+ min-height:340px;
 }
-.loader{text-align:center;padding:40px;color:var(--neon);}
+.loader{text-align:center;color:var(--neon);padding:40px;font-size:18px;}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V71</div></header>
+<header><div class="logo">APX NEURAL V72 CLEAN</div></header>
 
 <div class="container">
 <div class="panel">
@@ -93,7 +91,7 @@ button{
 
 <select id="pairs" multiple size="8"></select>
 
-<div style="display:flex;gap:10px;">
+<div style="display:flex;gap:12px;">
  <input type="time" id="start" value="18:00">
  <input type="time" id="end" value="20:30">
 </div>
@@ -111,8 +109,8 @@ button{
 const API="https://apx.mkapi009.workers.dev?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
-let currentMarket="OTC";
 let signals=[];
+let currentMarket="OTC";
 
 const PAIRS={
  OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","USDMXN-otc"],
@@ -180,14 +178,15 @@ async function generateSignals(){
   return;
  }
 
- document.getElementById("output").innerHTML="<div class='loader'>SCANNING STRUCTURE...</div>";
+ document.getElementById("output").innerHTML="<div class='loader'>SCANNING MARKET STRUCTURE...</div>";
 
  for(let pair of selected){
 
   try{
+
    let res=await fetch(API+pair);
    let data=await res.json();
-   let candles=data.slice(-120);
+   let candles=data.slice(-100);
 
    let closes=candles.map(c=>c.close);
    let highs=candles.map(c=>c.high);
@@ -203,27 +202,24 @@ async function generateSignals(){
    if(ema9.at(-1)>ema21.at(-1)){direction="CALL";score+=2;}
    else{direction="PUT";score+=2;}
 
-   if(direction==="CALL" && rsi>52) score+=2;
-   if(direction==="PUT" && rsi<48) score+=2;
+   if(direction==="CALL" && rsi>50) score+=2;
+   if(direction==="PUT" && rsi<50) score+=2;
 
-   let lastClose=closes.at(-1);
-   let prevClose=closes.at(-2);
-
-   if(direction==="CALL" && lastClose>prevClose) score+=2;
-   if(direction==="PUT" && lastClose<prevClose) score+=2;
+   if(direction==="CALL" && closes.at(-1)>closes.at(-2)) score+=1;
+   if(direction==="PUT" && closes.at(-1)<closes.at(-2)) score+=1;
 
    let range=highs.at(-1)-lows.at(-1);
-   let avgRange=highs.slice(-20).reduce((a,b,i)=>a+(b-lows[i]),0)/20;
+   let avgRange=highs.slice(-15).reduce((a,b,i)=>a+(b-lows[i]),0)/15;
 
-   if(range>avgRange) score+=1;
+   if(range>=avgRange*0.8) score+=1;
 
-   if(score>=5){
+   if(score>=4){
 
-    let t=start;
-    while(t<=end){
-     signals.push(`M1;${pair.replace("-otc","")};${t};${direction}`);
-     t=addMinutes(t,3);
-    }
+     let time=start;
+     while(time<=end){
+       signals.push(`M1;${pair.replace("-otc","")};${time};${direction}`);
+       time=addMinutes(time,Math.floor(Math.random()*2)+2);
+     }
 
    }
 
