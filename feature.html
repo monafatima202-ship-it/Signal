@@ -3,23 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V75 - PATTERN BRAIN</title>
+<title>APX NEURAL V75 - STABLE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
-:root { --bg:#01060b; --neon:#00ff88; --cyan:#00ccff; --glow:0 0 15px #00ff88; }
+:root { --bg:#01060b; --neon:#00ff88; --glow:0 0 15px #00ff88; }
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
 header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 12px var(--neon);letter-spacing:2px;}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);letter-spacing:2px;}
 .container{max-width:480px;margin:15px auto;padding:10px;}
 .panel{background:#0a111f;border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.2);}
 select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;box-sizing:border-box;}
 button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;margin-bottom:10px;background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
-#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:12px;color:#afffdf;line-height:1.7;min-height:300px;}
+#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;line-height:1.7;min-height:300px;}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V75 BRAIN</div></header>
+<header>
+<div class="logo">APX NEURAL V75 STABLE</div>
+</header>
 
 <div class="container">
 <div class="panel">
@@ -32,7 +35,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <option value="BRLUSD-otc">BRLUSD</option>
 </select>
 
-<div style="display:flex; gap:10px;">
+<div style="display:flex;gap:10px;">
 <input type="time" id="start" value="22:30">
 <input type="time" id="end" value="00:00">
 </div>
@@ -62,22 +65,7 @@ async function runBrain(){
    return;
  }
 
- out.innerText = "🧠 ANALYZING 300 CANDLES PER PAIR...";
-
- let assetData = {};
-
- for(let pair of selected){
-   try{
-     let res = await fetch(API + pair);
-     let json = await res.json();
-
-     if(json.data && Array.isArray(json.data)){
-        assetData[pair] = json.data.slice(-300);
-     }
-   }catch(e){
-     console.log("API error:", pair);
-   }
- }
+ out.innerText = "🧠 FETCHING LIVE DATA...";
 
  let startVal = document.getElementById("start").value;
  let endVal   = document.getElementById("end").value;
@@ -100,26 +88,35 @@ async function runBrain(){
 
    for(let pair of selected){
 
-     let candles = assetData[pair];
-     if(!candles || candles.length < 5) continue;
+     try{
 
-     let last = candles[candles.length-1];
-     let prev = candles[candles.length-2];
+       let res = await fetch(API + pair);
+       let json = await res.json();
 
-     let direction = last.close > prev.close ? "CALL" : "PUT";
+       if(!json || !json.data || json.data.length < 2) continue;
 
-     signals.push(
-       `M1;${pair.replace("-otc","")};${formatTime(cur)};${direction}`
-     );
+       let candles = json.data;
+       let last = candles[candles.length-1];
+       let prev = candles[candles.length-2];
 
-     if(signals.length >= 30) break;
+       let direction = last.close > prev.close ? "CALL" : "PUT";
+
+       signals.push(
+         `M1;${pair.replace("-otc","")};${formatTime(cur)};${direction}`
+       );
+
+       if(signals.length >= 30) break;
+
+     }catch(e){
+       console.log("API error:",pair);
+     }
    }
 
    cur.setMinutes(cur.getMinutes()+2);
  }
 
  if(signals.length === 0){
-   out.innerText = "DATA RECEIVED BUT NO SIGNAL FLOW.";
+   out.innerText = "⚠ API RETURNED DATA BUT NOT ENOUGH CANDLES.";
    return;
  }
 
