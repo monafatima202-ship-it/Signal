@@ -1,48 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V75 - STABLE</title>
+<title>APX FEATURE SIGNAL</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root { --bg:#01060b; --neon:#00ff88; --glow:0 0 15px #00ff88; }
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+ --glow:0 0 20px #00ff88;
+}
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
 header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);letter-spacing:2px;}
-.container{max-width:480px;margin:15px auto;padding:10px;}
-.panel{background:#0a111f;border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.2);}
-select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;box-sizing:border-box;}
-button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;margin-bottom:10px;background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
-#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;line-height:1.7;min-height:300px;}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
+.container{max-width:500px;margin:15px auto;padding:10px;}
+.panel{background:var(--panel);border-radius:20px;padding:25px;}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{
+ flex:1;
+ padding:12px;
+ border:2px solid var(--neon);
+ background:transparent;
+ color:var(--neon);
+ border-radius:10px;
+ cursor:pointer;
+ font-weight:bold;
+}
+.tab.active{
+ background:var(--neon);
+ color:black;
+ box-shadow:var(--glow);
+}
+select,input{
+ width:100%;
+ padding:14px;
+ margin-bottom:15px;
+ background:#050d1a;
+ border:1px solid #1a3a3a;
+ border-radius:10px;
+ color:white;
+}
+button{
+ width:100%;
+ padding:18px;
+ border:none;
+ border-radius:15px;
+ font-family:'Orbitron';
+ font-weight:900;
+ cursor:pointer;
+ text-transform:uppercase;
+ margin:8px 0;
+}
+.generate{
+ background:linear-gradient(135deg,#00ff88,#00ccff);
+ color:black;
+ box-shadow:var(--glow);
+}
+.telegram{
+ background:#0088cc;
+ color:white;
+}
+#output{
+ margin-top:20px;
+ background:#01040a;
+ padding:20px;
+ border-radius:15px;
+ border:1px dashed var(--neon);
+ white-space:pre-wrap;
+ font-family:monospace;
+ font-size:13px;
+ min-height:300px;
+}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">APX NEURAL V75 STABLE</div>
+<div class="logo">APX FEATURE ENGINE</div>
 </header>
 
 <div class="container">
 <div class="panel">
 
-<select id="pairs" multiple size="6">
-<option value="USDPKR-otc">USDPKR</option>
-<option value="USDBDT-otc">USDBDT</option>
-<option value="USDINR-otc">USDINR</option>
-<option value="USDARS-otc">USDARS</option>
-<option value="BRLUSD-otc">BRLUSD</option>
-</select>
-
-<div style="display:flex;gap:10px;">
-<input type="time" id="start" value="22:30">
-<input type="time" id="end" value="00:00">
+<div class="tabs">
+ <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+ <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+ <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
 </div>
 
-<button onclick="runBrain()">DEEP SCAN 300 CANDLES</button>
+<select id="pairs" multiple size="6"></select>
 
-<div id="output">BRAIN STATUS: READY</div>
+<div style="display:flex;gap:10px;">
+ <input type="time" id="start" value="18:00">
+ <input type="time" id="end" value="20:00">
+</div>
+
+<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+
+<div id="output">READY</div>
 
 </div>
 </div>
@@ -50,79 +111,111 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <script>
 
 const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
 
-function formatTime(date){
- return date.toTimeString().slice(0,5);
+let signals = [];
+let currentMarket="OTC";
+
+const PAIRS={
+ OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc"],
+ CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+ STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
+};
+
+function setMarket(type,el){
+ currentMarket=type;
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ el.classList.add("active");
+ loadPairs();
 }
 
-async function runBrain(){
+function loadPairs(){
+ let select=document.getElementById("pairs");
+ select.innerHTML="";
+ PAIRS[currentMarket].forEach(p=>{
+  let opt=document.createElement("option");
+  opt.value=p;
+  opt.textContent=p.replace("-otc","");
+  select.appendChild(opt);
+ });
+}
+loadPairs();
 
- const out = document.getElementById("output");
- const selected = [...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+function formatTime(d){return d.toTimeString().slice(0,5);}
 
- if(selected.length === 0){
-   alert("Select at least 1 pair");
-   return;
- }
+async function generateSignals(){
 
- out.innerText = "🧠 FETCHING LIVE DATA...";
+ signals=[];
+ let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+ if(selected.length===0){alert("Select pair");return;}
 
- let startVal = document.getElementById("start").value;
- let endVal   = document.getElementById("end").value;
+ let startVal=document.getElementById("start").value;
+ let endVal=document.getElementById("end").value;
 
- let start = new Date();
- let end   = new Date();
+ let start=new Date();
+ let end=new Date();
 
- let [sh,sm] = startVal.split(":").map(Number);
- let [eh,em] = endVal.split(":").map(Number);
+ let [sh,sm]=startVal.split(":").map(Number);
+ let [eh,em]=endVal.split(":").map(Number);
 
  start.setHours(sh,sm,0,0);
  end.setHours(eh,em,0,0);
+ if(end<=start) end.setDate(end.getDate()+1);
 
- if(end <= start) end.setDate(end.getDate()+1);
+ let cur=new Date(start);
 
- let cur = new Date(start);
- let signals = [];
+ document.getElementById("output").innerText="SCANNING...";
 
- while(cur < end && signals.length < 30){
+ while(cur<end && signals.length<25){
 
-   for(let pair of selected){
+  for(let pair of selected){
 
-     try{
+   try{
+    let res=await fetch(API+pair);
+    let json=await res.json();
+    if(!json.data || json.data.length<2) continue;
 
-       let res = await fetch(API + pair);
-       let json = await res.json();
+    let candles=json.data;
+    let last=candles[candles.length-1];
+    let prev=candles[candles.length-2];
 
-       if(!json || !json.data || json.data.length < 2) continue;
+    let direction= last.close>prev.close?"CALL":"PUT";
 
-       let candles = json.data;
-       let last = candles[candles.length-1];
-       let prev = candles[candles.length-2];
+    signals.push(`M1;${pair.replace("-otc","")};${formatTime(cur)};${direction}`);
 
-       let direction = last.close > prev.close ? "CALL" : "PUT";
+    if(signals.length>=25) break;
 
-       signals.push(
-         `M1;${pair.replace("-otc","")};${formatTime(cur)};${direction}`
-       );
+   }catch(e){}
+  }
 
-       if(signals.length >= 30) break;
-
-     }catch(e){
-       console.log("API error:",pair);
-     }
-   }
-
-   cur.setMinutes(cur.getMinutes()+2);
+  cur.setMinutes(cur.getMinutes()+2);
  }
 
- if(signals.length === 0){
-   out.innerText = "⚠ API RETURNED DATA BUT NOT ENOUGH CANDLES.";
-   return;
+ if(signals.length===0){
+  document.getElementById("output").innerText="NO SIGNALS GENERATED";
+  return;
  }
 
- out.innerText = signals.join("\n");
+ document.getElementById("output").innerText=signals.join("\n");
+}
+
+async function sendToTelegram(){
+
+ if(signals.length===0){
+  alert("No signals");
+  return;
+ }
+
+ await fetch(TG,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({signals})
+ });
+
+ alert("Sent to Telegram");
 }
 
 </script>
+
 </body>
 </html>
