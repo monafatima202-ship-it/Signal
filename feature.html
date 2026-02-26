@@ -1,281 +1,237 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V70 PRO - FEATURE SIGNALS</title>
+<title>APX FEATURE ENGINE FINAL</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
-:root {
-  --bg: #01060b;
-  --panel: #0a111f;
-  --neon: #00ff88;
-  --cyan: #00ccff;
-  --glow: 0 0 15px #00ff88, 0 0 30px #00ccff;
-  --text: #e0fbee;
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+ --glow:0 0 20px #00ff88;
 }
-body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
-header { text-align:center; padding:22px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
-.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:3px; }
-.container { max-width:500px; margin:15px auto; padding:10px; }
-.panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.25); box-shadow:0 0 25px rgba(0,255,136,0.2); }
-.tabs { display:flex; gap:8px; margin-bottom:15px; }
-.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; cursor:pointer; font-weight:bold; transition:0.3s; }
-.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); transform:scale(1.05); }
-select, input { width:100%; padding:14px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:12px; color:white; outline:none; }
-button { width:100%; padding:18px; border:none; border-radius:15px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.3s; margin:8px 0; }
-.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
-.telegram { background:linear-gradient(135deg,#0088cc,#00aaff); color:white; box-shadow:0 0 15px #0088cc; }
-.telegram:hover { transform:scale(1.03); box-shadow:0 0 35px #00aaff; }
-#output { margin-top:20px; background:#01040a; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:340px; }
-.loader { text-align:center; color:var(--neon); padding:40px 0; font-size:18px; animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.6;} }
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
+header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
+.container{max-width:520px;margin:15px auto;padding:10px;}
+.panel{background:var(--panel);border-radius:20px;padding:25px;}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{
+ flex:1;
+ padding:12px;
+ border:2px solid var(--neon);
+ background:transparent;
+ color:var(--neon);
+ border-radius:10px;
+ cursor:pointer;
+ font-weight:bold;
+}
+.tab.active{
+ background:var(--neon);
+ color:black;
+ box-shadow:var(--glow);
+}
+select,input{
+ width:100%;
+ padding:14px;
+ margin-bottom:15px;
+ background:#050d1a;
+ border:1px solid #1a3a3a;
+ border-radius:10px;
+ color:white;
+}
+button{
+ width:100%;
+ padding:18px;
+ border:none;
+ border-radius:15px;
+ font-family:'Orbitron';
+ font-weight:900;
+ cursor:pointer;
+ text-transform:uppercase;
+ margin:8px 0;
+}
+.generate{
+ background:linear-gradient(135deg,#00ff88,#00ccff);
+ color:black;
+ box-shadow:var(--glow);
+}
+.telegram{
+ background:#0088cc;
+ color:white;
+}
+#output{
+ margin-top:20px;
+ background:#01040a;
+ padding:20px;
+ border-radius:15px;
+ border:1px dashed var(--neon);
+ white-space:pre-wrap;
+ font-family:monospace;
+ font-size:13px;
+ min-height:300px;
+}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V70 PRO</div></header>
+<header>
+<div class="logo">APX FEATURE ENGINE</div>
+</header>
 
 <div class="container">
-  <div class="panel">
+<div class="panel">
 
-    <div class="tabs">
-      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-      <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-    </div>
+<div class="tabs">
+ <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+ <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+ <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
 
-    <select id="pairs" multiple size="8"></select>
+<select id="pairs" multiple size="6"></select>
 
-    <div style="display:flex; gap:12px; margin:15px 0;">
-      <input type="time" id="start" value="18:00">
-      <input type="time" id="end" value="20:30">
-    </div>
+<div style="display:flex;gap:10px;">
+ <input type="time" id="start" value="18:00">
+ <input type="time" id="end" value="20:00">
+</div>
 
-    <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
-    <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-    <div id="output">READY • SELECT 5-10 PAIRS + TIME RANGE • GENERATE</div>
+<div id="output">READY</div>
 
-  </div>
+</div>
 </div>
 
 <script>
+
 const API = "https://apx.mkapi009.workers.dev?pair=";
 const TG = "https://signal.mkapi009.workers.dev/send";
 
-let signals = [];
+let signals=[];
+let currentMarket="OTC";
 
-const PAIRS = {
-  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
-  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"],
-  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
+const PAIRS={
+ OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc"],
+ CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+ STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
 };
 
-function setMarket(type, btn) {
-  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  const select = document.getElementById("pairs");
-  select.innerHTML = "";
-  PAIRS[type].forEach(p => {
-    let opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p.replace(/-otc|-OTC/gi,"");
-    select.appendChild(opt);
-  });
-}
-setMarket("OTC", document.querySelector(".tab.active"));
-
-// EMA function
-function ema(prices, period) {
-  if (prices.length < period) return null;
-  let k = 2 / (period + 1);
-  let emaVal = prices[0];
-  for (let p of prices.slice(1)) {
-    emaVal = p * k + emaVal * (1 - k);
-  }
-  return emaVal;
+function setMarket(type,el){
+ currentMarket=type;
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ el.classList.add("active");
+ loadPairs();
 }
 
-// RSI function
-function rsi(candles) {
-  if (candles.length < 15) return 50;
-  let gains = 0, losses = 0;
-  for (let i = 1; i <= 14; i++) {
-    let diff = candles[candles.length - i].close - candles[candles.length - i - 1].close;
-    if (diff > 0) gains += diff; else losses -= diff;
-  }
-  let ag = gains / 14;
-  let al = losses / 14 || 0.0001;
-  return 100 - (100 / (1 + ag / al));
+function loadPairs(){
+ let select=document.getElementById("pairs");
+ select.innerHTML="";
+ PAIRS[currentMarket].forEach(p=>{
+  let opt=document.createElement("option");
+  opt.value=p;
+  opt.textContent=p.replace("-otc","");
+  select.appendChild(opt);
+ });
+}
+loadPairs();
+
+function EMA(data,period){
+ let k=2/(period+1);
+ let ema=data[0];
+ for(let i=1;i<data.length;i++){
+  ema=data[i]*k+ema*(1-k);
+ }
+ return ema;
 }
 
-// Candle tools
-function body(c) { return Math.abs(c.close - c.open); }
-function range_(c) { return c.high - c.low; }
+function formatTime(d){return d.toTimeString().slice(0,5);}
 
-// Patterns
-function is_doji(c) {
-  return body(c) <= range_(c) * 0.1;
-}
+async function generateSignals(){
 
-function is_hammer(c) {
-  if (body(c) == 0) return false;
-  let lower = Math.min(c.open, c.close) - c.low;
-  let upper = c.high - Math.max(c.open, c.close);
-  return lower >= body(c) * 2 && upper <= body(c) * 0.5;
-}
+ signals=[];
+ let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+ if(selected.length===0){alert("Select pair");return;}
 
-function is_shooting_star(c) {
-  if (body(c) == 0) return false;
-  let upper = c.high - Math.max(c.open, c.close);
-  let lower = Math.min(c.open, c.close) - c.low;
-  return upper >= body(c) * 2 && lower <= body(c) * 0.5;
-}
+ let startVal=document.getElementById("start").value;
+ let endVal=document.getElementById("end").value;
 
-// Risk filters
-function overextended(candles, idx) {
-  let avg = 0;
-  for (let i = idx-10; i < idx; i++) avg += Math.abs(candles[i].close - candles[i-1].close);
-  avg /= 9;
-  return Math.abs(candles[idx].close - candles[idx-1].close) > avg * 1.7;
-}
+ let start=new Date();
+ let end=new Date();
+ let [sh,sm]=startVal.split(":").map(Number);
+ let [eh,em]=endVal.split(":").map(Number);
 
-function impulse(candles, idx) {
-  let avg = 0;
-  for (let i = idx-10; i < idx; i++) avg += range_(candles[i]);
-  avg /= 9;
-  return range_(candles[idx]) > avg * 1.8;
-}
+ start.setHours(sh,sm,0,0);
+ end.setHours(eh,em,0,0);
+ if(end<=start) end.setDate(end.getDate()+1);
 
-function range_market(candles, idx) {
-  let highs = candles.slice(idx-10, idx).map(c => c.high);
-  let lows = candles.slice(idx-10, idx).map(c => c.low);
-  return (Math.max(...highs) - Math.min(...lows)) < range_(candles[idx]) * 2;
-}
+ let cur=new Date(start);
 
-function near_extreme(candles, idx) {
-  let highs = candles.slice(idx-20, idx).map(c => c.high);
-  let lows = candles.slice(idx-20, idx).map(c => c.low);
-  let last = candles[idx].close;
-  return last >= Math.max(...highs) * 0.999 || last <= Math.min(...lows) * 1.001;
-}
+ document.getElementById("output").innerText="SCANNING...";
 
-function weak_trend(ema9, ema21) {
-  return Math.abs(ema9 - ema21) < ema21 * 0.0005;
-}
+ while(cur<end && signals.length<25){
 
-// Analyze logic
-function decideSignal(candles) {
-  if (candles.length < 60) return null;
+  for(let pair of selected){
 
-  let last = candles[candles.length - 1];
-  let prev = candles[candles.length - 2];
+   try{
+    let r1=await fetch(API+pair);
+    let j1=await r1.json();
+    if(!j1.data||j1.data.length<30) continue;
 
-  if (is_doji(last)) return null;
-  if (body(last) < range_(last) * 0.25) return null;
+    let closes=j1.data.map(c=>c.close);
+    let ema9=EMA(closes,9);
+    let ema21=EMA(closes,21);
 
-  let closes = candles.map(c => c.close);
-  let ema9 = ema(closes, 9);
-  let ema21 = ema(closes, 21);
+    let last=j1.data[j1.data.length-1];
+    let prev=j1.data[j1.data.length-2];
 
-  let risk = 0;
-  if (overextended(candles, candles.length - 1)) risk++;
-  if (impulse(candles, candles.length - 1)) risk++;
-  if (range_market(candles, candles.length - 1)) risk++;
-  if (near_extreme(candles, candles.length - 1)) risk++;
-  if (weak_trend(ema9, ema21)) risk++;
+    let direction=null;
 
-  if (risk >= 4) return null;
+    if(ema9>ema21 && last.close>prev.close) direction="CALL";
+    if(ema9<ema21 && last.close<prev.close) direction="PUT";
 
-  if (is_hammer(last) && ema9 >= ema21) return "CALL";
-  if (is_shooting_star(last) && ema9 <= ema21) return "PUT";
+    if(direction){
+      signals.push(`M1;${pair.replace("-otc","")};${formatTime(cur)};${direction}`);
+    }
 
-  if (ema9 > ema21 && last.close > prev.close) return "CALL";
-  if (ema9 < ema21 && last.close < prev.close) return "PUT";
+    if(signals.length>=25) break;
 
-  return null;
-}
-
-async function generateSignals() {
-  const output = document.getElementById('output');
-  output.innerHTML = '<div class="loader">GENERATING PRO SIGNALS...</div>';
-
-  const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-  if (selected.length < 3) {
-    output.innerText = "Kam se kam 5 pairs select kar bhai (volatile better)";
-    return;
+   }catch(e){}
   }
 
-  let assetPool = [];
-  for (let p of selected) {
-    try {
-      let res = await fetch(API + p);
-      let json = await res.json();
-      let candles = json.data || [];
-      let dir = decideSignal(candles);
-      if (dir) {
-        assetPool.push({
-          name: p.split('-')[0].toUpperCase(),
-          dir: dir
-        });
-      }
-    } catch (e) {}
-  }
+  cur.setMinutes(cur.getMinutes()+2);
+ }
 
-  if (assetPool.length < 3) {
-    output.innerText = "No strong setups found.\nTry volatile pairs or wait 20-30 min.";
-    return;
-  }
+ if(signals.length===0){
+  document.getElementById("output").innerText="NO SIGNALS FOUND";
+  return;
+ }
 
-  const startStr = document.getElementById('start').value || "18:00";
-  const endStr = document.getElementById('end').value || "20:30";
-  const now = new Date();
-  let current = new Date(now.toDateString() + " " + startStr + ":00").getTime();
-  let stopTime = new Date(now.toDateString() + " " + endStr + ":00").getTime();
-  if (stopTime <= current) stopTime += 86400000;
-
-  signals = [];
-  let assetIndex = 0;
-
-  while (current < stopTime && signals.length < 35) {
-    let gapMin = 2 + Math.floor(Math.random() * 8); // 2-9 min gaps
-    current += gapMin * 60000;
-
-    let pair = assetPool[assetIndex % assetPool.length];
-    signals.push({
-      time: new Date(current).toTimeString().slice(0,5),
-      name: pair.name,
-      dir: pair.dir
-    });
-
-    assetIndex++;
-  }
-
-  signals.sort((a,b) => a.time.localeCompare(b.time));
-
-  let h = "M1 SIGNALS - V70\n━━━━━━━━━━━━━━━━━━\n";
-  signals.forEach(s => {
-    h += `M1;\( {s.name.padEnd(6)}; \){s.time};${s.dir}\n`;
-  });
-
-  h += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
-
-  output.innerText = h;
+ document.getElementById("output").innerText=signals.join("\n");
 }
 
-async function sendToTelegram() {
-  const outputText = document.getElementById('output').innerText;
-  if (!outputText.includes('M1;')) {
-    alert("Pehle signals generate kar bhai!");
-    return;
-  }
+async function sendToTelegram(){
 
-  let msg = outputText.replace("M1 SIGNALS - V70\n", "APX V70 SIGNALS\nPK Time | 1 Min\n");
+ if(signals.length===0){
+  alert("No signals");
+  return;
+ }
 
-  await fetch(TG, {method:"POST", body: msg});
-  alert("Telegram pe bhej diya! Channel/group check kar.");
+ await fetch(TG,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({signals})
+ });
+
+ alert("Sent to Telegram");
 }
+
 </script>
+
 </body>
 </html>
