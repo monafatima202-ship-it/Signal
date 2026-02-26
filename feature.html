@@ -1,227 +1,244 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V69 - CLEAN SIGNALS</title>
+<title>APX NEURAL V70</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
-:root {
-  --bg: #01060b;
-  --panel: #0a111f;
-  --neon: #00ff88;
-  --cyan: #00ccff;
-  --glow: 0 0 15px #00ff88, 0 0 30px #00ccff;
-  --text: #e0fbee;
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+ --text:#e0fbee;
 }
-body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
-header { text-align:center; padding:22px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
-.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:3px; }
-.container { max-width:500px; margin:15px auto; padding:10px; }
-.panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.25); box-shadow:0 0 25px rgba(0,255,136,0.2); }
-.tabs { display:flex; gap:8px; margin-bottom:15px; }
-.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; cursor:pointer; font-weight:bold; transition:0.3s; }
-.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); transform:scale(1.05); }
-select, input { width:100%; padding:14px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:12px; color:white; outline:none; }
-button { width:100%; padding:18px; border:none; border-radius:15px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.3s; margin:8px 0; }
-.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
-.telegram { background:linear-gradient(135deg,#0088cc,#00aaff); color:white; box-shadow:0 0 15px #0088cc; }
-.telegram:hover { transform:scale(1.03); box-shadow:0 0 35px #00aaff; }
-#output { margin-top:20px; background:#01040a; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:340px; }
-.loader { text-align:center; color:var(--neon); padding:40px 0; font-size:18px; animation:pulse 2s infinite; }
-@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.6;} }
+body{
+ margin:0;
+ background:var(--bg);
+ color:var(--text);
+ font-family:'Rajdhani';
+}
+header{
+ text-align:center;
+ padding:20px;
+ background:black;
+ border-bottom:4px solid var(--neon);
+ box-shadow:0 0 25px #00ff88;
+}
+.logo{
+ font-family:'Orbitron';
+ font-size:26px;
+ color:var(--neon);
+ letter-spacing:3px;
+}
+.container{
+ max-width:500px;
+ margin:20px auto;
+ padding:10px;
+}
+.panel{
+ background:var(--panel);
+ border-radius:20px;
+ padding:25px;
+ box-shadow:0 0 20px rgba(0,255,136,.2);
+}
+select,input{
+ width:100%;
+ padding:12px;
+ margin-bottom:12px;
+ background:#050d1a;
+ border:1px solid #1a3a3a;
+ border-radius:10px;
+ color:white;
+}
+button{
+ width:100%;
+ padding:15px;
+ margin:8px 0;
+ border:none;
+ border-radius:12px;
+ font-family:'Orbitron';
+ font-weight:bold;
+ cursor:pointer;
+}
+.generate{
+ background:linear-gradient(135deg,#00ff88,#00ccff);
+ color:black;
+}
+.telegram{
+ background:#0088cc;
+ color:white;
+}
+#output{
+ margin-top:15px;
+ background:#01040a;
+ padding:15px;
+ border-radius:12px;
+ border:1px dashed var(--neon);
+ white-space:pre-wrap;
+ min-height:300px;
+ font-family:monospace;
+ font-size:13px;
+}
+.loader{
+ text-align:center;
+ padding:40px 0;
+ color:var(--neon);
+}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V69 CLEAN</div></header>
+<header>
+ <div class="logo">APX NEURAL V70</div>
+</header>
 
 <div class="container">
-  <div class="panel">
+ <div class="panel">
 
-    <div class="tabs">
-      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-      <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-    </div>
+   <select id="pairs" multiple size="8">
+     <option value="USDPKR-otc">USDPKR</option>
+     <option value="USDINR-otc">USDINR</option>
+     <option value="USDARS-otc">USDARS</option>
+     <option value="USDBDT-otc">USDBDT</option>
+     <option value="USDNGN-otc">USDNGN</option>
+     <option value="USDMXN-otc">USDMXN</option>
+   </select>
 
-    <select id="pairs" multiple size="8"></select>
+   <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+   <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-    <div style="display:flex; gap:12px; margin:15px 0;">
-      <input type="time" id="start" value="18:00">
-      <input type="time" id="end" value="20:30">
-    </div>
+   <div id="output">READY • SELECT PAIRS • GENERATE</div>
 
-    <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
-    <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
-
-    <div id="output">READY • SELECT PAIRS + TIME RANGE • GENERATE</div>
-
-  </div>
+ </div>
 </div>
 
 <script>
+
 const API = "https://apx.mkapi009.workers.dev?pair=";
-const TG = "https://signal.mkapi009.workers.dev/send";
+const TG  = "https://signal.mkapi009.workers.dev/send";
 
 let signals = [];
 
-const PAIRS = {
-  OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
-  CRYPTO: ["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"],
-  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
-};
-
-function setMarket(type, btn) {
-  document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
-  const select = document.getElementById("pairs");
-  select.innerHTML = "";
-  PAIRS[type].forEach(p => {
-    let opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p.replace(/-otc|-OTC/gi,"");
-    select.appendChild(opt);
-  });
-}
-setMarket("OTC", document.querySelector(".tab.active"));
-
-function ema(candles, period) {
-  if (candles.length < period) return null;
-  let k = 2 / (period + 1);
-  let sum = candles.slice(0, period).reduce((s, c) => s + c.close, 0);
-  let emaVal = sum / period;
-  for (let i = period; i < candles.length; i++) {
-    emaVal = candles[i].close * k + emaVal * (1 - k);
-  }
-  return emaVal;
+function EMA(data,period){
+ let k=2/(period+1);
+ let ema=[data[0]];
+ for(let i=1;i<data.length;i++){
+  ema.push(data[i]*k + ema[i-1]*(1-k));
+ }
+ return ema;
 }
 
-function rsi(candles) {
-  if (candles.length < 15) return 50;
-  let gains = 0, losses = 0;
-  for (let i = 1; i <= 14; i++) {
-    let diff = candles[candles.length - i].close - candles[candles.length - i - 1].close;
-    if (diff > 0) gains += diff; else losses -= diff;
-  }
-  let ag = gains / 14;
-  let al = losses / 14 || 0.0001;
-  return 100 - (100 / (1 + ag / al));
+function RSI(closes,period=14){
+ let gain=0,loss=0;
+ for(let i=closes.length-period;i<closes.length-1;i++){
+  let diff=closes[i+1]-closes[i];
+  if(diff>0) gain+=diff;
+  else loss-=diff;
+ }
+ let rs=gain/(loss||1);
+ return 100-(100/(1+rs));
 }
 
-function analyzeSignal(candles, pair) {
-  if (candles.length < 80) return null;
-
-  const ema9 = ema(candles, 9);
-  const ema21 = ema(candles, 21);
-  if (!ema9 || !ema21) return null;
-
-  const rsiVal = rsi(candles);
-
-  let mom = 0;
-  for (let i = candles.length - 7; i < candles.length - 1; i++) {
-    mom += candles[i+1].close - candles[i].close;
-  }
-  mom /= 6;
-
-  let score = 0;
-  score += (ema9 > ema21 ? 6 : -6);
-  score += (rsiVal < 48 ? 3 : rsiVal > 52 ? -3 : 0);
-  score += (mom > 0.00005 ? 3 : mom < -0.00005 ? -3 : 0);
-
-  let lastClose = candles[candles.length-1].close;
-  score += (lastClose > ema9 ? 2 : lastClose < ema9 ? -2 : 0);
-
-  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 1.8 : 2.8;
-
-  let dir = null;
-  if (Math.abs(score) >= thresh) {
-    dir = score > 0 ? "CALL" : "PUT";
-  }
-
-  if (dir) return { dir };
-  return null;
+function nextMinute(){
+ let d=new Date();
+ d.setSeconds(0);
+ d.setMinutes(d.getMinutes()+1);
+ return d.toTimeString().slice(0,5);
 }
 
-async function generateSignals() {
-  const output = document.getElementById('output');
-  output.innerHTML = '<div class="loader">GENERATING CLEAN SIGNALS...</div>';
+async function generateSignals(){
 
-  const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-  if (selected.length < 3) {
-    output.innerText = "Kam se kam 5 pairs select kar bhai";
-    return;
+ signals=[];
+ let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+
+ if(selected.length===0){
+  alert("Select pairs first");
+  return;
+ }
+
+ document.getElementById("output").innerHTML="<div class='loader'>SCANNING MARKET...</div>";
+
+ for(let pair of selected){
+
+  try{
+   let res=await fetch(API+pair);
+   let data=await res.json();
+   let candles=data.slice(-100);
+
+   let closes=candles.map(c=>c.close);
+   let highs=candles.map(c=>c.high);
+   let lows=candles.map(c=>c.low);
+
+   let ema9=EMA(closes,9);
+   let ema21=EMA(closes,21);
+   let rsi=RSI(closes);
+
+   let score=0;
+   let direction=null;
+
+   if(ema9.at(-1)>ema21.at(-1)){
+     score+=2;
+     direction="CALL";
+   }else{
+     score+=2;
+     direction="PUT";
+   }
+
+   if(direction==="CALL" && rsi>55) score+=2;
+   if(direction==="PUT" && rsi<45) score+=2;
+
+   let recentHigh=Math.max(...highs.slice(-15));
+   let recentLow=Math.min(...lows.slice(-15));
+   let lastClose=closes.at(-1);
+
+   if(direction==="CALL" && lastClose>recentHigh) score+=3;
+   if(direction==="PUT" && lastClose<recentLow) score+=3;
+
+   let range=highs.at(-1)-lows.at(-1);
+   let avgRange=0;
+   for(let i=highs.length-15;i<highs.length;i++){
+     avgRange+=highs[i]-lows[i];
+   }
+   avgRange/=15;
+
+   if(range>avgRange) score+=1;
+
+   if(score>=6){
+     signals.push(`M1;${pair.replace("-otc","")};${nextMinute()};${direction}`);
+   }
+
+  }catch(e){
+   console.log("Error",pair);
   }
+ }
 
-  let assetPool = [];
-  for (let p of selected) {
-    try {
-      let res = await fetch(API + p);
-      let json = await res.json();
-      let candles = json.data || [];
-      let result = analyzeSignal(candles, p);
-      if (result) {
-        assetPool.push({
-          name: p.split('-')[0].toUpperCase(),
-          dir: result.dir
-        });
-      }
-    } catch (e) {}
-  }
+ if(signals.length===0){
+   document.getElementById("output").innerHTML="NO HIGH ACCURACY STRUCTURE FOUND.";
+   return;
+ }
 
-  if (assetPool.length < 3) {
-    output.innerText = "No strong signals found.\nTry volatile pairs or wait 20-30 min.";
-    return;
-  }
-
-  const startStr = document.getElementById('start').value || "18:00";
-  const endStr = document.getElementById('end').value || "20:30";
-  const now = new Date();
-  let current = new Date(now.toDateString() + " " + startStr + ":00").getTime();
-  let stopTime = new Date(now.toDateString() + " " + endStr + ":00").getTime();
-  if (stopTime <= current) stopTime += 86400000;
-
-  signals = [];
-  let assetIndex = 0;
-
-  while (current < stopTime && signals.length < 35) {
-    let gapMin = 2 + Math.floor(Math.random() * 8); // 2-9 min gaps
-    current += gapMin * 60000;
-
-    let pair = assetPool[assetIndex % assetPool.length];
-    signals.push({
-      time: new Date(current).toTimeString().slice(0,5),
-      name: pair.name,
-      dir: pair.dir
-    });
-
-    assetIndex++;
-  }
-
-  signals.sort((a,b) => a.time.localeCompare(b.time));
-
-  let h = "M1 SIGNALS - V69\n━━━━━━━━━━━━━━━━━━\n";
-  signals.forEach(s => {
-    h += `M1;\( {s.name.padEnd(6)}; \){s.time};${s.dir}\n`;
-  });
-
-  h += "\n━━━━━━━━━━━━━━━━━━\n• Exact time entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
-
-  output.innerText = h;
+ document.getElementById("output").innerHTML=signals.join("\n");
 }
 
-async function sendToTelegram() {
-  const outputText = document.getElementById('output').innerText;
-  if (!outputText.includes('M1;')) {
-    alert("Pehle signals generate kar bhai!");
-    return;
-  }
+async function sendToTelegram(){
+ if(signals.length===0){
+  alert("No signals to send");
+  return;
+ }
 
-  let msg = outputText.replace("M1 SIGNALS - V69\n", "APX V69 SIGNALS\nPK Time | 1 Min\n");
+ await fetch(TG,{
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({signals})
+ });
 
-  await fetch(TG, {method:"POST", body: msg});
-  alert("Telegram pe bhej diya! Check kar channel.");
+ alert("Signals sent to Telegram");
 }
+
 </script>
 </body>
 </html>
