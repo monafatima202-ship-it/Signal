@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX PROFESSIONAL FEATURE ENGINE</title>
+<title>APX PROFESSIONAL ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX PROFESSIONAL FEATURE ENGINE</div>
+<div class="logo">APX PROFESSIONAL ENGINE</div>
 </header>
 
 <div class="container">
@@ -105,7 +105,7 @@ function EMA(data,period){
 async function generateSignals(){
 
  signals=[];
- document.getElementById("output").innerText="SCANNING MARKET STRUCTURE...";
+ document.getElementById("output").innerText="ANALYZING MARKET...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){alert("Select pair");return;}
@@ -124,11 +124,11 @@ async function generateSignals(){
 
      let r=await fetch(API+pair);
      let j=await r.json();
-     if(!j.data||j.data.length<40) continue;
+     if(!j.data||j.data.length<25) continue;
 
      let candles=j.data;
 
-     for(let i=21;i<candles.length;i++){
+     for(let i=15;i<candles.length;i++){
 
        let c=candles[i];
        let prev=candles[i-1];
@@ -138,23 +138,23 @@ async function generateSignals(){
 
        if(totalMin<startMin||totalMin>endMin) continue;
 
-       let closes=candles.slice(0,i+1).map(x=>x.close);
+       let closes=candles.slice(i-15,i+1).map(x=>x.close);
 
        let ema9=EMA(closes,9);
        let ema21=EMA(closes,21);
 
-       let trendBias=ema9-ema21;
-       let bodySize=Math.abs(c.close-c.open);
-       let rangeSize=c.high-c.low;
+       let direction=null;
 
-       if(rangeSize===0) continue;
-
-       if(trendBias>0.01 && c.close>prev.close && bodySize>rangeSize*0.35){
-         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};CALL`);
+       if(ema9>ema21 && c.close>prev.close){
+         direction="CALL";
        }
 
-       if(trendBias<-0.01 && c.close<prev.close && bodySize>rangeSize*0.35){
-         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};PUT`);
+       if(ema9<ema21 && c.close<prev.close){
+         direction="PUT";
+       }
+
+       if(direction){
+         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
        }
      }
 
@@ -162,7 +162,7 @@ async function generateSignals(){
  }
 
  if(allSignals.length===0){
-   document.getElementById("output").innerText="MARKET SIDEWAYS - NO STRONG STRUCTURE";
+   document.getElementById("output").innerText="NO CLEAR TREND - WAITING";
    return;
  }
 
@@ -173,7 +173,6 @@ async function generateSignals(){
 }
 
 async function sendToTelegram(){
-
  if(signals.length===0){alert("No signals");return;}
 
  await fetch(TG,{
