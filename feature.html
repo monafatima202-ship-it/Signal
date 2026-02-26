@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX PROFESSIONAL ENGINE</title>
+<title>APX BALANCED ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX PROFESSIONAL ENGINE</div>
+<div class="logo">APX BALANCED ENGINE</div>
 </header>
 
 <div class="container">
@@ -105,7 +105,7 @@ function EMA(data,period){
 async function generateSignals(){
 
  signals=[];
- document.getElementById("output").innerText="ANALYZING MARKET FLOW...";
+ document.getElementById("output").innerText="SCANNING MARKET...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){alert("Select pair");return;}
@@ -124,7 +124,7 @@ async function generateSignals(){
 
      let r=await fetch(API+pair);
      let j=await r.json();
-     if(!j.data||j.data.length<15) continue;
+     if(!j.data||j.data.length<20) continue;
 
      let candles=j.data;
 
@@ -140,25 +140,30 @@ async function generateSignals(){
 
        let closes=candles.slice(i-10,i+1).map(x=>x.close);
 
-       let ema9=EMA(closes,9);
-       let ema21=EMA(closes,21);
+       let emaFast=EMA(closes,6);
+       let emaSlow=EMA(closes,12);
 
-       let direction;
+       let momentum = c.close - prev.close;
 
-       if(ema9>ema21){
-         direction = c.close>=prev.close ? "CALL" : "PUT";
-       } else {
-         direction = c.close<=prev.close ? "PUT" : "CALL";
+       let direction=null;
+
+       if(emaFast>emaSlow && momentum>0){
+         direction="CALL";
+       }
+       else if(emaFast<emaSlow && momentum<0){
+         direction="PUT";
        }
 
-       allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+       if(direction){
+         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+       }
      }
 
    }catch(e){}
  }
 
  if(allSignals.length===0){
-   document.getElementById("output").innerText="LOW VOLATILITY";
+   document.getElementById("output").innerText="WAITING FOR STRUCTURE...";
    return;
  }
 
