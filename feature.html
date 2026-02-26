@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX BALANCED ENGINE</title>
+<title>APX HYBRID ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX BALANCED ENGINE</div>
+<div class="logo">APX HYBRID ENGINE</div>
 </header>
 
 <div class="container">
@@ -105,7 +105,7 @@ function EMA(data,period){
 async function generateSignals(){
 
  signals=[];
- document.getElementById("output").innerText="SCANNING MARKET...";
+ document.getElementById("output").innerText="SCANNING STRUCTURE...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){alert("Select pair");return;}
@@ -124,11 +124,11 @@ async function generateSignals(){
 
      let r=await fetch(API+pair);
      let j=await r.json();
-     if(!j.data||j.data.length<20) continue;
+     if(!j.data||j.data.length<10) continue;
 
      let candles=j.data;
 
-     for(let i=10;i<candles.length;i++){
+     for(let i=5;i<candles.length;i++){
 
        let c=candles[i];
        let prev=candles[i-1];
@@ -138,33 +138,36 @@ async function generateSignals(){
 
        if(totalMin<startMin||totalMin>endMin) continue;
 
-       let closes=candles.slice(i-10,i+1).map(x=>x.close);
+       let closes=candles.slice(i-5,i+1).map(x=>x.close);
 
-       let emaFast=EMA(closes,6);
-       let emaSlow=EMA(closes,12);
-
-       let momentum = c.close - prev.close;
+       let emaFast=EMA(closes,5);
+       let emaSlow=EMA(closes,10);
 
        let direction=null;
 
-       if(emaFast>emaSlow && momentum>0){
+       // Level 1 Strong
+       if(emaFast>emaSlow && c.close>prev.close){
          direction="CALL";
        }
-       else if(emaFast<emaSlow && momentum<0){
+       else if(emaFast<emaSlow && c.close<prev.close){
          direction="PUT";
        }
 
-       if(direction){
-         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+       // Level 2 EMA only
+       if(!direction){
+         if(emaFast>emaSlow) direction="CALL";
+         else direction="PUT";
        }
+
+       // Level 3 Pure candle
+       if(!direction){
+         direction = c.close>=prev.close ? "CALL":"PUT";
+       }
+
+       allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
      }
 
    }catch(e){}
- }
-
- if(allSignals.length===0){
-   document.getElementById("output").innerText="WAITING FOR STRUCTURE...";
-   return;
  }
 
  allSignals.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
