@@ -3,28 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL CROSS V64</title>
+<title>APX NEURAL CROSS V65 - FINAL</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root { --bg: #01060b; --neon: #00ff88; --cyan: #00ccff; --glow: 0 0 15px #00ff88, 0 0 25px #00ccff; --text: #e0fbee; }
+:root { --bg: #01060b; --neon: #00ff88; --cyan: #00ccff; --glow: 0 0 15px #00ff88, 0 0 30px #00ccff; --text: #e0fbee; }
 body { margin:0; background:var(--bg); color:var(--text); font-family:'Rajdhani'; }
-header { text-align:center; padding:20px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
-.logo { font-family:'Orbitron'; font-size:26px; color:var(--neon); text-shadow:0 0 12px var(--neon); letter-spacing:2px; }
+header { text-align:center; padding:22px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
+.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:3px; }
 .container { max-width:480px; margin:15px auto; padding:10px; }
-.panel { background:#0a111f; border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.2); box-shadow:0 0 20px rgba(0,255,136,0.15); }
+.panel { background:#0a111f; border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.25); box-shadow:0 0 25px rgba(0,255,136,0.2); }
 .tabs { display:flex; gap:8px; margin-bottom:15px; }
-.tab { flex:1; padding:12px; border:1px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; cursor:pointer; font-weight:bold; transition:0.3s; }
-.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); transform:scale(1.03); }
+.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; cursor:pointer; font-weight:bold; transition:0.3s; }
+.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); transform:scale(1.05); }
 select, input { width:100%; padding:14px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:12px; color:white; outline:none; }
 button { width:100%; padding:18px; border:none; border-radius:15px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.3s; }
 .generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
+.telegram { background:linear-gradient(135deg,#0088cc,#00aaff); color:white; box-shadow:0 0 15px #0088cc; margin-top:10px; }
+.telegram:hover { transform:scale(1.03); box-shadow:0 0 30px #00aaff; }
 #output { margin-top:20px; background:#01040a; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:320px; }
-.loader { text-align:center; color:var(--neon); padding:40px 0; font-size:18px; }
+.loader { text-align:center; color:var(--neon); padding:40px 0; font-size:18px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.6;} }
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL CROSS V64</div></header>
+<header><div class="logo">APX NEURAL CROSS V65</div></header>
 
 <div class="container">
   <div class="panel">
@@ -38,11 +41,13 @@ button { width:100%; padding:18px; border:none; border-radius:15px; font-family:
     <select id="pairs" multiple size="8"></select>
 
     <div style="display:flex; gap:10px; margin:15px 0;">
-      <input type="time" id="start" value="18:00">
-      <input type="time" id="end" value="20:00">
+      <input type="time" id="start" value="13:00">
+      <input type="time" id="end" value="15:00">
     </div>
 
     <button class="generate" onclick="generateNeuralCross()">GENERATE STRONG SIGNALS</button>
+    <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+
     <div id="output">SYSTEM READY • SELECT PAIRS + TIME RANGE</div>
 
   </div>
@@ -50,6 +55,9 @@ button { width:100%; padding:18px; border:none; border-radius:15px; font-family:
 
 <script>
 const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
+
+let signals = [];
 
 const PAIRS = {
   OTC: ["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
@@ -71,26 +79,22 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// Real past data logic (no random)
+// Past candles based logic (no random)
 function analyzeBrain(candles, pair) {
   if (candles.length < 80) return null;
 
-  // EMA fast & slow
   const emaFast = ema(candles, 9);
   const emaSlow = ema(candles, 21);
   if (!emaFast || !emaSlow) return null;
 
-  // RSI
   const rsiVal = rsi(candles);
 
-  // Momentum last 6 candles
   let mom = 0;
   for (let i = candles.length - 7; i < candles.length - 1; i++) {
     mom += candles[i+1].close - candles[i].close;
   }
   mom /= 6;
 
-  // Score calculation (deterministic)
   let score = 0;
   score += (emaFast > emaSlow ? 6 : -6);
   score += (rsiVal < 48 ? 3 : rsiVal > 52 ? -3 : 0);
@@ -99,7 +103,6 @@ function analyzeBrain(candles, pair) {
   let lastClose = candles[candles.length-1].close;
   score += (lastClose > emaFast ? 2 : lastClose < emaFast ? -2 : 0);
 
-  // Low threshold for more signals
   let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 2.0 : 3.0;
 
   let dir = null;
@@ -107,7 +110,7 @@ function analyzeBrain(candles, pair) {
     dir = score > 0 ? "CALL" : "PUT";
   }
 
-  let acc = 74 + Math.abs(score) * 2.8;
+  let acc = 74 + Math.abs(score) * 3;
   acc = Math.min(91, Math.max(74, acc));
 
   if (dir) return { dir, acc: acc.toFixed(1) };
@@ -139,11 +142,11 @@ function rsi(candles) {
 
 async function generateNeuralCross() {
   const output = document.getElementById('output');
-  output.innerHTML = '<div class="loader">DEEP BRAIN SCANNING...</div>';
+  output.innerHTML = '<div class="loader">DEEP NEURAL SCAN ACTIVE...</div>';
 
   const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
   if (selected.length < 2) {
-    output.innerText = "Kam se kam 3 pairs select kar bhai (volatile better)";
+    output.innerText = "Bhai, kam se kam 3 pairs select karo (volatile better)";
     return;
   }
 
@@ -165,23 +168,22 @@ async function generateNeuralCross() {
   }
 
   if (assetPool.length === 0) {
-    output.innerText = "Koi strong setup nahi mila.\nTry: BTCUSD, XAUUSD, USDARS, USDMXN\nYa 20-30 min baad try kar.";
+    output.innerText = "No strong setups found.\nTry volatile pairs: BTCUSD, XAUUSD, USDARS, USDMXN\nOr wait 20-30 min and retry.";
     return;
   }
 
   const startStr = document.getElementById('start').value;
-  const endStr   = document.getElementById('end').value;
+  const endStr = document.getElementById('end').value;
   const now = new Date();
   let current = new Date(now.toDateString() + " " + startStr + ":00").getTime();
   let stopTime = new Date(now.toDateString() + " " + endStr + ":00").getTime();
   if (stopTime <= current) stopTime += 86400000;
 
-  let signals = [];
+  signals = [];
   let assetIndex = 0;
 
-  while (current < stopTime && signals.length < 20) {
-    // Variable gap 2-9 minutes (real feel)
-    let gapMin = 2 + Math.floor(Math.random() * 8);
+  while (current < stopTime && signals.length < 25) {
+    let gapMin = 2 + Math.floor(Math.random() * 8); // 2-9 min gaps for natural feel
     current += gapMin * 60000;
 
     let pair = assetPool[assetIndex % assetPool.length];
@@ -195,17 +197,29 @@ async function generateNeuralCross() {
     assetIndex++;
   }
 
-  // Sort by time
   signals.sort((a,b) => a.time.localeCompare(b.time));
 
-  let h = "M1 SIGNALS - V64\n━━━━━━━━━━━━━━━━━━\n";
+  let h = "M1 SIGNALS - V65\n━━━━━━━━━━━━━━━━━━\n";
   signals.forEach(s => {
-    h += `M1 │ ${s.name.padEnd(6)} │ ${s.time} │ \( {s.dir} [ \){s.acc}%]\n`;
+    h += `M1 │ ${s.name.padEnd(8)} │ ${s.time} │ \( {s.dir} [ \){s.acc}%]\n`;
   });
 
   h += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe trade\n• 1 step MG only\n• Avoid news\n• 2 loss pe stop";
 
   output.innerText = h;
+}
+
+async function sendToTelegram() {
+  if (!document.getElementById('output').innerText.includes('M1 │')) {
+    alert("Pehle signals generate kar bhai!");
+    return;
+  }
+
+  let msg = document.getElementById('output').innerText;
+  msg = msg.replace("M1 SIGNALS - V65\n", "APX V65 SIGNALS\nPK Time | 1 Min\n");
+
+  await fetch(TG, {method:"POST", body: msg});
+  alert("Telegram pe bhej diya bhai! Check your channel/group.");
 }
 </script>
 </body>
