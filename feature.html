@@ -94,6 +94,7 @@ function loadPairs(){
 loadPairs();
 
 function EMA(data,period){
+ if(data.length===0) return 0;
  let k=2/(period+1);
  let ema=data[0];
  for(let i=1;i<data.length;i++){
@@ -104,11 +105,15 @@ function EMA(data,period){
 
 async function generateSignals(){
 
+ let output=document.getElementById("output");
  signals=[];
- document.getElementById("output").innerText="SCANNING STRUCTURE...";
+ output.innerText="SCANNING MARKET...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
- if(selected.length===0){alert("Select pair");return;}
+ if(selected.length===0){
+   output.innerText="NO PAIR SELECTED";
+   return;
+ }
 
  let startVal=document.getElementById("start").value;
  let endVal=document.getElementById("end").value;
@@ -122,70 +127,84 @@ async function generateSignals(){
 
    try{
 
-     let r=await fetch(API+pair);
-     let j=await r.json();
-     if(!j.data||j.data.length<10) continue;
+     let res=await fetch(API+pair);
+     if(!res.ok){
+       output.innerText="API ERROR: "+pair;
+       continue;
+     }
 
-     let candles=j.data;
+     let data=await res.json();
+     if(!data || !Array.isArray(data.data)){
+       output.innerText="INVALID DATA: "+pair;
+       continue;
+     }
 
-     for(let i=5;i<candles.length;i++){
+     let candles=data.data;
+     if(candles.length<5) continue;
+
+     for(let i=3;i<candles.length;i++){
 
        let c=candles[i];
        let prev=candles[i-1];
 
-       let [h,m]=c.time.split(":").map(Number);
-       let totalMin=h*60+m;
+       if(!c.time) continue;
 
-       if(totalMin<startMin||totalMin>endMin) continue;
+       let parts=c.time.split(":");
+       if(parts.length!==2) continue;
 
-       let closes=candles.slice(i-5,i+1).map(x=>x.close);
+       let totalMin=parseInt(parts[0])*60+parseInt(parts[1]);
+       if(totalMin<startMin || totalMin>endMin) continue;
 
-       let emaFast=EMA(closes,5);
-       let emaSlow=EMA(closes,10);
+       let closes=candles.slice(i-3,i+1).map(x=>x.close);
 
-       let direction=null;
+       let emaFast=EMA(closes,3);
+       let emaSlow=EMA(closes,6);
 
-       // Level 1 Strong
-       if(emaFast>emaSlow && c.close>prev.close){
-         direction="CALL";
-       }
-       else if(emaFast<emaSlow && c.close<prev.close){
-         direction="PUT";
-       }
+       let direction;
 
-       // Level 2 EMA only
-       if(!direction){
-         if(emaFast>emaSlow) direction="CALL";
-         else direction="PUT";
-       }
-
-       // Level 3 Pure candle
-       if(!direction){
+       if(emaFast>emaSlow){
          direction = c.close>=prev.close ? "CALL":"PUT";
+       }else{
+         direction = c.close<=prev.close ? "PUT":"CALL";
        }
 
        allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
      }
 
-   }catch(e){}
+   }catch(err){
+     output.innerText="FETCH FAILED: "+pair;
+   }
+ }
+
+ if(allSignals.length===0){
+   output.innerText="NO SIGNALS IN SELECTED TIME";
+   return;
  }
 
  allSignals.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
 
  signals=allSignals;
- document.getElementById("output").innerText=signals.join("\n");
+ output.innerText=signals.join("\n");
 }
 
 async function sendToTelegram(){
- if(signals.length===0){alert("No signals");return;}
 
- await fetch(TG,{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({signals})
- });
+ if(signals.length===0){
+   alert("No signals to send");
+   return;
+ }
 
- alert("Sent to Telegram");
+ try{
+   await fetch(TG,{
+     method:"POST",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({signals})
+   });
+   alert("Sent to Telegram");
+ }catch(e){
+   alert("Telegram Error");
+ }
+
 }
 
 </script>
