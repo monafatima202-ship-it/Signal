@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX V46 - MANUAL TIME SIGNALS</title>
+<title>APX V47 - MANUAL TIME STRONG SIGNALS</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -28,7 +28,7 @@ button { width:100%; padding:15px; margin:10px 0; border:none; border-radius:12p
 </head>
 <body>
 
-<header><div class="logo">APX V46 MANUAL SIGNALS</div></header>
+<header><div class="logo">APX V47 MANUAL STRONG SIGNALS</div></header>
 
 <div class="container">
   <div class="panel">
@@ -37,11 +37,14 @@ button { width:100%; padding:15px; margin:10px 0; border:none; border-radius:12p
       <!-- JS se load honge -->
     </select>
 
-    <input type="time" id="startTime" value="18:00" style="margin:15px 0;">
+    <div style="display:flex; gap:12px; margin:15px 0;">
+      <input type="time" id="startTime" value="18:00">
+      <input type="time" id="endTime" value="19:30">
+    </div>
 
-    <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+    <button class="generate" onclick="generateSignals()">GENERATE STRONG SIGNALS</button>
 
-    <div id="output">SELECT PAIRS + START TIME → GENERATE</div>
+    <div id="output">PAIRS + START & END TIME SELECT KARO → GENERATE</div>
 
   </div>
 </div>
@@ -92,11 +95,11 @@ function rsi(candles) {
 }
 
 function getSignal(candles, pair) {
-  if (candles.length < 60) return null;
+  if (candles.length < 50) return null;
 
-  const ema8 = ema(candles, 8);
-  const ema21 = ema(candles, 21);
-  if (!ema8 || !ema21) return null;
+  const emaFast = ema(candles, 8) || ema(candles, 5);
+  const emaSlow = ema(candles, 21) || ema(candles, 13);
+  if (!emaFast || !emaSlow) return null;
 
   const rsiVal = rsi(candles);
 
@@ -107,26 +110,20 @@ function getSignal(candles, pair) {
   mom /= 7;
 
   let score = 0;
-  score += (ema8 > ema21 ? 5.5 : -5.5);
-  score += (rsiVal < 48 ? 2.8 : rsiVal > 52 ? -2.8 : 0);
-  score += (mom > 0.0001 ? 2.5 : mom < -0.0001 ? -2.5 : 0);
+  score += (emaFast > emaSlow ? 5 : -5);
+  score += (rsiVal < 50 ? 2.5 : rsiVal > 50 ? -2.5 : 0);
+  score += (mom > 0 ? 2 : mom < 0 ? -2 : 0);
 
   let lastClose = candles[candles.length-1].close;
-  score += (lastClose > ema8 ? 1.8 : lastClose < ema8 ? -1.8 : 0);
+  score += (lastClose > emaFast ? 1.5 : lastClose < emaFast ? -1.5 : 0);
 
-  // Volatile pairs pe threshold low
-  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 2.0 : 3.5;
+  // Low threshold taake signals aayein
+  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 1.5 : 2.5;
 
-  let dir = null;
-  let acc = 70 + Math.abs(score) * 2.4;
-  acc = Math.min(89, Math.max(70, acc));
+  let dir = score >= thresh ? "CALL" : score <= -thresh ? "PUT" : null;
 
-  if (Math.abs(score) >= thresh) {
-    dir = score > 0 ? "CALL" : "PUT";
-  } else if (Math.abs(score) >= 1.0) {
-    dir = score > 0 ? "CALL" : "PUT";
-    acc -= 12;
-  }
+  let acc = 70 + Math.abs(score) * 3;
+  acc = Math.min(88, Math.max(70, acc));
 
   if (dir) return { dir, acc: acc.toFixed(1) };
   return null;
@@ -134,11 +131,11 @@ function getSignal(candles, pair) {
 
 async function generateSignals() {
   const output = document.getElementById("output");
-  output.innerHTML = '<div class="loader">GENERATING SIGNALS...</div>';
+  output.innerHTML = '<div class="loader">GENERATING STRONG SIGNALS...</div>';
 
   const selected = Array.from(document.getElementById("pairs").selectedOptions).map(o => o.value);
   if (selected.length === 0) {
-    output.innerText = "Bhai kam se kam 3-4 pairs select karo";
+    output.innerText = "Bhai kam se kam 3-5 pairs select karo (volatile better)";
     return;
   }
 
@@ -157,37 +154,45 @@ async function generateSignals() {
           acc: result.acc
         });
       }
-    } catch (e) {
-      console.log("Fetch error for", pair);
-    }
+    } catch (e) {}
   }
 
   if (signals.length === 0) {
-    output.innerText = "Abhi strong move nahi mila.\nTry: BTCUSD, XAUUSD, USDARS, USDMXN\nYa 15-30 min baad refresh kar ke try kar.";
+    output.innerText = "Abhi bhi strong move nahi mila.\nTry more volatile pairs (BTCUSD, XAUUSD, USDARS, USDMXN)\nYa 15-30 min baad dobara try kar.";
     return;
   }
 
-  // Time distribution
+  // Manual start + end time use kar ke distribute
   const startStr = document.getElementById("startTime").value || "18:00";
-  const now = new Date();
-  let base = new Date(now.toDateString() + " " + startStr + ":00").getTime();
+  const endStr   = document.getElementById("endTime").value || "19:30";
 
-  // Random realistic gaps 1-9 minutes
+  const now = new Date();
+  let startMs = new Date(now.toDateString() + " " + startStr + ":00").getTime();
+  let endMs   = new Date(now.toDateString() + " " + endStr   + ":00").getTime();
+  if (endMs <= startMs) endMs += 86400000;
+
+  const total = signals.length;
+  const totalMs = endMs - startMs;
+  const baseGap = totalMs / (total + 1);
+
+  let current = startMs + baseGap;
+
   signals.forEach(s => {
-    let gap = Math.floor(Math.random() * 480 + 60) * 1000; // 1 to 9 min
-    base += gap;
-    s.time = new Date(base).toTimeString().slice(0,5);
+    // 1 to 9 min extra random gap for realism
+    let extra = Math.floor(Math.random() * 480 + 60) * 1000;
+    current += extra;
+    s.time = new Date(current).toTimeString().slice(0,5);
   });
 
-  // Sort by time
+  // Time ke hisaab se sort
   signals.sort((a,b) => a.time.localeCompare(b.time));
 
-  // Display
-  let text = "M1 SIGNALS - V46\n━━━━━━━━━━━━━━━━━━\n";
+  // Final display – exact example style
+  let text = "M1 SIGNALS - V47\n━━━━━━━━━━━━━━━━━━\n";
   signals.forEach(s => {
     text += `M1 │ ${s.pair.padEnd(6)} │ ${s.time} │ \( {s.dir} [ \){s.acc}%]\n`;
   });
-  text += "\n━━━━━━━━━━━━━━━━━━\n• Exact time entry\n• 1 step MG max\n• News time avoid\n• 2 loss pe ruk jao";
+  text += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe entry\n• 1 step MG max\n• News avoid\n• 2 loss pe stop";
 
   output.innerText = text;
 }
