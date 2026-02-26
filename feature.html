@@ -3,40 +3,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEON FEATURE ENGINE</title>
+<title>APX NEON PRO SCANNER</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
 --bg:#02060c;
 --panel:#0a111f;
---neon:#00ffea;
+--neon:#00ff88;
 --cyan:#00ccff;
---glow:0 0 15px #00ffea,0 0 30px #00ccff;
+--glow:0 0 15px #00ff88,0 0 25px #00ccff;
 --text:#e0fbee;
 }
 body{margin:0;background:var(--bg);color:var(--text);font-family:'Rajdhani';}
-header{text-align:center;padding:22px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:28px;color:var(--neon);text-shadow:var(--glow);}
-.container{max-width:500px;margin:20px auto;padding:15px;}
-.panel{background:var(--panel);border-radius:20px;padding:25px;border:2px solid rgba(0,255,234,.25);box-shadow:0 0 40px rgba(0,255,234,.2);}
-.tabs{display:flex;gap:8px;margin-bottom:18px;}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;font-weight:bold;cursor:pointer;}
-.tab.active{background:var(--neon);color:#000;box-shadow:var(--glow);}
-select{width:100%;padding:12px;margin-bottom:15px;background:#051021;border:1px solid #1a3a5a;border-radius:10px;color:white;}
-button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
-.scan{background:linear-gradient(135deg,#00ffea,#ff00aa);color:black;box-shadow:var(--glow);}
+header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 10px var(--neon);}
+.container{max-width:480px;margin:20px auto;padding:15px;}
+.panel{background:var(--panel);border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.2);}
+.tabs{display:flex;gap:10px;margin-bottom:15px;}
+.tab{flex:1;padding:10px;border:1px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
+.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
+select,input{width:100%;padding:12px;margin-bottom:12px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
+button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:bold;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
 .telegram{background:#0088cc;color:white;}
-#output{margin-top:20px;background:#000814;padding:18px;border-radius:12px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:250px;}
-.bar-bg{width:100%;height:10px;background:#0d1e13;border-radius:10px;margin-top:10px;overflow:hidden;}
-.bar-fill{width:0%;height:100%;background:linear-gradient(90deg,#00ffea,#00ccff,#00ffea);background-size:200% 100%;animation:move 1.5s linear infinite;}
+#output{margin-top:20px;background:#01040a;padding:15px;border-radius:12px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;min-height:220px;}
+.loader{padding:20px;text-align:center;color:var(--neon);}
+.bar{height:8px;background:#123;border-radius:6px;overflow:hidden;margin-top:10px;}
+.fill{height:100%;width:0;background:linear-gradient(90deg,#00ff88,#00ccff,#00ff88);background-size:200% 100%;animation:move 1.5s linear infinite;}
 @keyframes move{0%{background-position:0%}100%{background-position:200%}}
 </style>
 </head>
 
 <body>
-
-<header><div class="logo">APX NEON FEATURE ENGINE</div></header>
+<header><div class="logo">APX NEON PRO SCANNER</div></header>
 
 <div class="container">
 <div class="panel">
@@ -47,22 +47,23 @@ button{width:100%;padding:14px;margin-top:10px;border:none;border-radius:12px;fo
 <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
 </div>
 
-<select id="pairs" multiple size="8"></select>
+<select id="pairs" multiple size="6"></select>
 
-<button class="scan" onclick="scanMarket()">SCAN FEATURES</button>
-<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
+<input type="time" id="contextTime" value="18:00">
 
-<div id="output">SYSTEM READY • SELECT PAIRS</div>
+<button class="generate" onclick="scanMarket()">SCAN STRUCTURE</button>
+<button class="telegram" onclick="sendToTG()">SEND REPORT</button>
+
+<div id="output">SYSTEM READY</div>
 
 </div>
 </div>
 
 <script>
-
 const API="https://apx.mkapi009.workers.dev?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
-let results=[];
+let REPORT="";
 
 const PAIRS={
 OTC:["USDPKR-otc","USDBDT-otc","USDINR-otc","USDARS-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc","USDIDR-otc"],
@@ -73,117 +74,90 @@ CRYPTO:["XAUUSD-otc","BTCUSD-otc","ETHUSD-otc"]
 function setMarket(type,btn){
 document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
 btn.classList.add("active");
-let sel=document.getElementById("pairs");
-sel.innerHTML="";
+const select=document.getElementById("pairs");
+select.innerHTML="";
 PAIRS[type].forEach(p=>{
 let o=document.createElement("option");
 o.value=p;
-o.textContent=p.replace(/-otc|-OTC/gi,'');
-sel.appendChild(o);
+o.textContent=p.replace(/-otc|-OTC/gi,"");
+select.appendChild(o);
 });
 }
 setMarket("OTC",document.querySelector(".tab.active"));
 
-function ema(data,period){
+function EMA(data,period){
 if(data.length<period)return null;
 let k=2/(period+1);
-let e=data[data.length-period].close;
+let ema=data[data.length-period].close;
 for(let i=data.length-period+1;i<data.length;i++){
-e=data[i].close*k+e*(1-k);
+ema=data[i].close*k+ema*(1-k);
 }
-return e;
+return ema;
 }
 
-function rsi(data){
-if(data.length<15)return 50;
-let g=0,l=0;
-for(let i=data.length-14;i<data.length;i++){
+function RSI(data,period=14){
+if(data.length<period+1)return 50;
+let gain=0,loss=0;
+for(let i=data.length-period;i<data.length;i++){
 let d=data[i].close-data[i-1].close;
-if(d>0)g+=d;else l-=d;
+if(d>0)gain+=d;else loss-=d;
 }
-let rs=(g/14)/(l/14||0.0001);
+let rs=gain/(loss||0.0001);
 return 100-(100/(1+rs));
 }
 
-function momentum(data){
-let score=0;
-for(let i=data.length-20;i<data.length;i++){
-score+=data[i].close-data[i-1].close;
-}
-return score;
-}
-
-function analyze(candles){
-if(!candles||candles.length<200)return null;
-let ema20=ema(candles,20);
-let ema50=ema(candles,50);
-let r=rsi(candles);
-let mom=momentum(candles);
-
-let strength=0;
-if(ema20>ema50)strength+=3;else strength-=3;
-if(r<40)strength+=2;
-if(r>60)strength-=2;
-if(mom>0)strength+=2;
-if(mom<0)strength-=2;
-
-if(Math.abs(strength)<4)return null;
-
-return{
-dir:strength>0?"BULLISH":"BEARISH",
-power:Math.abs(strength)
-};
-}
-
 async function scanMarket(){
-results=[];
-let output=document.getElementById("output");
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(!selected.length){output.innerText="Select pairs first";return;}
+const output=document.getElementById("output");
+output.innerHTML='<div class="loader">Scanning Market<div class="bar"><div class="fill"></div></div></div>';
 
-output.innerHTML="SCANNING MARKET...\n<div class='bar-bg'><div class='bar-fill' id='bar'></div></div>";
+const selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+if(!selected.length){output.innerText="Select pairs!";return;}
 
-for(let i=0;i<selected.length;i++){
-let res=await fetch(API+selected[i]);
-let json=await res.json();
-let decision=analyze(json.data||[]);
-if(decision){
+let results=[];
+
+for(const pair of selected){
+try{
+let r=await fetch(API+pair);
+let j=await r.json();
+let c=j.data||[];
+if(c.length<100)continue;
+
+let ema9=EMA(c,9);
+let ema21=EMA(c,21);
+let rsi=RSI(c);
+let momentum=c[c.length-1].close-c[c.length-5].close;
+
+let trend=ema9>ema21?"BULLISH":"BEARISH";
+let strength=Math.abs(momentum)*1000;
+let zone=rsi<40?"OVERSOLD":rsi>60?"OVERBOUGHT":"NEUTRAL";
+
 results.push({
-pair:selected[i].replace(/-otc|-OTC/gi,''),
-...decision
+pair:pair.replace(/-otc|-OTC/gi,""),
+trend,
+zone,
+strength:strength.toFixed(2)
 });
-}
-document.getElementById("bar").style.width=((i+1)/selected.length)*100+"%";
-}
-
-if(!results.length){
-output.innerText="NO STRONG STRUCTURE FOUND\nMarket weak ya ranging hai.";
-return;
+}catch(e){}
 }
 
-display();
-}
+if(!results.length){output.innerText="No strong structure detected.";return;}
 
-function display(){
-let text="APX NEON FEATURE REPORT\n";
-text+="━━━━━━━━━━━━━━━━━━\n\n";
+REPORT="APX NEON STRUCTURE REPORT\n━━━━━━━━━━━━━━━━━━\nUTC+5 Context: "+document.getElementById("contextTime").value+"\n\n";
+
+results.sort((a,b)=>b.strength-a.strength);
+
 results.forEach(r=>{
-text+=`${r.pair.padEnd(10)} | ${r.dir} | Strength ${r.power}/7\n`;
+REPORT+=`${r.pair.padEnd(8)} | ${r.trend} | ${r.zone} | Power:${r.strength}\n`;
 });
-text+="\n━━━━━━━━━━━━━━━━━━\nEMA + RSI + MOMENTUM BASED STRUCTURE";
-document.getElementById("output").innerText=text;
+
+output.innerText=REPORT;
 }
 
-async function sendTG(){
-if(!results.length)return alert("Scan first");
-let msg="APX NEON FEATURE REPORT\n\n";
-results.forEach(r=>{
-msg+=`${r.pair} → ${r.dir} (Power ${r.power})\n`;
-});
-await fetch(TG,{method:"POST",body:msg});
-alert("Sent to Telegram");
+async function sendToTG(){
+if(!REPORT)return alert("Scan first!");
+await fetch(TG,{method:"POST",body:REPORT});
+alert("Report Sent!");
 }
-
 </script>
 </body>
 </html>
