@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V67 - FEATURE SIGNALS</title>
+<title>APX NEURAL V69 - CLEAN SIGNALS</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -34,7 +34,7 @@ button { width:100%; padding:18px; border:none; border-radius:15px; font-family:
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V67 PRO</div></header>
+<header><div class="logo">APX NEURAL V69 CLEAN</div></header>
 
 <div class="container">
   <div class="panel">
@@ -52,10 +52,10 @@ button { width:100%; padding:18px; border:none; border-radius:15px; font-family:
       <input type="time" id="end" value="20:30">
     </div>
 
-    <button class="generate" onclick="generateSignals()">GENERATE FEATURE SIGNALS</button>
+    <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
     <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-    <div id="output">READY • SELECT 5-10 PAIRS + TIME RANGE • GENERATE</div>
+    <div id="output">READY • SELECT PAIRS + TIME RANGE • GENERATE</div>
 
   </div>
 </div>
@@ -139,20 +139,17 @@ function analyzeSignal(candles, pair) {
     dir = score > 0 ? "CALL" : "PUT";
   }
 
-  let acc = 74 + Math.abs(score) * 3.2;
-  acc = Math.min(92, Math.max(74, acc));
-
-  if (dir) return { dir, acc: acc.toFixed(1) };
+  if (dir) return { dir };
   return null;
 }
 
 async function generateSignals() {
   const output = document.getElementById('output');
-  output.innerHTML = '<div class="loader">READING PAST CANDLES • GENERATING PRO SIGNALS...</div>';
+  output.innerHTML = '<div class="loader">GENERATING CLEAN SIGNALS...</div>';
 
   const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
   if (selected.length < 3) {
-    output.innerText = "Kam se kam 5 pairs select kar bhai (volatile better)";
+    output.innerText = "Kam se kam 5 pairs select kar bhai";
     return;
   }
 
@@ -166,15 +163,14 @@ async function generateSignals() {
       if (result) {
         assetPool.push({
           name: p.split('-')[0].toUpperCase(),
-          dir: result.dir,
-          acc: result.acc
+          dir: result.dir
         });
       }
     } catch (e) {}
   }
 
   if (assetPool.length < 3) {
-    output.innerText = "Koi strong setup nahi mila.\nTry volatile: BTCUSD, XAUUSD, USDARS, USDMXN\nYa thodi der baad retry kar.";
+    output.innerText = "No strong signals found.\nTry volatile pairs or wait 20-30 min.";
     return;
   }
 
@@ -188,16 +184,15 @@ async function generateSignals() {
   signals = [];
   let assetIndex = 0;
 
-  while (current < stopTime && signals.length < 30) {
-    let gapMin = 2 + Math.floor(Math.random() * 8); // 2-9 min realistic gaps
+  while (current < stopTime && signals.length < 35) {
+    let gapMin = 2 + Math.floor(Math.random() * 8); // 2-9 min gaps
     current += gapMin * 60000;
 
     let pair = assetPool[assetIndex % assetPool.length];
     signals.push({
       time: new Date(current).toTimeString().slice(0,5),
       name: pair.name,
-      dir: pair.dir,
-      acc: pair.acc
+      dir: pair.dir
     });
 
     assetIndex++;
@@ -205,12 +200,12 @@ async function generateSignals() {
 
   signals.sort((a,b) => a.time.localeCompare(b.time));
 
-  let h = "M1 SIGNALS - V67 PRO\n━━━━━━━━━━━━━━━━━━\n";
+  let h = "M1 SIGNALS - V69\n━━━━━━━━━━━━━━━━━━\n";
   signals.forEach(s => {
-    h += `M1;\( {s.name.padEnd(6)}; \){s.time};\( {s.dir} [ \){s.acc}%]\n`;
+    h += `M1;\( {s.name.padEnd(6)}; \){s.time};${s.dir}\n`;
   });
 
-  h += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
+  h += "\n━━━━━━━━━━━━━━━━━━\n• Exact time entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
 
   output.innerText = h;
 }
@@ -222,10 +217,10 @@ async function sendToTelegram() {
     return;
   }
 
-  let msg = outputText.replace("M1 SIGNALS - V67 PRO\n", "APX V67 PRO SIGNALS\nPK Time | 1 Min\n");
+  let msg = outputText.replace("M1 SIGNALS - V69\n", "APX V69 SIGNALS\nPK Time | 1 Min\n");
 
   await fetch(TG, {method:"POST", body: msg});
-  alert("Telegram pe bhej diya! Channel/group check kar.");
+  alert("Telegram pe bhej diya! Check kar channel.");
 }
 </script>
 </body>
