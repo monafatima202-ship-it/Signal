@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX V47 - MANUAL TIME STRONG SIGNALS</title>
+<title>APX V48 - ONE SIGNAL PER PAIR</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -28,23 +28,21 @@ button { width:100%; padding:15px; margin:10px 0; border:none; border-radius:12p
 </head>
 <body>
 
-<header><div class="logo">APX V47 MANUAL STRONG SIGNALS</div></header>
+<header><div class="logo">APX V48 ONE PER PAIR</div></header>
 
 <div class="container">
   <div class="panel">
 
-    <select id="pairs" multiple size="8">
-      <!-- JS se load honge -->
-    </select>
+    <select id="pairs" multiple size="8"></select>
 
     <div style="display:flex; gap:12px; margin:15px 0;">
       <input type="time" id="startTime" value="18:00">
       <input type="time" id="endTime" value="19:30">
     </div>
 
-    <button class="generate" onclick="generateSignals()">GENERATE STRONG SIGNALS</button>
+    <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
 
-    <div id="output">PAIRS + START & END TIME SELECT KARO → GENERATE</div>
+    <div id="output">PAIRS SELECT KARO + START & END TIME SET KARO → GENERATE</div>
 
   </div>
 </div>
@@ -117,13 +115,12 @@ function getSignal(candles, pair) {
   let lastClose = candles[candles.length-1].close;
   score += (lastClose > emaFast ? 1.5 : lastClose < emaFast ? -1.5 : 0);
 
-  // Low threshold taake signals aayein
-  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 1.5 : 2.5;
+  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 1.8 : 2.8;
 
   let dir = score >= thresh ? "CALL" : score <= -thresh ? "PUT" : null;
 
-  let acc = 70 + Math.abs(score) * 3;
-  acc = Math.min(88, Math.max(70, acc));
+  let acc = 72 + Math.abs(score) * 3.2;
+  acc = Math.min(89, Math.max(72, acc));
 
   if (dir) return { dir, acc: acc.toFixed(1) };
   return null;
@@ -131,11 +128,11 @@ function getSignal(candles, pair) {
 
 async function generateSignals() {
   const output = document.getElementById("output");
-  output.innerHTML = '<div class="loader">GENERATING STRONG SIGNALS...</div>';
+  output.innerHTML = '<div class="loader">GENERATING ONE SIGNAL PER PAIR...</div>';
 
   const selected = Array.from(document.getElementById("pairs").selectedOptions).map(o => o.value);
   if (selected.length === 0) {
-    output.innerText = "Bhai kam se kam 3-5 pairs select karo (volatile better)";
+    output.innerText = "At least 1-2 pairs select karo bhai";
     return;
   }
 
@@ -154,15 +151,17 @@ async function generateSignals() {
           acc: result.acc
         });
       }
-    } catch (e) {}
+    } catch (e) {
+      console.log("Error for", pair);
+    }
   }
 
   if (signals.length === 0) {
-    output.innerText = "Abhi bhi strong move nahi mila.\nTry more volatile pairs (BTCUSD, XAUUSD, USDARS, USDMXN)\nYa 15-30 min baad dobara try kar.";
+    output.innerText = "Abhi koi pair pe strong signal nahi mila.\nTry volatile: BTCUSD, XAUUSD, USDARS, USDMXN\nYa thodi der baad refresh kar ke try kar.";
     return;
   }
 
-  // Manual start + end time use kar ke distribute
+  // Start + End time se even distribution
   const startStr = document.getElementById("startTime").value || "18:00";
   const endStr   = document.getElementById("endTime").value || "19:30";
 
@@ -173,26 +172,24 @@ async function generateSignals() {
 
   const total = signals.length;
   const totalMs = endMs - startMs;
-  const baseGap = totalMs / (total + 1);
+  const gap = totalMs / (total + 1);
 
-  let current = startMs + baseGap;
+  let current = startMs + gap;
 
   signals.forEach(s => {
-    // 1 to 9 min extra random gap for realism
-    let extra = Math.floor(Math.random() * 480 + 60) * 1000;
-    current += extra;
     s.time = new Date(current).toTimeString().slice(0,5);
+    current += gap;
   });
 
-  // Time ke hisaab se sort
+  // Sort by time
   signals.sort((a,b) => a.time.localeCompare(b.time));
 
-  // Final display – exact example style
-  let text = "M1 SIGNALS - V47\n━━━━━━━━━━━━━━━━━━\n";
+  // Display exact example style
+  let text = "M1 SIGNALS - V48\n━━━━━━━━━━━━━━━━━━\n";
   signals.forEach(s => {
     text += `M1 │ ${s.pair.padEnd(6)} │ ${s.time} │ \( {s.dir} [ \){s.acc}%]\n`;
   });
-  text += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe entry\n• 1 step MG max\n• News avoid\n• 2 loss pe stop";
+  text += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe enter karo\n• 1 step MG max\n• News time avoid\n• 2 loss pe stop";
 
   output.innerText = text;
 }
