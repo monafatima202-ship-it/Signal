@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V66 PRO - FEATURE SIGNALS</title>
+<title>APX NEURAL V67 - FEATURE SIGNALS</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -34,7 +34,7 @@ button { width:100%; padding:18px; border:none; border-radius:15px; font-family:
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V66 PRO</div></header>
+<header><div class="logo">APX NEURAL V67 PRO</div></header>
 
 <div class="container">
   <div class="panel">
@@ -49,13 +49,13 @@ button { width:100%; padding:18px; border:none; border-radius:15px; font-family:
 
     <div style="display:flex; gap:12px; margin:15px 0;">
       <input type="time" id="start" value="18:00">
-      <input type="time" id="end" value="20:00">
+      <input type="time" id="end" value="20:30">
     </div>
 
     <button class="generate" onclick="generateSignals()">GENERATE FEATURE SIGNALS</button>
     <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-    <div id="output">READY • SELECT PAIRS + TIME RANGE • GENERATE</div>
+    <div id="output">READY • SELECT 5-10 PAIRS + TIME RANGE • GENERATE</div>
 
   </div>
 </div>
@@ -86,45 +86,6 @@ function setMarket(type, btn) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-// Professional past candle logic (non-random)
-function analyzeSignal(candles, pair) {
-  if (candles.length < 80) return null;
-
-  const ema9 = ema(candles, 9);
-  const ema21 = ema(candles, 21);
-  if (!ema9 || !ema21) return null;
-
-  const rsiVal = rsi(candles);
-
-  let mom = 0;
-  for (let i = candles.length - 7; i < candles.length - 1; i++) {
-    mom += candles[i+1].close - candles[i].close;
-  }
-  mom /= 6;
-
-  let score = 0;
-  score += (ema9 > ema21 ? 6 : -6);
-  score += (rsiVal < 48 ? 3 : rsiVal > 52 ? -3 : 0);
-  score += (mom > 0.00005 ? 3 : mom < -0.00005 ? -3 : 0);
-
-  let lastClose = candles[candles.length-1].close;
-  score += (lastClose > ema9 ? 2 : lastClose < ema9 ? -2 : 0);
-
-  // Low threshold for 15–25+ signals
-  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 1.8 : 2.8;
-
-  let dir = null;
-  if (Math.abs(score) >= thresh) {
-    dir = score > 0 ? "CALL" : "PUT";
-  }
-
-  let acc = 74 + Math.abs(score) * 3.2;
-  acc = Math.min(92, Math.max(74, acc));
-
-  if (dir) return { dir, acc: acc.toFixed(1) };
-  return null;
-}
-
 function ema(candles, period) {
   if (candles.length < period) return null;
   let k = 2 / (period + 1);
@@ -148,13 +109,50 @@ function rsi(candles) {
   return 100 - (100 / (1 + ag / al));
 }
 
+function analyzeSignal(candles, pair) {
+  if (candles.length < 80) return null;
+
+  const ema9 = ema(candles, 9);
+  const ema21 = ema(candles, 21);
+  if (!ema9 || !ema21) return null;
+
+  const rsiVal = rsi(candles);
+
+  let mom = 0;
+  for (let i = candles.length - 7; i < candles.length - 1; i++) {
+    mom += candles[i+1].close - candles[i].close;
+  }
+  mom /= 6;
+
+  let score = 0;
+  score += (ema9 > ema21 ? 6 : -6);
+  score += (rsiVal < 48 ? 3 : rsiVal > 52 ? -3 : 0);
+  score += (mom > 0.00005 ? 3 : mom < -0.00005 ? -3 : 0);
+
+  let lastClose = candles[candles.length-1].close;
+  score += (lastClose > ema9 ? 2 : lastClose < ema9 ? -2 : 0);
+
+  let thresh = pair.includes('BTC') || pair.includes('XAU') || pair.includes('ARS') || pair.includes('MXN') || pair.includes('NGN') ? 1.8 : 2.8;
+
+  let dir = null;
+  if (Math.abs(score) >= thresh) {
+    dir = score > 0 ? "CALL" : "PUT";
+  }
+
+  let acc = 74 + Math.abs(score) * 3.2;
+  acc = Math.min(92, Math.max(74, acc));
+
+  if (dir) return { dir, acc: acc.toFixed(1) };
+  return null;
+}
+
 async function generateSignals() {
   const output = document.getElementById('output');
-  output.innerHTML = '<div class="loader">READING PAST CANDLES • BRAIN ACTIVE...</div>';
+  output.innerHTML = '<div class="loader">READING PAST CANDLES • GENERATING PRO SIGNALS...</div>';
 
   const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
   if (selected.length < 3) {
-    output.innerText = "Kam se kam 4-5 pairs select kar bhai (volatile better)";
+    output.innerText = "Kam se kam 5 pairs select kar bhai (volatile better)";
     return;
   }
 
@@ -180,8 +178,8 @@ async function generateSignals() {
     return;
   }
 
-  const startStr = document.getElementById('start').value;
-  const endStr = document.getElementById('end').value;
+  const startStr = document.getElementById('start').value || "18:00";
+  const endStr = document.getElementById('end').value || "20:30";
   const now = new Date();
   let current = new Date(now.toDateString() + " " + startStr + ":00").getTime();
   let stopTime = new Date(now.toDateString() + " " + endStr + ":00").getTime();
@@ -207,7 +205,7 @@ async function generateSignals() {
 
   signals.sort((a,b) => a.time.localeCompare(b.time));
 
-  let h = "M1 SIGNALS - V66 PRO\n━━━━━━━━━━━━━━━━━━\n";
+  let h = "M1 SIGNALS - V67 PRO\n━━━━━━━━━━━━━━━━━━\n";
   signals.forEach(s => {
     h += `M1;\( {s.name.padEnd(6)}; \){s.time};\( {s.dir} [ \){s.acc}%]\n`;
   });
@@ -224,7 +222,7 @@ async function sendToTelegram() {
     return;
   }
 
-  let msg = outputText.replace("M1 SIGNALS - V66 PRO\n", "APX V66 PRO SIGNALS\nPK Time | 1 Min\n");
+  let msg = outputText.replace("M1 SIGNALS - V67 PRO\n", "APX V67 PRO SIGNALS\nPK Time | 1 Min\n");
 
   await fetch(TG, {method:"POST", body: msg});
   alert("Telegram pe bhej diya! Channel/group check kar.");
