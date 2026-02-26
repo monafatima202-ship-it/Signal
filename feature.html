@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL V72</title>
+<title>APX NEURAL V73</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -21,64 +21,19 @@ header{text-align:center;padding:22px;background:black;border-bottom:4px solid v
 .container{max-width:520px;margin:20px auto;padding:10px;}
 .panel{background:var(--panel);border-radius:20px;padding:25px;box-shadow:0 0 25px rgba(0,255,136,.2);}
 .tabs{display:flex;gap:8px;margin-bottom:15px;}
-.tab{
- flex:1;
- padding:12px;
- border:2px solid var(--neon);
- background:transparent;
- color:var(--neon);
- border-radius:10px;
- cursor:pointer;
- font-weight:bold;
- transition:.3s;
-}
-.tab.active{
- background:var(--neon);
- color:black;
- box-shadow:0 0 20px #00ff88;
- transform:scale(1.05);
-}
-select,input{
- width:100%;
- padding:14px;
- margin-bottom:15px;
- background:#050d1a;
- border:1px solid #1a3a3a;
- border-radius:12px;
- color:white;
-}
-button{
- width:100%;
- padding:18px;
- border:none;
- border-radius:15px;
- font-family:'Orbitron';
- font-weight:900;
- cursor:pointer;
- text-transform:uppercase;
- transition:.3s;
- margin:8px 0;
-}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold;transition:.3s;}
+.tab.active{background:var(--neon);color:black;box-shadow:0 0 20px #00ff88;transform:scale(1.05);}
+select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:12px;color:white;}
+button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;margin:8px 0;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:0 0 20px #00ff88;}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 20px #0088cc;}
-#output{
- margin-top:20px;
- background:#01040a;
- padding:20px;
- border-radius:15px;
- border:1px dashed var(--neon);
- white-space:pre-wrap;
- font-family:monospace;
- font-size:13px;
- line-height:1.6;
- min-height:340px;
-}
+#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;line-height:1.6;min-height:340px;}
 .loader{text-align:center;color:var(--neon);padding:40px;font-size:18px;}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX NEURAL V72 CLEAN</div></header>
+<header><div class="logo">APX NEURAL V73</div></header>
 
 <div class="container">
 <div class="panel">
@@ -137,33 +92,29 @@ function loadPairs(){
 }
 loadPairs();
 
-function EMA(data,period){
- let k=2/(period+1);
- let ema=[data[0]];
- for(let i=1;i<data.length;i++){
-  ema.push(data[i]*k + ema[i-1]*(1-k));
- }
+function EMA(data,p){
+ let k=2/(p+1), ema=[data[0]];
+ for(let i=1;i<data.length;i++) ema.push(data[i]*k+ema[i-1]*(1-k));
  return ema;
 }
 
-function RSI(closes,period=14){
- let gain=0,loss=0;
- for(let i=closes.length-period;i<closes.length-1;i++){
-  let diff=closes[i+1]-closes[i];
-  if(diff>0) gain+=diff;
-  else loss-=diff;
+function RSI(c,p=14){
+ let g=0,l=0;
+ for(let i=c.length-p;i<c.length-1;i++){
+  let d=c[i+1]-c[i];
+  if(d>0) g+=d; else l-=d;
  }
- let rs=gain/(loss||1);
+ let rs=g/(l||1);
  return 100-(100/(1+rs));
 }
 
-function addMinutes(timeStr,min){
- let [h,m]=timeStr.split(":").map(Number);
- let date=new Date();
- date.setHours(h);
- date.setMinutes(m+min);
- date.setSeconds(0);
- return date.toTimeString().slice(0,5);
+function addMinutes(time,min){
+ let [h,m]=time.split(":").map(Number);
+ let d=new Date();
+ d.setHours(h);
+ d.setMinutes(m+min);
+ d.setSeconds(0);
+ return d.toTimeString().slice(0,5);
 }
 
 async function generateSignals(){
@@ -173,21 +124,18 @@ async function generateSignals(){
  let start=document.getElementById("start").value;
  let end=document.getElementById("end").value;
 
- if(selected.length===0){
-  alert("Select pairs first");
-  return;
- }
+ if(selected.length===0){alert("Select pairs first");return;}
 
- document.getElementById("output").innerHTML="<div class='loader'>SCANNING MARKET STRUCTURE...</div>";
+ document.getElementById("output").innerHTML="<div class='loader'>SCANNING MARKET...</div>";
 
  for(let pair of selected){
 
   try{
-
    let res=await fetch(API+pair);
    let data=await res.json();
-   let candles=data.slice(-100);
+   if(!data || data.length<30) continue;
 
+   let candles=data.slice(-80);
    let closes=candles.map(c=>c.close);
    let highs=candles.map(c=>c.high);
    let lows=candles.map(c=>c.low);
@@ -197,30 +145,26 @@ async function generateSignals(){
    let rsi=RSI(closes);
 
    let score=0;
-   let direction=null;
+   let direction=ema9.at(-1)>ema21.at(-1)?"CALL":"PUT";
+   score+=2;
 
-   if(ema9.at(-1)>ema21.at(-1)){direction="CALL";score+=2;}
-   else{direction="PUT";score+=2;}
+   if((direction==="CALL"&&rsi>48)||(direction==="PUT"&&rsi<52)) score+=2;
 
-   if(direction==="CALL" && rsi>50) score+=2;
-   if(direction==="PUT" && rsi<50) score+=2;
-
-   if(direction==="CALL" && closes.at(-1)>closes.at(-2)) score+=1;
-   if(direction==="PUT" && closes.at(-1)<closes.at(-2)) score+=1;
+   if((direction==="CALL"&&closes.at(-1)>closes.at(-2))||
+      (direction==="PUT"&&closes.at(-1)<closes.at(-2))) score+=1;
 
    let range=highs.at(-1)-lows.at(-1);
-   let avgRange=highs.slice(-15).reduce((a,b,i)=>a+(b-lows[i]),0)/15;
+   let avg=0;
+   for(let i=highs.length-10;i<highs.length;i++) avg+=highs[i]-lows[i];
+   avg/=10;
+   if(range>=avg*0.7) score+=1;
 
-   if(range>=avgRange*0.8) score+=1;
+   if(score<3) score=3; // fallback prevent block
 
-   if(score>=4){
-
-     let time=start;
-     while(time<=end){
-       signals.push(`M1;${pair.replace("-otc","")};${time};${direction}`);
-       time=addMinutes(time,Math.floor(Math.random()*2)+2);
-     }
-
+   let time=start;
+   while(time<=end){
+    signals.push(`M1;${pair.replace("-otc","")};${time};${direction}`);
+    time=addMinutes(time,2+Math.floor(Math.random()*2));
    }
 
   }catch(e){console.log(pair);}
@@ -235,18 +179,12 @@ async function generateSignals(){
 }
 
 async function sendToTelegram(){
-
- if(signals.length===0){
-  alert("No signals to send");
-  return;
- }
-
+ if(signals.length===0){alert("No signals");return;}
  await fetch(TG,{
   method:"POST",
   headers:{"Content-Type":"application/json"},
   body:JSON.stringify({signals})
  });
-
  alert("Signals sent successfully");
 }
 
