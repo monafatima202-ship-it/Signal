@@ -139,7 +139,6 @@ async function generateSignals(){
 
       for(let i = 15; i < candles.length; i++){
         let c = candles[i];
-        let prev = candles[i-1];
 
         let timeParts = c.time.split(" ");
         let hm = timeParts[1] || c.time;
