@@ -1,3 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX MILOGZAI FLOW ENGINE</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+ --glow:0 0 20px #00ff88,0 0 35px #00ccff;
+}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
+header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:24px;color:var(--neon);letter-spacing:2px;}
+.container{max-width:520px;margin:15px auto;padding:10px;}
+.panel{background:var(--panel);border-radius:20px;padding:20px;border:1px solid rgba(0,255,136,.3);}
+.tabs{display:flex;gap:6px;margin-bottom:10px;}
+.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;font-weight:bold;}
+.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
+select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
+button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;}
+#output{margin-top:10px;background:#01040a;padding:15px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:260px;}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">APX MILOGZAI FLOW ENGINE</div>
+</header>
+
+<div class="container">
+<div class="panel">
+
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
+
+<select id="pairs" multiple size="6"></select>
+
+<input type="time" id="start" value="18:00">
+<input type="time" id="end" value="20:00">
+
+<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+
+<div id="output">READY • MILOGZAI FLOW MODE</div>
+
+</div>
+</div>
+
 <script>
 
 const API="https://apx.mkapi009.workers.dev?pair=";
@@ -44,23 +104,9 @@ return ema;
 function body(c){return Math.abs(c.close-c.open);}
 function rangeC(c){return c.high-c.low;}
 
-function calcConfidence(clusterBias,c,ema9,ema21){
-let score=50;
-
-if(clusterBias==="CALL" && ema9>ema21) score+=15;
-if(clusterBias==="PUT" && ema9<ema21) score+=15;
-
-if(body(c)>=rangeC(c)*0.4) score+=15;
-
-if(rangeC(c)>0) score+=10;
-
-return score;
-}
-
 function removeBackToBack(list){
 let cleaned=[];
 let last=-999;
-
 for(let s of list){
 let t=s.split(";")[2];
 let total=parseInt(t.split(":")[0])*60+parseInt(t.split(":")[1]);
@@ -69,7 +115,6 @@ cleaned.push(s);
 last=total;
 }
 }
-
 return cleaned;
 }
 
@@ -77,7 +122,7 @@ async function generateSignals(){
 
 signals=[];
 let out=document.getElementById("output");
-out.innerText="MILOGZAI FLOW ANALYZING...";
+out.innerText="ANALYZING FLOW...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 if(selected.length==0){out.innerText="Select pairs";return;}
@@ -94,17 +139,16 @@ for(let pair of selected){
 
 let r=await fetch(API+pair);
 let j=await r.json();
-if(!j.data||j.data.length<40) continue;
+if(!j.data||j.data.length<30) continue;
 
 let candles=j.data;
 
-// ---- Trend Cluster Detection ----
-let up=0, down=0;
+// Cluster bias detection
+let up=0,down=0;
 for(let i=candles.length-15;i<candles.length;i++){
 if(candles[i].close>candles[i-1].close) up++;
 else down++;
 }
-
 let clusterBias= up>=down ? "CALL" : "PUT";
 
 let pairSignals=[];
@@ -126,19 +170,17 @@ let ema9=EMA(closes,9);
 let ema21=EMA(closes,21);
 if(!ema9||!ema21) continue;
 
-let conf=calcConfidence(clusterBias,c,ema9,ema21);
+let strongBody=body(c)>=rangeC(c)*0.35;
 
-if(conf>=60 && conf<=90){
-
+if(strongBody){
 pairSignals.push(`M1;${pair.replace("-otc","")};${c.time.slice(0,5)};${clusterBias}`);
-
 }
 
 if(pairSignals.length>=5) break;
 }
 
-// Bias projection if none found
-if(pairSignals.length===0){
+// Projection if none found
+if(pairSignals.length==0){
 let hh=Math.floor(startMin/60).toString().padStart(2,"0");
 let mm=(startMin%60).toString().padStart(2,"0");
 pairSignals.push(`M1;${pair.replace("-otc","")};${hh}:${mm};${clusterBias}`);
@@ -153,9 +195,14 @@ all.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
 
 signals=all;
 
-let msg="MILOGZAI STYLE SIGNALS\n━━━━━━━━━━━━━━\n";
+if(all.length==0){
+out.innerText="NO FLOW STRUCTURE";
+return;
+}
+
+let msg="MILOGZAI FLOW SIGNALS\n━━━━━━━━━━━━━━\n";
 msg+=all.join("\n");
-msg+="\n━━━━━━━━━━━━━━\nConfidence Band: 60-90\nCluster Bias Mode";
+msg+="\n━━━━━━━━━━━━━━\nCluster Bias Mode\nAvoid News\nMax 1 Step MG";
 
 out.innerText=msg;
 }
@@ -164,9 +211,12 @@ async function sendToTelegram(){
 if(signals.length==0){alert("No signals");return;}
 let text="APX MILOGZAI FLOW\nUTC+6 | M1\n━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━\nCluster Bias Engine";
+text+="\n━━━━━━━━━━\nTrade Safe";
 await fetch(TG,{method:"POST",body:text});
 alert("Sent to Telegram");
 }
 
 </script>
+
+</body>
+</html>
