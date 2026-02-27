@@ -2,38 +2,90 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>APX FUTURE FEATURE ENGINE</title>
+<title>APX PRO FEATURE ENGINE</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 <style>
-body{background:#01060b;color:#00ff88;font-family:monospace;padding:20px}
-button{padding:12px;background:#00ff88;border:none;font-weight:bold;margin:10px 0}
-select,input{padding:8px;margin:5px 0;background:#111;color:#00ff88}
-#output{white-space:pre-wrap;margin-top:20px}
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
+header{text-align:center;padding:18px;background:black;border-bottom:3px solid var(--neon);}
+.logo{font-family:'Orbitron';color:var(--neon);font-size:24px;}
+.container{max-width:520px;margin:15px auto;padding:10px;}
+.panel{background:var(--panel);border-radius:18px;padding:20px;}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
+.tab.active{background:var(--neon);color:black;}
+select,input{width:100%;padding:12px;margin-bottom:12px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
+button{width:100%;padding:14px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;margin:8px 0;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
+.telegram{background:#0088cc;color:white;}
+#output{margin-top:15px;background:#01040a;padding:15px;border-radius:10px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:260px;}
 </style>
 </head>
 <body>
 
-<select id="pairs" multiple size="5">
-<option value="USDPKR-otc">USDPKR</option>
-<option value="USDINR-otc">USDINR</option>
-<option value="USDARS-otc">USDARS</option>
-<option value="USDBDT-otc">USDBDT</option>
-<option value="USDNGN-otc">USDNGN</option>
-</select>
+<header>
+<div class="logo">APX PRO FEATURE ENGINE</div>
+</header>
 
-<br>
+<div class="container">
+<div class="panel">
+
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
+
+<select id="pairs" multiple size="6"></select>
 
 <input type="time" id="start" value="18:00">
-<input type="time" id="end" value="19:00">
+<input type="time" id="end" value="20:00">
 
-<br>
-
-<button onclick="generate()">GENERATE FUTURE FEATURE SIGNALS</button>
+<button class="generate" onclick="generate()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
 <div id="output">READY</div>
+
+</div>
+</div>
 
 <script>
 
 const API="https://apx.mkapi009.workers.dev?pair=";
+const TG="https://signal.mkapi009.workers.dev/send";
+
+let currentMarket="OTC";
+let signals=[];
+
+const PAIRS={
+ OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
+ CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+ STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
+};
+
+function setMarket(type,el){
+ currentMarket=type;
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ el.classList.add("active");
+ loadPairs();
+}
+
+function loadPairs(){
+ let select=document.getElementById("pairs");
+ select.innerHTML="";
+ PAIRS[currentMarket].forEach(p=>{
+  let o=document.createElement("option");
+  o.value=p;
+  o.textContent=p.replace("-otc","");
+  select.appendChild(o);
+ });
+}
+loadPairs();
 
 function EMA(prices,period){
  let k=2/(period+1);
@@ -46,14 +98,12 @@ function EMA(prices,period){
 
 async function generate(){
 
- let output=document.getElementById("output");
- output.innerText="ANALYZING MARKET BIAS...";
+ let out=document.getElementById("output");
+ out.innerText="ANALYZING MARKET STRUCTURE...";
+ signals=[];
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
- if(selected.length===0){
-   output.innerText="SELECT PAIRS";
-   return;
- }
+ if(selected.length===0){out.innerText="SELECT PAIRS";return;}
 
  let start=document.getElementById("start").value;
  let end=document.getElementById("end").value;
@@ -61,7 +111,8 @@ async function generate(){
  let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
  let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
 
- let signals=[];
+ let usedMinute=new Set();
+ let lastPairMinute={};
 
  for(let pair of selected){
 
@@ -70,54 +121,68 @@ async function generate(){
    if(!data || !data.data) continue;
 
    let candles=data.data;
-   if(candles.length<30) continue;
 
-   let closes=candles.slice(-30).map(c=>c.close);
+   for(let i=30;i<candles.length;i++){
 
-   let ema9=EMA(closes,9);
-   let ema21=EMA(closes,21);
+     let c=candles[i];
+     let prev=candles[i-1];
 
-   let bias = ema9>ema21 ? "CALL" : "PUT";
+     let closes=candles.slice(i-30,i+1).map(x=>x.close);
+     let ema9=EMA(closes,9);
+     let ema21=EMA(closes,21);
 
-   let volatility=0;
-   for(let i=1;i<closes.length;i++){
-     volatility+=Math.abs(closes[i]-closes[i-1]);
-   }
+     let score=0;
+     if(ema9>ema21) score++;
+     if(c.close>prev.close) score++;
+     if(Math.abs(c.close-c.open)>(c.high-c.low)*0.5) score++;
 
-   volatility/=closes.length;
+     if(score<3) continue;
 
-   // projection spacing based on volatility
-   let gap = volatility>0.02 ? 3 : 6;
+     let totalMin=parseInt(c.time.split(":")[0])*60+parseInt(c.time.split(":")[1]);
 
-   let t=startMin;
-   while(true){
-
+     let valid=false;
      if(startMin<=endMin){
-       if(t>endMin) break;
+       valid= totalMin>=startMin && totalMin<=endMin;
      }else{
-       if(t>endMin && t<startMin) break;
+       valid= totalMin>=startMin || totalMin<=endMin;
+     }
+     if(!valid) continue;
+
+     if(usedMinute.has(c.time)) continue;
+
+     if(lastPairMinute[pair]){
+       let diff=Math.abs(parseInt(c.time.split(":")[1]) - parseInt(lastPairMinute[pair].split(":")[1]));
+       if(diff<4) continue;
      }
 
-     let hh=Math.floor(t/60).toString().padStart(2,"0");
-     let mm=(t%60).toString().padStart(2,"0");
+     let direction= ema9>ema21 ? "CALL":"PUT";
 
-     signals.push(`M1;${pair.replace("-otc","")};${hh}:${mm};${bias}`);
+     usedMinute.add(c.time);
+     lastPairMinute[pair]=c.time;
 
-     t+=gap;
-
-     if(signals.length>20) break;
+     signals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
    }
  }
 
  if(signals.length===0){
-   output.innerText="NO FEATURE PROJECTION POSSIBLE";
+   out.innerText="NO HIGH ACCURACY STRUCTURE FOUND";
    return;
  }
 
- output.innerText=signals.join("\n");
+ signals.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
+ out.innerText=signals.join("\n");
+}
+
+async function sendTG(){
+ if(signals.length===0){alert("No signals");return;}
+ await fetch(TG,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({signals})
+ });
+ alert("Sent to Telegram");
 }
 
 </script>
-
 </body>
 </html>
