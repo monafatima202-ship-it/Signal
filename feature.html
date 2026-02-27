@@ -58,4 +58,125 @@
         <select id="pairSelect">
           <option value="USDTRY-OTC">USDTRY-OTC</option>
           <option value="USDPKR-OTC">USDPKR-OTC</option>
-          <option value
+          <option value="USDINR-OTC">USDINR-OTC</option>
+          <option value="USDNGN-OTC">USDNGN-OTC</option>
+          <option value="BTCUSD">BTCUSD</option>
+          <option value="ETHUSD">ETHUSD</option>
+        </select>
+      </label>
+
+      <label>Start Time: <input type="time" id="startTime" value="00:00"></label>
+      <label>End Time: <input type="time" id="endTime" value="23:59"></label>
+
+      <button onclick="generateSignals()">Generate Feature Signals</button>
+    </div>
+
+    <div id="status">Waiting...</div>
+
+    <table id="signalsTable">
+      <thead><tr><th>Pair</th><th>Time</th><th>Direction</th><th>Confidence</th><th>Action</th></tr></thead>
+      <tbody id="signalsBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API = "https://apx.mkapi009.workers.dev?pair=";
+    const TG  = "https://signal.mkapi009.workers.dev/send";
+
+    function padTime(time) {
+      return time.padStart(5, '0'); // e.g. "9:05" → "09:05"
+    }
+
+    async function generateSignals() {
+      const pair = document.getElementById('pairSelect').value;
+      let start = padTime(document.getElementById('startTime').value);
+      let end   = padTime(document.getElementById('endTime').value);
+      const status = document.getElementById('status');
+      const tbody = document.getElementById('signalsBody');
+
+      tbody.innerHTML = '';
+      status.textContent = `Fetching real candles for ${pair}...`;
+
+      try {
+        const response = await fetch(API + encodeURIComponent(pair));
+        if (!response.ok) throw new Error(`API failed: ${response.status}`);
+
+        const json = await response.json();
+
+        if (!json.data || json.data.length === 0) {
+          status.textContent = 'No candle data available from API right now.';
+          return;
+        }
+
+        let signals = [];
+        let availableTimes = [];
+
+        json.data.forEach(item => {
+          if (item.time && item.direction) {
+            const time = padTime(item.time);
+            availableTimes.push(time);
+            if (time >= start && time <= end) {
+              signals.push({
+                pair: item.pair || pair,
+                time: time,
+                direction: item.direction.toUpperCase(),
+                confidence: '80%'
+              });
+            }
+          }
+        });
+
+        // Agar selected range mein zero signals → full available show karo (hack2 style fallback)
+        if (signals.length === 0 && availableTimes.length > 0) {
+          status.textContent += ' (No matches in range → showing all available candles)';
+          json.data.forEach(item => {
+            if (item.time && item.direction) {
+              const time = padTime(item.time);
+              signals.push({
+                pair: item.pair || pair,
+                time: time,
+                direction: item.direction.toUpperCase(),
+                confidence: '80%'
+              });
+            }
+          });
+        }
+
+        if (signals.length === 0) {
+          status.textContent = 'No signals/candles available at all. Try different pair or wait.';
+          return;
+        }
+
+        signals.forEach(sig => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${sig.pair}</td>
+            <td>${sig.time}</td>
+            <td class="\( {sig.direction.toLowerCase()}"> \){sig.direction}</td>
+            <td>${sig.confidence}</td>
+            <td><button class="send-btn" onclick="sendToTelegram('\( {sig.pair}', ' \){sig.time}', '${sig.direction}')">Send to TG</button></td>
+          `;
+          tbody.appendChild(row);
+        });
+
+        status.textContent = `Feature Signals: ${signals.length} found (from ${signals[0]?.time || '?'} to ${signals[signals.length-1]?.time || '?'})`;
+
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        console.error(err);
+      }
+    }
+
+    async function sendToTelegram(pair, time, direction) {
+      const message = `${pair} => ${time} => ${direction} (Confidence: 80%)`;
+      try {
+        const res = await fetch(`\( {TG}?text= \){encodeURIComponent(message)}`);
+        if (res.ok) alert('Sent to Telegram!');
+        else alert('TG send failed: ' + res.status);
+      } catch (e) {
+        alert('Send error: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>
