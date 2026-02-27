@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX NEURAL FEATURE ENGINE</title>
+<title>APX BALANCED FEATURE ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX NEURAL FEATURE ENGINE</div>
+<div class="logo">APX BALANCED FEATURE ENGINE</div>
 </header>
 
 <div class="container">
@@ -102,28 +102,11 @@ function EMA(prices,period){
  return ema;
 }
 
-function body(c){return Math.abs(c.close-c.open);}
-function range(c){return c.high-c.low;}
-
-function isHammer(c){
- if(range(c)===0) return false;
- let lower=Math.min(c.open,c.close)-c.low;
- let upper=c.high-Math.max(c.open,c.close);
- return lower>=body(c)*2 && upper<=body(c)*0.5;
-}
-
-function isShootingStar(c){
- if(range(c)===0) return false;
- let upper=c.high-Math.max(c.open,c.close);
- let lower=Math.min(c.open,c.close)-c.low;
- return upper>=body(c)*2 && lower<=body(c)*0.5;
-}
-
 async function generateSignals(){
 
  let output=document.getElementById("output");
  signals=[];
- output.innerText="ANALYZING PAST CANDLES...";
+ output.innerText="ANALYZING MARKET FLOW...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){
@@ -145,7 +128,6 @@ async function generateSignals(){
 
      let res=await fetch(API+pair);
      let data=await res.json();
-
      if(!data || !Array.isArray(data.data)) continue;
 
      let candles=data.data;
@@ -177,30 +159,27 @@ async function generateSignals(){
 
        let direction=null;
 
-       if(isHammer(c) && ema9>ema21){
+       // Relaxed Professional Logic
+
+       if(ema9>ema21 && c.close>=prev.close){
          direction="CALL";
        }
-       else if(isShootingStar(c) && ema9<ema21){
+       else if(ema9<ema21 && c.close<=prev.close){
          direction="PUT";
        }
-       else if(ema9>ema21 && c.close>prev.close){
-         direction="CALL";
-       }
-       else if(ema9<ema21 && c.close<prev.close){
-         direction="PUT";
+       else{
+         // soft fallback
+         direction = c.close>=prev.close ? "CALL":"PUT";
        }
 
-       if(direction){
-         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
-       }
-
+       allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
      }
 
    }catch(e){}
  }
 
  if(allSignals.length===0){
-   output.innerText="NO HIGH ACCURACY STRUCTURE FOUND.";
+   output.innerText="NO SIGNAL FLOW IN WINDOW";
    return;
  }
 
