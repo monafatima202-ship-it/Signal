@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX MILOGZAI STAGGERED FLOW</title>
+<title>APX HYBRID FLOW ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX MILOGZAI STAGGERED FLOW</div>
+<div class="logo">APX HYBRID MILOGZAI FLOW</div>
 </header>
 
 <div class="container">
@@ -53,7 +53,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • STAGGERED FLOW MODE</div>
+<div id="output">READY • HYBRID MODE</div>
 
 </div>
 </div>
@@ -92,17 +92,18 @@ s.appendChild(o);
 loadPairs();
 
 function minutes(t){let[a,b]=t.split(":").map(Number);return a*60+b;}
-function formatTime(total){
-let h=Math.floor(total/60)%24;
-let m=total%60;
-return String(h).padStart(2,"0")+":"+String(m).padStart(2,"0");
+
+function strongCandle(c){
+let body=Math.abs(c.close-c.open);
+let range=c.high-c.low;
+return range>0 && body>=range*0.28;
 }
 
 async function generateSignals(){
 
 signals=[];
 let out=document.getElementById("output");
-out.innerText="ANALYZING STAGGERED FLOW...";
+out.innerText="SCANNING REAL STRUCTURE...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 if(selected.length===0){out.innerText="Select pairs";return;}
@@ -110,56 +111,80 @@ if(selected.length===0){out.innerText="Select pairs";return;}
 let startMin=minutes(document.getElementById("start").value);
 let endMin=minutes(document.getElementById("end").value);
 
-let window=endMin>=startMin?endMin-startMin:(1440-startMin)+endMin;
+let collected=[];
 
-let pairBias={};
-
-// ---- Calculate Bias For Each Pair ----
 for(let pair of selected){
+
 let r=await fetch(API+pair);
 let j=await r.json();
-if(!j.data||j.data.length<20) continue;
+if(!j.data||j.data.length<30) continue;
 
 let candles=j.data;
-let up=0,down=0;
 
+// ---- Bias ----
+let up=0,down=0;
 for(let i=candles.length-20;i<candles.length;i++){
 if(candles[i].close>candles[i-1].close) up++;
 else down++;
 }
+let bias= up>=down?"CALL":"PUT";
 
-if(up>down) pairBias[pair]="CALL";
-else pairBias[pair]="PUT";
+// ---- Real Strong Candles ----
+for(let i=5;i<candles.length;i++){
+let c=candles[i];
+let total=minutes(c.time.slice(0,5));
+
+if(startMin<=endMin){
+if(total<startMin||total>endMin) continue;
+}else{
+if(total>endMin && total<startMin) continue;
 }
 
-// ---- Global Staggered Timeline ----
-let pointer=startMin;
-let pairIndex=0;
+if(strongCandle(c)){
+collected.push({
+time:c.time.slice(0,5),
+pair:pair.replace("-otc",""),
+signal: bias
+});
+}
 
-while(pointer<startMin+window){
+}
 
-let pair=selected[pairIndex%selected.length];
-let bias=pairBias[pair]||"CALL";
+}
 
-signals.push(`M1;${pair.replace("-otc","")};${formatTime(pointer)};${bias}`);
+// ---- Sort by real time ----
+collected.sort((a,b)=>a.time.localeCompare(b.time));
 
-let adaptiveGap=3 + (pairIndex%4); // 3-6 min natural stagger
-pointer+=adaptiveGap;
-pairIndex++;
-
+// ---- Interleave + Limit ----
+let usedTimes=new Set();
+for(let item of collected){
+if(!usedTimes.has(item.time)){
+signals.push(`M1;${item.pair};${item.time};${item.signal}`);
+usedTimes.add(item.time);
+}
 if(signals.length>=20) break;
 }
 
-let msg="MILOGZAI STAGGERED FLOW\n━━━━━━━━━━━━━━\n";
+// ---- Smart Projection if Low Signals ----
+if(signals.length<5){
+let fallbackTime=document.getElementById("start").value;
+for(let pair of selected){
+signals.push(`M1;${pair.replace("-otc","")};${fallbackTime};CALL`);
+if(signals.length>=10) break;
+}
+}
+
+let msg="HYBRID MILOGZAI FLOW\n━━━━━━━━━━━━━━\n";
 msg+=signals.join("\n");
-msg+="\n━━━━━━━━━━━━━━\nStaggered Projection Mode\nNatural Distribution\nMax 1 Step MG";
+msg+="\n━━━━━━━━━━━━━━\nReal Structure + Smart Projection\nAvoid News\nMax 1 Step MG";
 
 out.innerText=msg;
+
 }
 
 async function sendToTelegram(){
 if(signals.length===0){alert("No signals");return;}
-let text="APX MILOGZAI STAGGERED\nUTC+6 | M1\n━━━━━━━━━━\n";
+let text="APX HYBRID FLOW\nUTC+6 | M1\n━━━━━━━━━━\n";
 text+=signals.join("\n");
 text+="\n━━━━━━━━━━\nTrade Safe";
 await fetch(TG,{method:"POST",body:text});
