@@ -15,64 +15,29 @@
       --text-light: #e0f7ff;
     }
     body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
+      margin: 0; font-family: 'Roboto', sans-serif;
       background: linear-gradient(135deg, #0a0a1f, #1a0033);
       color: var(--text-light);
-      min-height: 100vh;
-      padding: 20px;
-      box-sizing: border-box;
+      min-height: 100vh; padding: 20px; box-sizing: border-box;
     }
-    h1 {
-      font-family: 'Orbitron', sans-serif;
-      text-align: center;
-      color: var(--neon-blue);
-      text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
-      margin-bottom: 10px;
-    }
+    h1 { font-family: 'Orbitron', sans-serif; text-align: center; color: var(--neon-blue);
+         text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue); margin-bottom: 10px; }
     .subtitle { text-align: center; color: #aaa; margin-bottom: 30px; }
     .container { max-width: 1100px; margin: 0 auto; }
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 15px;
-      justify-content: center;
-      margin-bottom: 30px;
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
-      border: 1px solid var(--neon-blue);
-    }
+    .controls { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; margin-bottom: 30px;
+                background: var(--card-bg); padding: 20px; border-radius: 12px;
+                box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); border: 1px solid var(--neon-blue); }
     label { display: flex; flex-direction: column; color: #ccc; font-weight: bold; }
     select, input[type="time"], button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      background: #1e1e4a;
-      color: white;
-      border: 1px solid var(--neon-blue);
-      transition: all 0.3s;
+      padding: 10px 15px; border: none; border-radius: 8px; font-size: 16px;
+      background: #1e1e4a; color: white; border: 1px solid var(--neon-blue); transition: all 0.3s;
     }
     select:focus, input:focus { outline: none; box-shadow: 0 0 10px var(--neon-blue); }
-    button {
-      background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
-      color: white;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 0 15px var(--neon-pink);
-    }
+    button { background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue)); color: white;
+             cursor: pointer; font-weight: bold; box-shadow: 0 0 15px var(--neon-pink); }
     button:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--neon-blue); }
-    #signalsTable {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      background: var(--card-bg);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
-    }
+    #signalsTable { width: 100%; border-collapse: collapse; margin-top: 20px; background: var(--card-bg);
+                    border-radius: 12px; overflow: hidden; box-shadow: 0 0 20px rgba(57, 255, 20, 0.2); }
     th, td { padding: 12px; text-align: center; border-bottom: 1px solid #333; }
     th { background: #1e1e4a; color: var(--neon-green); font-family: 'Orbitron', sans-serif; }
     .call { color: var(--neon-green); font-weight: bold; text-shadow: 0 0 8px var(--neon-green); }
@@ -86,134 +51,11 @@
 
   <div class="container">
     <h1>NEON-DX SIGNAL GENERATOR</h1>
-    <p class="subtitle">OTC • Stocks • Crypto • Powered by Your API</p>
+    <p class="subtitle">Real Candle-Based Signals • OTC • Crypto • Your API</p>
 
     <div class="controls">
-      <label>
-        Pair:
+      <label>Pair:
         <select id="pairSelect">
           <option value="USDTRY-OTC">USDTRY-OTC</option>
           <option value="USDPKR-OTC">USDPKR-OTC</option>
-          <option value="USDINR-OTC">USDINR-OTC</option>
-          <option value="USDNGN-OTC">USDNGN-OTC</option>
-          <option value="BTCUSD">BTCUSD (Crypto)</option>
-          <option value="ETHUSD">ETHUSD (Crypto)</option>
-          <option value="AXP-OTC">AXP-OTC</option>
-          <option value="MSFT-OTC">MSFT-OTC</option>
-        </select>
-      </label>
-
-      <label>
-        Start Time:
-        <input type="time" id="startTime" value="00:00">
-      </label>
-
-      <label>
-        End Time:
-        <input type="time" id="endTime" value="23:59">
-      </label>
-
-      <button onclick="generateSignals()">Generate Signals</button>
-    </div>
-
-    <div id="status">Waiting for generation...</div>
-
-    <table id="signalsTable">
-      <thead>
-        <tr>
-          <th>Pair</th>
-          <th>Time</th>
-          <th>Direction</th>
-          <th>Confidence</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody id="signalsBody"></tbody>
-    </table>
-  </div>
-
-  <script>
-    const API = "https://apx.mkapi009.workers.dev?pair=";
-    const TG  = "https://signal.mkapi009.workers.dev/send";
-
-    async function generateSignals() {
-      const pair = document.getElementById('pairSelect').value;
-      const start = document.getElementById('startTime').value;
-      const end   = document.getElementById('endTime').value;
-      const status = document.getElementById('status');
-      const tbody = document.getElementById('signalsBody');
-
-      tbody.innerHTML = '';
-      status.textContent = 'Fetching from API... Please wait.';
-
-      try {
-        const response = await fetch(API + encodeURIComponent(pair));
-        if (!response.ok) throw new Error('API error: ' + response.status);
-
-        const json = await response.json();
-
-        if (!json.data || json.data.length === 0) {
-          status.textContent = 'No data returned from API for this pair.';
-          return;
-        }
-
-        let signals = [];
-
-        json.data.forEach(item => {
-          if (item.time && item.direction) {
-            const time = item.time.padStart(5, '0'); // Ensure HH:MM format
-            if (time >= start && time <= end) {
-              signals.push({
-                pair: item.pair || pair,
-                time: time,
-                direction: item.direction.toUpperCase(),
-                confidence: '80%'
-              });
-            }
-          }
-        });
-
-        if (signals.length === 0) {
-          status.textContent = 'No signals in selected time range (try wider range or different pair).';
-          return;
-        }
-
-        // Table fill
-        signals.forEach(sig => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${sig.pair}</td>
-            <td>${sig.time}</td>
-            <td class="\( {sig.direction.toLowerCase()}"> \){sig.direction}</td>
-            <td>${sig.confidence}</td>
-            <td><button class="send-btn" onclick="sendToTelegram('\( {sig.pair}', ' \){sig.time}', '${sig.direction}')">Send to TG</button></td>
-          `;
-          tbody.appendChild(row);
-        });
-
-        status.textContent = `Generated ${signals.length} feature signals for \( {pair} ( \){start} - ${end})`;
-
-      } catch (err) {
-        status.textContent = 'Error: ' + err.message + ' (Check console for details)';
-        console.error(err);
-      }
-    }
-
-    async function sendToTelegram(pair, time, direction) {
-      const message = `${pair} => ${time} => ${direction} (Confidence: 80%)`;
-      const url = `\( {TG}?text= \){encodeURIComponent(message)}`;
-
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          alert('Signal sent to Telegram successfully!');
-        } else {
-          alert('Telegram send failed: ' + res.status);
-        }
-      } catch (e) {
-        alert('Error sending: ' + e.message);
-      }
-    }
-  </script>
-</body>
-</html>
+          <option value
