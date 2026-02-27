@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID ENGINE</title>
+<title>APX NEURAL FEATURE ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX HYBRID ENGINE</div>
+<div class="logo">APX NEURAL FEATURE ENGINE</div>
 </header>
 
 <div class="container">
@@ -48,11 +48,11 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <select id="pairs" multiple size="6"></select>
 
 <div style="display:flex;gap:10px;">
- <input type="time" id="start" value="18:00">
- <input type="time" id="end" value="20:00">
+ <input type="time" id="start" value="12:00">
+ <input type="time" id="end" value="02:00">
 </div>
 
-<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+<button class="generate" onclick="generateSignals()">GENERATE FEATURE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
 <div id="output">READY</div>
@@ -62,8 +62,8 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 
 <script>
 
-const API = "https://apx.mkapi009.workers.dev?pair=";
-const TG  = "https://signal.mkapi009.workers.dev/send";
+const API="https://apx.mkapi009.workers.dev?pair=";
+const TG ="https://signal.mkapi009.workers.dev/send";
 
 let signals=[];
 let currentMarket="OTC";
@@ -93,25 +93,41 @@ function loadPairs(){
 }
 loadPairs();
 
-function EMA(data,period){
- if(data.length===0) return 0;
+function EMA(prices,period){
  let k=2/(period+1);
- let ema=data[0];
- for(let i=1;i<data.length;i++){
-  ema=data[i]*k+ema*(1-k);
+ let ema=prices[0];
+ for(let i=1;i<prices.length;i++){
+  ema=prices[i]*k + ema*(1-k);
  }
  return ema;
+}
+
+function body(c){return Math.abs(c.close-c.open);}
+function range(c){return c.high-c.low;}
+
+function isHammer(c){
+ if(range(c)===0) return false;
+ let lower=Math.min(c.open,c.close)-c.low;
+ let upper=c.high-Math.max(c.open,c.close);
+ return lower>=body(c)*2 && upper<=body(c)*0.5;
+}
+
+function isShootingStar(c){
+ if(range(c)===0) return false;
+ let upper=c.high-Math.max(c.open,c.close);
+ let lower=Math.min(c.open,c.close)-c.low;
+ return upper>=body(c)*2 && lower<=body(c)*0.5;
 }
 
 async function generateSignals(){
 
  let output=document.getElementById("output");
  signals=[];
- output.innerText="SCANNING MARKET...";
+ output.innerText="ANALYZING PAST CANDLES...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){
-   output.innerText="NO PAIR SELECTED";
+   output.innerText="SELECT PAIRS";
    return;
  }
 
@@ -128,21 +144,13 @@ async function generateSignals(){
    try{
 
      let res=await fetch(API+pair);
-     if(!res.ok){
-       output.innerText="API ERROR: "+pair;
-       continue;
-     }
-
      let data=await res.json();
-     if(!data || !Array.isArray(data.data)){
-       output.innerText="INVALID DATA: "+pair;
-       continue;
-     }
+
+     if(!data || !Array.isArray(data.data)) continue;
 
      let candles=data.data;
-     if(candles.length<5) continue;
 
-     for(let i=3;i<candles.length;i++){
+     for(let i=21;i<candles.length;i++){
 
        let c=candles[i];
        let prev=candles[i-1];
@@ -153,31 +161,46 @@ async function generateSignals(){
        if(parts.length!==2) continue;
 
        let totalMin=parseInt(parts[0])*60+parseInt(parts[1]);
-       if(totalMin<startMin || totalMin>endMin) continue;
 
-       let closes=candles.slice(i-3,i+1).map(x=>x.close);
-
-       let emaFast=EMA(closes,3);
-       let emaSlow=EMA(closes,6);
-
-       let direction;
-
-       if(emaFast>emaSlow){
-         direction = c.close>=prev.close ? "CALL":"PUT";
+       let valid=false;
+       if(startMin<=endMin){
+         valid= totalMin>=startMin && totalMin<=endMin;
        }else{
-         direction = c.close<=prev.close ? "PUT":"CALL";
+         valid= totalMin>=startMin || totalMin<=endMin;
        }
 
-       allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+       if(!valid) continue;
+
+       let closes=candles.slice(i-21,i+1).map(x=>x.close);
+       let ema9=EMA(closes,9);
+       let ema21=EMA(closes,21);
+
+       let direction=null;
+
+       if(isHammer(c) && ema9>ema21){
+         direction="CALL";
+       }
+       else if(isShootingStar(c) && ema9<ema21){
+         direction="PUT";
+       }
+       else if(ema9>ema21 && c.close>prev.close){
+         direction="CALL";
+       }
+       else if(ema9<ema21 && c.close<prev.close){
+         direction="PUT";
+       }
+
+       if(direction){
+         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+       }
+
      }
 
-   }catch(err){
-     output.innerText="FETCH FAILED: "+pair;
-   }
+   }catch(e){}
  }
 
  if(allSignals.length===0){
-   output.innerText="NO SIGNALS IN SELECTED TIME";
+   output.innerText="NO HIGH ACCURACY STRUCTURE FOUND.";
    return;
  }
 
@@ -194,17 +217,13 @@ async function sendToTelegram(){
    return;
  }
 
- try{
-   await fetch(TG,{
-     method:"POST",
-     headers:{"Content-Type":"application/json"},
-     body:JSON.stringify({signals})
-   });
-   alert("Sent to Telegram");
- }catch(e){
-   alert("Telegram Error");
- }
+ await fetch(TG,{
+   method:"POST",
+   headers:{"Content-Type":"application/json"},
+   body:JSON.stringify({signals})
+ });
 
+ alert("Sent to Telegram");
 }
 
 </script>
