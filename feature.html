@@ -1,63 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX FLOW BALANCED ENGINE</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
-<style>
-:root{
- --bg:#01060b;
- --panel:#0a111f;
- --neon:#00ff88;
- --cyan:#00ccff;
- --glow:0 0 15px #00ff88,0 0 30px #00ccff;
-}
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:22px;color:var(--neon);}
-.container{max-width:520px;margin:15px auto;padding:10px;}
-.panel{background:var(--panel);border-radius:20px;padding:20px;}
-.tabs{display:flex;gap:6px;margin-bottom:10px;}
-.tab{flex:1;padding:8px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
-.tab.active{background:var(--neon);color:black;}
-select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
-button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
-.telegram{background:#0088cc;color:white;}
-#output{margin-top:10px;background:#01040a;padding:12px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:260px;}
-</style>
-</head>
-<body>
-
-<header>
-<div class="logo">APX FLOW BALANCED ENGINE</div>
-</header>
-
-<div class="container">
-<div class="panel">
-
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
-
-<select id="pairs" multiple size="6"></select>
-
-<input type="time" id="start" value="18:00">
-<input type="time" id="end" value="20:00">
-
-<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
-<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
-
-<div id="output">READY • FLOW BALANCED MODE</div>
-
-</div>
-</div>
-
 <script>
 
 const API="https://apx.mkapi009.workers.dev?pair=";
@@ -67,7 +7,7 @@ let signals=[];
 let currentMarket="OTC";
 
 const PAIRS={
-OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc"],
+OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
 CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
 STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
 };
@@ -104,20 +44,23 @@ return ema;
 function body(c){return Math.abs(c.close-c.open);}
 function rangeC(c){return c.high-c.low;}
 
-function calcConfidence(c,ema9,ema21,prev){
-let score=0;
-if(ema9>ema21) score+=25;
-if(ema9<ema21) score+=25;
-if(c.close>prev.close) score+=15;
-if(c.close<prev.close) score+=15;
-if(body(c)>=rangeC(c)*0.45) score+=25;
+function calcConfidence(clusterBias,c,ema9,ema21){
+let score=50;
+
+if(clusterBias==="CALL" && ema9>ema21) score+=15;
+if(clusterBias==="PUT" && ema9<ema21) score+=15;
+
+if(body(c)>=rangeC(c)*0.4) score+=15;
+
 if(rangeC(c)>0) score+=10;
+
 return score;
 }
 
 function removeBackToBack(list){
 let cleaned=[];
 let last=-999;
+
 for(let s of list){
 let t=s.split(";")[2];
 let total=parseInt(t.split(":")[0])*60+parseInt(t.split(":")[1]);
@@ -126,6 +69,7 @@ cleaned.push(s);
 last=total;
 }
 }
+
 return cleaned;
 }
 
@@ -133,7 +77,7 @@ async function generateSignals(){
 
 signals=[];
 let out=document.getElementById("output");
-out.innerText="FLOW ANALYZING...";
+out.innerText="MILOGZAI FLOW ANALYZING...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 if(selected.length==0){out.innerText="Select pairs";return;}
@@ -150,17 +94,24 @@ for(let pair of selected){
 
 let r=await fetch(API+pair);
 let j=await r.json();
-if(!j.data||j.data.length<30) continue;
+if(!j.data||j.data.length<40) continue;
 
 let candles=j.data;
+
+// ---- Trend Cluster Detection ----
+let up=0, down=0;
+for(let i=candles.length-15;i<candles.length;i++){
+if(candles[i].close>candles[i-1].close) up++;
+else down++;
+}
+
+let clusterBias= up>=down ? "CALL" : "PUT";
+
 let pairSignals=[];
-let lastBias=null;
 
 for(let i=20;i<candles.length;i++){
 
 let c=candles[i];
-let prev=candles[i-1];
-
 let [h,m]=c.time.split(":").map(Number);
 let total=h*60+m;
 
@@ -175,23 +126,22 @@ let ema9=EMA(closes,9);
 let ema21=EMA(closes,21);
 if(!ema9||!ema21) continue;
 
-let direction=null;
-if(ema9>ema21 && c.close>prev.close) direction="CALL";
-if(ema9<ema21 && c.close<prev.close) direction="PUT";
+let conf=calcConfidence(clusterBias,c,ema9,ema21);
 
-let conf=calcConfidence(c,ema9,ema21,prev);
+if(conf>=60 && conf<=90){
 
-if(conf>=65){
-pairSignals.push(`M1;${pair.replace("-otc","")};${c.time.slice(0,5)};${direction}`);
-lastBias=direction;
+pairSignals.push(`M1;${pair.replace("-otc","")};${c.time.slice(0,5)};${clusterBias}`);
+
 }
 
 if(pairSignals.length>=5) break;
 }
 
-// Bias carry if no signals
-if(pairSignals.length==0 && lastBias){
-pairSignals.push(`M1;${pair.replace("-otc","")};${start};${lastBias}`);
+// Bias projection if none found
+if(pairSignals.length===0){
+let hh=Math.floor(startMin/60).toString().padStart(2,"0");
+let mm=(startMin%60).toString().padStart(2,"0");
+pairSignals.push(`M1;${pair.replace("-otc","")};${hh}:${mm};${clusterBias}`);
 }
 
 all=all.concat(pairSignals);
@@ -203,27 +153,20 @@ all.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
 
 signals=all;
 
-if(all.length==0){
-out.innerText="NO FLOW STRUCTURE FOUND";
-return;
-}
-
-let msg="FLOW BALANCED SIGNALS\n━━━━━━━━━━━━━━\n";
+let msg="MILOGZAI STYLE SIGNALS\n━━━━━━━━━━━━━━\n";
 msg+=all.join("\n");
-msg+="\n━━━━━━━━━━━━━━\nConfidence ≥ 65\nPer Pair Max: 5\nTotal Max: 20";
+msg+="\n━━━━━━━━━━━━━━\nConfidence Band: 60-90\nCluster Bias Mode";
 
 out.innerText=msg;
 }
 
 async function sendToTelegram(){
 if(signals.length==0){alert("No signals");return;}
-let text="APX FLOW SIGNALS\nUTC+6 | M1\n━━━━━━━━━━\n";
+let text="APX MILOGZAI FLOW\nUTC+6 | M1\n━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━\nFlow Balanced Mode";
+text+="\n━━━━━━━━━━\nCluster Bias Engine";
 await fetch(TG,{method:"POST",body:text});
 alert("Sent to Telegram");
 }
 
 </script>
-</body>
-</html>
