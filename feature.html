@@ -1,39 +1,36 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID MILOGZAI ENGINE</title>
-
+<title>APX DYNAMIC HYBRID ENGINE</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
 <style>
 :root{
  --bg:#01060b;
  --panel:#0a111f;
  --neon:#00ff88;
  --cyan:#00ccff;
- --glow:0 0 20px #00ff88, 0 0 35px #00ccff;
+ --glow:0 0 20px #00ff88,0 0 35px #00ccff;
 }
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
-header{text-align:center;padding:22px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
+header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:24px;color:var(--neon);}
 .container{max-width:520px;margin:15px auto;padding:10px;}
 .panel{background:var(--panel);border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.25);}
 .tabs{display:flex;gap:8px;margin-bottom:15px;}
-.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold;}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:12px;color:white;}
-button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;margin:8px 0;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;}
+.tab.active{background:var(--neon);color:black;}
+select,input{width:100%;padding:12px;margin-bottom:12px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
+button{width:100%;padding:15px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;margin:6px 0;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;}
-#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:320px;}
+#output{margin-top:15px;background:#01040a;padding:15px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:12px;min-height:300px;}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">APX HYBRID MILOGZAI ENGINE</div>
+<div class="logo">APX DYNAMIC HYBRID ENGINE</div>
 </header>
 
 <div class="container">
@@ -49,156 +46,151 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 
 <div style="display:flex;gap:10px;">
  <input type="time" id="start" value="18:00">
- <input type="time" id="end" value="20:30">
+ <input type="time" id="end" value="20:00">
 </div>
 
 <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • SELECT PAIRS + TIME RANGE</div>
+<div id="output">READY</div>
 
 </div>
 </div>
 
 <script>
 
-const API = "https://apx.mkapi009.workers.dev?pair=";
-const TG  = "https://signal.mkapi009.workers.dev/send";
+const API="https://apx.mkapi009.workers.dev?pair=";
+const TG="https://signal.mkapi009.workers.dev/send";
 
-let signals = [];
-let currentMarket = "OTC";
+let signals=[];
+let currentMarket="OTC";
 
-const PAIRS = {
-  OTC: ["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
-  CRYPTO: ["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
-  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
+const PAIRS={
+ OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
+ CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+ STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
 };
 
-function setMarket(type, el){
-  currentMarket = type;
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  el.classList.add("active");
-  loadPairs();
+function setMarket(type,el){
+ currentMarket=type;
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ el.classList.add("active");
+ loadPairs();
 }
 
 function loadPairs(){
-  let select = document.getElementById("pairs");
-  select.innerHTML="";
-  PAIRS[currentMarket].forEach(p=>{
-    let opt=document.createElement("option");
-    opt.value=p;
-    opt.textContent=p.replace("-otc","");
-    select.appendChild(opt);
-  });
+ let s=document.getElementById("pairs");
+ s.innerHTML="";
+ PAIRS[currentMarket].forEach(p=>{
+  let o=document.createElement("option");
+  o.value=p;
+  o.textContent=p.replace("-otc","");
+  s.appendChild(o);
+ });
 }
 loadPairs();
 
-function EMA(prices, period){
-  if(prices.length<period) return null;
-  let k=2/(period+1);
-  let ema=prices[0];
-  for(let i=1;i<prices.length;i++){
-    ema=prices[i]*k+ema*(1-k);
-  }
-  return ema;
+function EMA(prices,period){
+ if(prices.length<period) return null;
+ let k=2/(period+1);
+ let ema=prices[0];
+ for(let i=1;i<prices.length;i++){
+  ema=prices[i]*k+ema*(1-k);
+ }
+ return ema;
 }
 
-function getBias(candles){
-  let up=0,down=0;
-  for(let i=candles.length-15;i<candles.length;i++){
-    if(candles[i].close>candles[i].open) up++;
-    else down++;
-  }
-  if(up>down) return "CALL";
-  if(down>up) return "PUT";
-  return null;
+function calculateDynamicBias(candles){
+ let up=0,down=0;
+ for(let i=candles.length-12;i<candles.length;i++){
+  if(candles[i].close>candles[i].open) up++;
+  else down++;
+ }
+ if(Math.abs(up-down)<=2) return null;
+ return up>down?"CALL":"PUT";
 }
 
 function formatTime(min){
-  let h=Math.floor(min/60)%24;
-  let m=min%60;
-  return (h<10?"0"+h:h)+":"+(m<10?"0"+m:m);
+ let h=Math.floor(min/60)%24;
+ let m=min%60;
+ return (h<10?"0"+h:h)+":"+(m<10?"0"+m:m);
 }
 
 async function generateSignals(){
-  signals=[];
-  const output=document.getElementById("output");
-  output.innerText="ANALYZING...";
+ signals=[];
+ let output=document.getElementById("output");
+ output.innerText="ANALYZING...";
 
-  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-  if(selected.length===0){
-    output.innerText="Select pairs first.";
-    return;
+ let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+ if(selected.length===0){output.innerText="Select pairs";return;}
+
+ let start=document.getElementById("start").value;
+ let end=document.getElementById("end").value;
+
+ let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
+ let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
+ if(endMin<=startMin) endMin+=1440;
+
+ let pairData={};
+
+ for(let pair of selected){
+  try{
+   let r=await fetch(API+pair);
+   let j=await r.json();
+   if(j.data && j.data.length>30){
+    pairData[pair.replace("-otc","")]=j.data;
+   }
+  }catch(e){}
+ }
+
+ let pointer=startMin;
+ let rotation=0;
+ let pairNames=Object.keys(pairData);
+ let directionCount={};
+
+ while(pointer<=endMin && pairNames.length>0){
+  let pairName=pairNames[rotation%pairNames.length];
+  let candles=pairData[pairName];
+  let bias=calculateDynamicBias(candles);
+
+  if(!bias){
+   let closes=candles.map(x=>x.close);
+   let ema9=EMA(closes.slice(-20),9);
+   let ema21=EMA(closes.slice(-20),21);
+   if(ema9 && ema21) bias=ema9>ema21?"CALL":"PUT";
   }
 
-  let start=document.getElementById("start").value;
-  let end=document.getElementById("end").value;
+  if(!directionCount[pairName]) directionCount[pairName]={CALL:0,PUT:0};
 
-  let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
-  let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
-  if(endMin<=startMin) endMin+=1440;
-
-  let biasMap={};
-
-  for(let pair of selected){
-    try{
-      let r=await fetch(API+pair);
-      let j=await r.json();
-      if(!j.data || j.data.length<30) continue;
-
-      let bias=getBias(j.data);
-      if(!bias){
-        let closes=j.data.map(x=>x.close);
-        let ema9=EMA(closes.slice(-20),9);
-        let ema21=EMA(closes.slice(-20),21);
-        if(ema9 && ema21){
-          bias=ema9>ema21?"CALL":"PUT";
-        }
-      }
-
-      biasMap[pair.replace("-otc","")]=bias||"CALL";
-
-    }catch(e){}
+  if(directionCount[pairName][bias]>=3){
+   bias=bias==="CALL"?"PUT":"CALL";
+   directionCount[pairName]={CALL:0,PUT:0};
   }
 
-  let pointer=startMin;
-  let rotation=0;
-  let pairNames=Object.keys(biasMap);
+  directionCount[pairName][bias]++;
 
-  while(pointer<=endMin && pairNames.length>0){
-    let pairName=pairNames[rotation%pairNames.length];
-    let dir=biasMap[pairName];
+  signals.push(`M1;${pairName};${formatTime(pointer)};${bias}`);
 
-    signals.push(`M1;${pairName};${formatTime(pointer)};${dir}`);
+  pointer+=3+(rotation%4);
+  rotation++;
+ }
 
-    let gap=3+(rotation%4);
-    pointer+=gap;
-    rotation++;
-  }
+ if(signals.length===0){
+  output.innerText="NO FLOW GENERATED";
+  return;
+ }
 
-  if(signals.length===0){
-    output.innerText="NO FLOW GENERATED";
-    return;
-  }
+ let header="DYNAMIC MILOGZAI FLOW\n━━━━━━━━━━━━━━\n";
+ let footer="\n━━━━━━━━━━━━━━\nCluster Bias Mode\nAvoid News\nMax 1 Step MG";
 
-  let header="HYBRID MILOGZAI FLOW\n━━━━━━━━━━━━━━\n";
-  let footer="\n━━━━━━━━━━━━━━\nCluster Bias Mode\nAvoid News\nMax 1 Step MG";
-
-  output.innerText=header+signals.join("\n")+footer;
+ output.innerText=header+signals.join("\n")+footer;
 }
 
 async function sendToTelegram(){
-  if(signals.length===0){
-    alert("No signals.");
-    return;
-  }
-
-  let msg="HYBRID MILOGZAI FLOW\n━━━━━━━━━━━━━━\n"+
-          signals.join("\n")+
-          "\n━━━━━━━━━━━━━━\nTrade Safe";
-
-  await fetch(TG,{method:"POST",body:msg});
-  alert("Sent to Telegram");
+ if(signals.length===0){alert("No signals");return;}
+ let msg="DYNAMIC MILOGZAI FLOW\n━━━━━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━━━━━\nTrade Safe";
+ await fetch(TG,{method:"POST",body:msg});
+ alert("Sent");
 }
 
 </script>
