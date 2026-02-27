@@ -1,221 +1,258 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX PROFESSIONAL STRUCTURE ENGINE</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
-<style>
-:root{
- --bg:#01060b;
- --panel:#0a111f;
- --neon:#00ff88;
- --cyan:#00ccff;
- --glow:0 0 20px #00ff88,0 0 35px #00ccff;
-}
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:22px;color:var(--neon);}
-.container{max-width:520px;margin:15px auto;padding:10px;}
-.panel{background:var(--panel);border-radius:20px;padding:20px;}
-.tabs{display:flex;gap:6px;margin-bottom:10px;}
-.tab{flex:1;padding:8px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
-.tab.active{background:var(--neon);color:black;}
-select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
-button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
-.telegram{background:#0088cc;color:white;}
-.modeToggle{display:flex;gap:6px;margin-bottom:10px;}
-.modeBtn{flex:1;padding:8px;border:2px solid #00ff88;background:transparent;color:#00ff88;border-radius:6px;cursor:pointer;}
-.modeBtn.active{background:#00ff88;color:black;}
-#output{margin-top:10px;background:#01040a;padding:12px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:250px;}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Neon-DX Signal Generator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --neon-blue: #00f0ff;
+      --neon-pink: #ff00aa;
+      --neon-green: #39ff14;
+      --bg-dark: #0a0a1f;
+      --card-bg: #12123a;
+      --text-light: #e0f7ff;
+    }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #0a0a1f, #1a0033);
+      color: var(--text-light);
+      min-height: 100vh;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    h1 {
+      font-family: 'Orbitron', sans-serif;
+      text-align: center;
+      color: var(--neon-blue);
+      text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #aaa;
+      margin-bottom: 30px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      margin-bottom: 30px;
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
+      border: 1px solid var(--neon-blue);
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      color: #ccc;
+      font-weight: bold;
+    }
+    select, input[type="time"], button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      background: #1e1e4a;
+      color: white;
+      border: 1px solid var(--neon-blue);
+      transition: all 0.3s;
+    }
+    select:focus, input:focus {
+      outline: none;
+      box-shadow: 0 0 10px var(--neon-blue);
+    }
+    button {
+      background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      box-shadow: 0 0 15px var(--neon-pink);
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px var(--neon-blue);
+    }
+    #signalsTable {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: var(--card-bg);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #333;
+    }
+    th {
+      background: #1e1e4a;
+      color: var(--neon-green);
+      font-family: 'Orbitron', sans-serif;
+    }
+    .call { color: var(--neon-green); font-weight: bold; text-shadow: 0 0 8px var(--neon-green); }
+    .put  { color: var(--neon-pink);  font-weight: bold; text-shadow: 0 0 8px var(--neon-pink); }
+    .send-btn {
+      background: #00cc66;
+      color: black;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .send-btn:hover { background: #00ff88; }
+    #status {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 18px;
+      color: #ffcc00;
+    }
+  </style>
 </head>
 <body>
 
-<header>
-<div class="logo">APX STRUCTURE ENGINE</div>
-</header>
+  <div class="container">
+    <h1>NEON-DX SIGNAL GENERATOR</h1>
+    <p class="subtitle">OTC • Stocks • Crypto • Powered by Your API</p>
 
-<div class="container">
-<div class="panel">
+    <div class="controls">
+      <label>
+        Pair:
+        <select id="pairSelect">
+          <option value="USDTRY-OTC">USDTRY-OTC</option>
+          <option value="USDPKR-OTC">USDPKR-OTC</option>
+          <option value="USDINR-OTC">USDINR-OTC</option>
+          <option value="USDNGN-OTC">USDNGN-OTC</option>
+          <option value="BTCUSD">BTCUSD (Crypto)</option>
+          <option value="ETHUSD">ETHUSD (Crypto)</option>
+          <option value="AXP-OTC">AXP-OTC</option>
+          <option value="MSFT-OTC">MSFT-OTC</option>
+          <!-- aur pairs add kar sakte ho -->
+        </select>
+      </label>
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
+      <label>
+        Start Time:
+        <input type="time" id="startTime" value="00:00">
+      </label>
 
-<div class="modeToggle">
-<button class="modeBtn active" onclick="setMode('STRICT',this)">STRICT</button>
-<button class="modeBtn" onclick="setMode('BALANCED',this)">BALANCED</button>
-</div>
+      <label>
+        End Time:
+        <input type="time" id="endTime" value="23:59">
+      </label>
 
-<select id="pairs" multiple size="6"></select>
+      <button onclick="generateSignals()">Generate Signals</button>
+    </div>
 
-<input type="time" id="start" value="18:00">
-<input type="time" id="end" value="20:00">
+    <div id="status">Waiting for generation...</div>
 
-<button class="generate" onclick="generate()">GENERATE</button>
-<button class="telegram" onclick="sendTG()">SEND TELEGRAM</button>
+    <table id="signalsTable">
+      <thead>
+        <tr>
+          <th>Pair</th>
+          <th>Time</th>
+          <th>Direction</th>
+          <th>Confidence</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="signalsBody"></tbody>
+    </table>
+  </div>
 
-<div id="output">READY</div>
+  <script>
+    const API = "https://apx.mkapi009.workers.dev?pair=";
+    const TG  = "https://signal.mkapi009.workers.dev/send";
 
-</div>
-</div>
+    async function generateSignals() {
+      const pair = document.getElementById('pairSelect').value;
+      const start = document.getElementById('startTime').value;
+      const end   = document.getElementById('endTime').value;
+      const status = document.getElementById('status');
+      const tbody = document.getElementById('signalsBody');
 
-<script>
+      tbody.innerHTML = '';
+      status.textContent = 'Generating signals... Please wait.';
 
-const API="https://apx.mkapi009.workers.dev?pair=";
-const TG="https://signal.mkapi009.workers.dev/send";
+      try {
+        // API call (tumhara worker pair ke basis pe signals deta hai)
+        const response = await fetch(API + encodeURIComponent(pair));
+        if (!response.ok) throw new Error('API error: ' + response.status);
 
-let currentMarket="OTC";
-let mode="STRICT";
-let signals=[];
+        const text = await response.text();  // plain text mil raha jaise milongazi mein
 
-const PAIRS={
-OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
-CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
-STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
-};
+        // Parse simple text format: PAIR => TIME => DIRECTION
+        const lines = text.split('\n').filter(line => line.includes('=>'));
+        let signals = [];
 
-function setMarket(type,el){
-currentMarket=type;
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-loadPairs();
-}
+        lines.forEach(line => {
+          const parts = line.split('=>').map(p => p.trim());
+          if (parts.length >= 3) {
+            const time = parts[1];
+            // Time filter apply karo
+            if (time >= start && time <= end) {
+              signals.push({
+                pair: pair,
+                time: time,
+                direction: parts[2],
+                confidence: '80%'  // fixed jaise original mein, ya dynamic agar JSON ho to change kar dena
+              });
+            }
+          }
+        });
 
-function setMode(m,el){
-mode=m;
-document.querySelectorAll(".modeBtn").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-}
+        if (signals.length === 0) {
+          status.textContent = 'No signals in selected time range.';
+          return;
+        }
 
-function loadPairs(){
-let s=document.getElementById("pairs");
-s.innerHTML="";
-PAIRS[currentMarket].forEach(p=>{
-let o=document.createElement("option");
-o.value=p;
-o.textContent=p.replace("-otc","");
-s.appendChild(o);
-});
-}
-loadPairs();
+        // Table fill karo
+        signals.forEach(sig => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${sig.pair}</td>
+            <td>${sig.time}</td>
+            <td class="\( {sig.direction.toLowerCase()}"> \){sig.direction}</td>
+            <td>${sig.confidence}</td>
+            <td><button class="send-btn" onclick="sendToTelegram('\( {sig.pair}', ' \){sig.time}', '${sig.direction}')">Send to TG</button></td>
+          `;
+          tbody.appendChild(row);
+        });
 
-function EMA(arr,period){
-if(arr.length<period) return null;
-let k=2/(period+1);
-let ema=arr[0];
-for(let i=1;i<arr.length;i++){
-ema=arr[i]*k + ema*(1-k);
-}
-return ema;
-}
+        status.textContent = `Generated ${signals.length} signals for \( {pair} ( \){start} - ${end})`;
 
-function body(c){return Math.abs(c.close-c.open);}
-function rangeC(c){return c.high-c.low;}
+      } catch (err) {
+        status.textContent = 'Error: ' + err.message;
+        console.error(err);
+      }
+    }
 
-function strongCandle(c){
-if(rangeC(c)==0) return false;
-return body(c)>=rangeC(c)*0.5;
-}
+    async function sendToTelegram(pair, time, direction) {
+      const message = `${pair} => ${time} => ${direction} (Confidence: 80%)`;
+      const url = `\( {TG}?text= \){encodeURIComponent(message)}`;
 
-async function generate(){
-
-signals=[];
-let out=document.getElementById("output");
-out.innerText="SCANNING STRUCTURE...";
-
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(selected.length==0){out.innerText="SELECT PAIRS";return;}
-
-let start=document.getElementById("start").value;
-let end=document.getElementById("end").value;
-
-let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
-let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
-
-let all=[];
-
-for(let pair of selected){
-
-let r=await fetch(API+pair);
-let j=await r.json();
-if(!j.data || j.data.length<30) continue;
-
-let candles=j.data;
-
-for(let i=25;i<candles.length;i++){
-
-let c=candles[i];
-let prev=candles[i-1];
-
-let [h,m]=c.time.split(":").map(Number);
-let total=h*60+m;
-
-if(startMin<=endMin){
-if(total<startMin || total>endMin) continue;
-}else{
-if(total>endMin && total<startMin) continue;
-}
-
-let closes=candles.slice(i-20,i+1).map(x=>x.close);
-
-let ema9=EMA(closes,9);
-let ema21=EMA(closes,21);
-if(!ema9 || !ema21) continue;
-
-let direction=null;
-
-if(strongCandle(c)){
-if(ema9>ema21 && c.close>prev.close) direction="CALL";
-if(ema9<ema21 && c.close<prev.close) direction="PUT";
-}
-
-if(direction){
-
-// STRICT MODE
-if(mode=="STRICT"){
-if(body(c)<rangeC(c)*0.6) continue;
-}
-
-// BALANCED MODE
-if(mode=="BALANCED"){
-if(body(c)<rangeC(c)*0.4) continue;
-}
-
-all.push(`M1;${pair.replace("-otc","")};${c.time.slice(0,5)};${direction}`);
-}
-}
-}
-
-if(all.length==0){
-out.innerText="NO STRONG STRUCTURE IN WINDOW";
-return;
-}
-
-all.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
-
-signals=all;
-
-let msg="M1 SIGNALS\n━━━━━━━━━━━━━━\n";
-msg+=all.join("\n");
-msg+="\n━━━━━━━━━━━━━━\nMODE: "+mode+"\nStrong candle only";
-
-out.innerText=msg;
-}
-
-async function sendTG(){
-if(signals.length==0){alert("No signals");return;}
-let text="APX STRUCTURE\nUTC+6 | M1\n━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
-await fetch(TG,{method:"POST",body:text});
-alert("Sent");
-}
-
-</script>
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          alert('Signal sent to Telegram!');
+        } else {
+          alert('Telegram send failed: ' + res.status);
+        }
+      } catch (e) {
+        alert('Error sending: ' + e.message);
+      }
+    }
+  </script>
 </body>
 </html>
