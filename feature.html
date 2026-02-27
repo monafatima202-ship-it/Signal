@@ -2,43 +2,17 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX MANUAL FEATURE ENGINE</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
+<title>APX FUTURE FEATURE ENGINE</title>
 <style>
-:root{
- --bg:#01060b;
- --panel:#0a111f;
- --neon:#00ff88;
- --cyan:#00ccff;
- --glow:0 0 20px #00ff88;
-}
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
-.container{max-width:520px;margin:15px auto;padding:10px;}
-.panel{background:var(--panel);border-radius:20px;padding:25px;}
-.tabs{display:flex;gap:8px;margin-bottom:15px;}
-.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold;}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
-button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;margin:8px 0;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
-#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:300px;}
+body{background:#01060b;color:#00ff88;font-family:monospace;padding:20px}
+button{padding:12px;background:#00ff88;border:none;font-weight:bold;margin:10px 0}
+select,input{padding:8px;margin:5px 0;background:#111;color:#00ff88}
+#output{white-space:pre-wrap;margin-top:20px}
 </style>
 </head>
 <body>
 
-<header>
-<div class="logo">APX MANUAL FEATURE ENGINE</div>
-</header>
-
-<div class="container">
-<div class="panel">
-
-<select id="pairs" multiple size="6">
+<select id="pairs" multiple size="5">
 <option value="USDPKR-otc">USDPKR</option>
 <option value="USDINR-otc">USDINR</option>
 <option value="USDARS-otc">USDARS</option>
@@ -46,22 +20,20 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <option value="USDNGN-otc">USDNGN</option>
 </select>
 
-<div style="display:flex;gap:10px;">
-<input type="time" id="start" value="18:00">
-<input type="time" id="end" value="20:00">
-</div>
+<br>
 
-<button class="generate" onclick="generateSignals()">GENERATE FEATURE SIGNALS</button>
+<input type="time" id="start" value="18:00">
+<input type="time" id="end" value="19:00">
+
+<br>
+
+<button onclick="generate()">GENERATE FUTURE FEATURE SIGNALS</button>
 
 <div id="output">READY</div>
-
-</div>
-</div>
 
 <script>
 
 const API="https://apx.mkapi009.workers.dev?pair=";
-let signals=[];
 
 function EMA(prices,period){
  let k=2/(period+1);
@@ -72,14 +44,10 @@ function EMA(prices,period){
  return ema;
 }
 
-function body(c){return Math.abs(c.close-c.open);}
-function range(c){return c.high-c.low;}
-
-async function generateSignals(){
+async function generate(){
 
  let output=document.getElementById("output");
- signals=[];
- output.innerText="ANALYZING STRUCTURE...";
+ output.innerText="ANALYZING MARKET BIAS...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){
@@ -93,88 +61,59 @@ async function generateSignals(){
  let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
  let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
 
- let allSignals=[];
- let lastPairMinute={};
- let usedMinute=new Set();
+ let signals=[];
 
  for(let pair of selected){
 
-   try{
+   let res=await fetch(API+pair);
+   let data=await res.json();
+   if(!data || !data.data) continue;
 
-     let res=await fetch(API+pair);
-     let data=await res.json();
-     if(!data || !Array.isArray(data.data)) continue;
+   let candles=data.data;
+   if(candles.length<30) continue;
 
-     let candles=data.data;
+   let closes=candles.slice(-30).map(c=>c.close);
 
-     for(let i=21;i<candles.length;i++){
+   let ema9=EMA(closes,9);
+   let ema21=EMA(closes,21);
 
-       let c=candles[i];
-       let prev=candles[i-1];
+   let bias = ema9>ema21 ? "CALL" : "PUT";
 
-       let parts=c.time.split(":");
-       let totalMin=parseInt(parts[0])*60+parseInt(parts[1]);
+   let volatility=0;
+   for(let i=1;i<closes.length;i++){
+     volatility+=Math.abs(closes[i]-closes[i-1]);
+   }
 
-       let valid=false;
-       if(startMin<=endMin){
-         valid= totalMin>=startMin && totalMin<=endMin;
-       }else{
-         valid= totalMin>=startMin || totalMin<=endMin;
-       }
+   volatility/=closes.length;
 
-       if(!valid) continue;
+   // projection spacing based on volatility
+   let gap = volatility>0.02 ? 3 : 6;
 
-       let closes=candles.slice(i-21,i+1).map(x=>x.close);
-       let ema9=EMA(closes,9);
-       let ema21=EMA(closes,21);
+   let t=startMin;
+   while(true){
 
-       let callScore=0;
-       let putScore=0;
-
-       if(ema9>ema21) callScore++;
-       if(ema9<ema21) putScore++;
-
-       if(c.close>prev.close) callScore++;
-       if(c.close<prev.close) putScore++;
-
-       if(range(c)>0 && body(c)>range(c)*0.5){
-         if(c.close>c.open) callScore++;
-         else putScore++;
-       }
-
-       let direction=null;
-       if(callScore>=3 && callScore>putScore) direction="CALL";
-       if(putScore>=3 && putScore>callScore) direction="PUT";
-       if(!direction) continue;
-
-       let minute=c.time;
-
-       if(lastPairMinute[pair]){
-         let prevMin=parseInt(lastPairMinute[pair].split(":")[1]);
-         let curMin=parseInt(minute.split(":")[1]);
-         if(Math.abs(curMin-prevMin)<3) continue;
-       }
-
-       if(usedMinute.has(minute)) continue;
-
-       usedMinute.add(minute);
-       lastPairMinute[pair]=minute;
-
-       allSignals.push(`M1;${pair.replace("-otc","")};${minute};${direction}`);
-
+     if(startMin<=endMin){
+       if(t>endMin) break;
+     }else{
+       if(t>endMin && t<startMin) break;
      }
 
-   }catch(e){}
+     let hh=Math.floor(t/60).toString().padStart(2,"0");
+     let mm=(t%60).toString().padStart(2,"0");
+
+     signals.push(`M1;${pair.replace("-otc","")};${hh}:${mm};${bias}`);
+
+     t+=gap;
+
+     if(signals.length>20) break;
+   }
  }
 
- if(allSignals.length===0){
-   output.innerText="NO STRUCTURE FOUND IN SELECTED WINDOW";
+ if(signals.length===0){
+   output.innerText="NO FEATURE PROJECTION POSSIBLE";
    return;
  }
 
- allSignals.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
-
- signals=allSignals;
  output.innerText=signals.join("\n");
 }
 
