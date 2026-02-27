@@ -1,254 +1,229 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>APX HYBRID MILOGZAI PRO ENGINE</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #01060b;
-      --panel: #0a111f;
-      --neon: #00ff88;
-      --cyan: #00ccff;
-      --glow: 0 0 25px #00ff88, 0 0 40px #00ccff;
-      --error: #ff3366;
-    }
-    body { margin:0; background:var(--bg); color:#e0fbee; font-family:'Rajdhani', sans-serif; }
-    header { text-align:center; padding:25px; background:black; border-bottom:5px solid var(--neon); box-shadow:var(--glow); }
-    .logo { font-family:'Orbitron'; font-size:32px; color:var(--neon); text-shadow:0 0 20px var(--neon); letter-spacing:2px; }
-    .container { max-width:580px; margin:20px auto; padding:15px; }
-    .panel { background:var(--panel); border-radius:25px; padding:30px; border:2px solid rgba(0,255,136,0.3); box-shadow:var(--glow); }
-    .tabs { display:flex; gap:10px; margin-bottom:20px; }
-    .tab { flex:1; padding:14px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:12px; cursor:pointer; font-weight:bold; transition:all 0.3s; text-align:center; }
-    .tab:hover { background:rgba(0,255,136,0.1); }
-    .tab.active { background:var(--neon); color:black; box-shadow:var(--glow); border-color:var(--cyan); }
-    select, input { width:100%; padding:14px; margin-bottom:18px; background:#050d1a; border:1px solid #1a3a3a; border-radius:12px; color:white; font-size:16px; }
-    select[multiple] { height:180px; }
-    button { width:100%; padding:18px; border:none; border-radius:15px; font-family:'Orbitron'; font-weight:900; cursor:pointer; margin:10px 0; transition:all 0.3s; font-size:18px; }
-    button:hover { transform:scale(1.02); }
-    .generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
-    .telegram { background:linear-gradient(135deg,#0088cc,#00aaff); color:white; box-shadow:0 0 20px #00aaff; }
-    #output { margin-top:25px; background:#01040a; padding:25px; border-radius:18px; border:2px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:14px; min-height:380px; line-height:1.5; box-shadow:inset 0 0 15px rgba(0,255,136,0.15); }
-    #status { text-align:center; margin:15px 0; font-size:16px; color:#ffcc00; font-weight:bold; }
-    .error { color:var(--error); }
-    .spinner { display:none; border:5px solid #333; border-top:5px solid var(--neon); border-radius:50%; width:30px; height:30px; animation:spin 1s linear infinite; margin:20px auto; }
-    @keyframes spin { 0% { transform:rotate(0deg); } 100% { transform:rotate(360deg); } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APX HYBRID MILOGZAI PRO ENGINE</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+--bg:#01060b;
+--panel:#0a111f;
+--neon:#00ff88;
+--cyan:#00ccff;
+--glow:0 0 25px #00ff88,0 0 40px #00ccff;
+--error:#ff3366;
+}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani',sans-serif}
+header{text-align:center;padding:25px;background:black;border-bottom:5px solid var(--neon);box-shadow:var(--glow)}
+.logo{font-family:'Orbitron';font-size:30px;color:var(--neon);text-shadow:0 0 20px var(--neon);letter-spacing:2px}
+.container{max-width:600px;margin:20px auto;padding:15px}
+.panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,0.3);box-shadow:var(--glow)}
+.tabs{display:flex;gap:10px;margin-bottom:20px}
+.tab{flex:1;padding:14px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:12px;cursor:pointer;font-weight:bold;transition:0.3s}
+.tab.active{background:var(--neon);color:black;box-shadow:var(--glow)}
+select,input{width:100%;padding:14px;margin-bottom:18px;background:#050d1a;border:1px solid #1a3a3a;border-radius:12px;color:white;font-size:16px}
+select[multiple]{height:180px}
+button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;margin:10px 0;transition:0.3s;font-size:18px}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow)}
+.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white}
+button:hover{transform:scale(1.02)}
+#output{margin-top:25px;background:#01040a;padding:25px;border-radius:18px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:14px;min-height:380px;line-height:1.5}
+#status{text-align:center;margin:15px 0;font-size:16px;color:#ffcc00;font-weight:bold}
+.spinner{display:none;border:5px solid #333;border-top:5px solid var(--neon);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:20px auto}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+</style>
 </head>
 <body>
 
 <header>
-  <div class="logo">APX HYBRID MILOGZAI PRO</div>
+<div class="logo">APX HYBRID MILOGZAI PRO v3</div>
 </header>
 
 <div class="container">
-  <div class="panel">
+<div class="panel">
 
-    <div class="tabs">
-      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-      <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-    </div>
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
 
-    <select id="pairs" multiple size="8"></select>
+<select id="pairs" multiple></select>
 
-    <div style="display:flex; gap:12px;">
-      <input type="time" id="start" value="18:00">
-      <input type="time" id="end" value="23:59">
-    </div>
+<div style="display:flex;gap:12px">
+<input type="time" id="start" value="18:00">
+<input type="time" id="end" value="23:59">
+</div>
 
-    <button class="generate" onclick="generateSignals()">GENERATE PRO FLOW</button>
-    <button class="telegram" onclick="sendToTelegram()">SEND FLOW TO TELEGRAM</button>
+<button class="generate" onclick="generateSignals()">GENERATE PRO FLOW</button>
+<button class="telegram" onclick="sendToTelegram()">SEND FLOW TO TELEGRAM</button>
 
-    <div id="status"></div>
-    <div class="spinner" id="spinner"></div>
+<div id="status"></div>
+<div class="spinner" id="spinner"></div>
+<div id="output">READY • SELECT MARKET + PAIRS + TIME RANGE • PRO ENGINE v3</div>
 
-    <div id="output">READY • SELECT MARKET + PAIRS + TIME RANGE • PRO ENGINE v2.0</div>
-
-  </div>
+</div>
 </div>
 
 <script>
-const API_BASE = "https://apx.mkapi009.workers.dev?pair=";
-const TG_URL   = "https://signal.mkapi009.workers.dev/send";
+const API_BASE="https://apx.mkapi009.workers.dev?pair=";
+const TG_URL="https://signal.mkapi009.workers.dev/send";
 
-let signals = [];
-let currentMarket = "OTC";
+let signals=[];
+let currentMarket="OTC";
 
-const PAIRS = {
-  OTC: ["USDTRY-OTC", "USDPKR-OTC", "USDINR-OTC", "USDARS-OTC", "USDBDT-OTC", "USDNGN-OTC"],
-  CRYPTO: ["BTCUSD", "ETHUSD", "XAUUSD-OTC"],
-  STOCK: ["MSFT-OTC", "AXP-OTC", "PFE-OTC", "MCD-OTC", "JNJ-OTC"]
+const PAIRS={
+OTC:["USDTRY-OTC","USDPKR-OTC","USDINR-OTC","USDARS-OTC","USDBDT-OTC","USDNGN-OTC"],
+CRYPTO:["BTCUSD","ETHUSD","XAUUSD-OTC"],
+STOCK:["MSFT-OTC","AXP-OTC","PFE-OTC","MCD-OTC","JNJ-OTC"]
 };
 
-function setMarket(type, el) {
-  currentMarket = type;
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  el.classList.add("active");
-  loadPairs();
+function setMarket(type,el){
+currentMarket=type;
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+el.classList.add("active");
+loadPairs();
 }
 
-function loadPairs() {
-  const select = document.getElementById("pairs");
-  select.innerHTML = "";
-  PAIRS[currentMarket].forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p.replace(/-OTC|-otc/i, "");
-    select.appendChild(opt);
-  });
+function loadPairs(){
+const select=document.getElementById("pairs");
+select.innerHTML="";
+PAIRS[currentMarket].forEach(p=>{
+const opt=document.createElement("option");
+opt.value=p;
+opt.textContent=p.replace(/-OTC|-otc/i,"");
+select.appendChild(opt);
+});
 }
 loadPairs();
 
-function padTime(min) {
-  const h = Math.floor(min / 60) % 24;
-  const m = min % 60;
-  return `\( {h.toString().padStart(2,'0')}: \){m.toString().padStart(2,'0')}`;
+function padTime(min){
+const h=Math.floor(min/60)%24;
+const m=min%60;
+return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
 }
 
-function timeToMin(timeStr) {
-  const [h, m] = timeStr.split(":").map(Number);
-  return h * 60 + m;
+function timeToMin(str){
+const [h,m]=str.split(":").map(Number);
+return h*60+m;
 }
 
-function EMA(prices, period) {
-  if (prices.length < period) return null;
-  let k = 2 / (period + 1);
-  let ema = prices[0];
-  for (let i = 1; i < prices.length; i++) {
-    ema = prices[i] * k + ema * (1 - k);
-  }
-  return ema;
+function EMA(prices,period){
+if(prices.length<period)return null;
+let k=2/(period+1);
+let ema=prices[0];
+for(let i=1;i<prices.length;i++){
+ema=prices[i]*k+ema*(1-k);
+}
+return ema;
 }
 
-async function getPairBias(pair) {
-  try {
-    const res = await fetch(API_BASE + encodeURIComponent(pair));
-    if (!res.ok) return null;
-    const json = await res.json();
-    if (!json.data || json.data.length < 30) return null;
+async function getPairBias(pair){
+try{
+const res=await fetch(API_BASE+encodeURIComponent(pair));
+if(!res.ok)return null;
+const json=await res.json();
+if(!json.data||json.data.length<40)return null;
 
-    // Recent bias: majority direction in last 15 candles
-    let up = 0, down = 0;
-    const recent = json.data.slice(-15);
-    recent.forEach(c => {
-      if (c.direction === "CALL") up++;
-      else if (c.direction === "PUT") down++;
-    });
+let up=0,down=0;
+json.data.slice(-20).forEach(c=>{
+if(c.direction==="CALL")up++;
+if(c.direction==="PUT")down++;
+});
 
-    if (up > down) return "CALL";
-    if (down > up) return "PUT";
+const closes=json.data.slice(-30).map(c=>c.close);
+const ema9=EMA(closes,9);
+const ema21=EMA(closes,21);
 
-    // Fallback: EMA 9 vs EMA 21 crossover
-    const closes = json.data.slice(-30).map(c => c.close);
-    const ema9  = EMA(closes, 9);
-    const ema21 = EMA(closes, 21);
-    if (ema9 && ema21) {
-      return ema9 > ema21 ? "CALL" : "PUT";
-    }
+let emaBias=null;
+if(ema9&&ema21)emaBias=ema9>ema21?"CALL":"PUT";
 
-    return null; // No clear bias
-  } catch (e) {
-    console.error(e);
-    return null;
-  }
+if(up>down&&emaBias==="CALL")return"CALL";
+if(down>up&&emaBias==="PUT")return"PUT";
+
+return emaBias;
+}catch(e){return null;}
 }
 
-async function generateSignals() {
-  signals = [];
-  const output = document.getElementById("output");
-  const status = document.getElementById("status");
-  const spinner = document.getElementById("spinner");
+async function generateSignals(){
+signals=[];
+const output=document.getElementById("output");
+const status=document.getElementById("status");
+const spinner=document.getElementById("spinner");
 
-  output.innerText = "INITIALIZING PRO ENGINE...";
-  status.innerText = "";
-  spinner.style.display = "block";
+output.innerText="ANALYZING MARKET FLOW...";
+status.innerText="";
+spinner.style.display="block";
 
-  const selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
-  if (selected.length === 0) {
-    output.innerText = "ERROR: Select at least one pair.";
-    spinner.style.display = "none";
-    return;
-  }
-
-  const startStr = document.getElementById("start").value;
-  const endStr   = document.getElementById("end").value;
-  let startMin = timeToMin(startStr);
-  let endMin   = timeToMin(endStr);
-  if (endMin <= startMin) endMin += 1440; // Midnight cross
-
-  const biasMap = {};
-  status.innerText = "Analyzing biases...";
-
-  for (const pair of selected) {
-    const bias = await getPairBias(pair);
-    if (bias) {
-      biasMap[pair.replace(/-OTC|-otc/i, "")] = bias;
-    }
-  }
-
-  const pairNames = Object.keys(biasMap);
-  if (pairNames.length === 0) {
-    output.innerText = "NO VALID BIAS FOUND • CHECK API OR PAIRS";
-    spinner.style.display = "none";
-    return;
-  }
-
-  let pointer = startMin;
-  let rotation = 0;
-
-  while (pointer <= endMin && pairNames.length > 0) {
-    const pairName = pairNames[rotation % pairNames.length];
-    const dir = biasMap[pairName];
-
-    signals.push(`M1;\( {pairName}; \){padTime(pointer)};${dir}`);
-
-    // Dynamic gap: 3-6 min for natural flow
-    const gap = 3 + (rotation % 4);
-    pointer += gap;
-    rotation++;
-  }
-
-  spinner.style.display = "none";
-
-  if (signals.length === 0) {
-    output.innerText = "NO FLOW GENERATED IN RANGE • TRY WIDER TIME";
-    return;
-  }
-
-  const header = "HYBRID MILOGZAI PRO FLOW\n━━━━━━━━━━━━━━━━━━━\n";
-  const footer = "\n━━━━━━━━━━━━━━━━━━━\nCluster Bias • EMA Hybrid • Avoid High-Impact News\nMax 1-Step Martingale • Trade Safe";
-
-  output.innerText = header + signals.join("\n") + footer;
-  status.innerText = `Generated \( {signals.length} pro signals ( \){pairNames.length} pairs)`;
+const selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+if(selected.length===0){
+output.innerText="ERROR: SELECT AT LEAST ONE PAIR";
+spinner.style.display="none";
+return;
 }
 
-async function sendToTelegram() {
-  if (signals.length === 0) {
-    alert("No signals generated yet.");
-    return;
-  }
+let start=timeToMin(document.getElementById("start").value);
+let end=timeToMin(document.getElementById("end").value);
+if(end<=start)end+=1440;
 
-  const msg = "HYBRID MILOGZAI PRO FLOW\n━━━━━━━━━━━━━━━━━━━\n" +
-              signals.join("\n") +
-              "\n━━━━━━━━━━━━━━━━━━━\nTrade Safe • Pro Engine";
+status.innerText="Analyzing Bias Structure...";
 
-  try {
-    const res = await fetch(TG_URL, {
-      method: "POST",
-      body: msg,
-      headers: { "Content-Type": "text/plain" }
-    });
-    if (res.ok) {
-      alert("Flow sent to Telegram successfully!");
-    } else {
-      alert("Telegram send failed: " + res.status);
-    }
-  } catch (e) {
-    alert("Send error: " + e.message);
-  }
+let biasMap={};
+for(const pair of selected){
+let bias=await getPairBias(pair);
+if(bias)biasMap[pair.replace(/-OTC|-otc/i,"")]=bias;
+}
+
+const pairs=Object.keys(biasMap);
+if(pairs.length===0){
+output.innerText="NO VALID BIAS FOUND • TRY DIFFERENT PAIRS";
+spinner.style.display="none";
+return;
+}
+
+let pointer=start;
+let rotation=0;
+
+while(pointer<=end){
+let pair=pairs[rotation%pairs.length];
+let dir=biasMap[pair];
+signals.push(`M1;${pair};${padTime(pointer)};${dir}`);
+pointer+=3+(rotation%3);
+rotation++;
+}
+
+spinner.style.display="none";
+
+output.innerText=
+"HYBRID MILOGZAI PRO FLOW\n━━━━━━━━━━━━━━━━━━━\n"+
+signals.join("\n")+
+"\n━━━━━━━━━━━━━━━━━━━\nCluster Bias • EMA Hybrid Confirmed\nMax 1 Martingale • Trade Safe";
+
+status.innerText=`Generated ${signals.length} Signals • ${pairs.length} Pairs`;
+}
+
+async function sendToTelegram(){
+if(signals.length===0){
+alert("Generate signals first.");
+return;
+}
+
+try{
+const res=await fetch(TG_URL,{
+method:"POST",
+body:"HYBRID MILOGZAI PRO FLOW\n━━━━━━━━━━━━━━━━━━━\n"+signals.join("\n"),
+headers:{"Content-Type":"text/plain"}
+});
+if(res.ok)alert("Sent to Telegram Successfully!");
+else alert("Telegram Send Failed.");
+}catch(e){
+alert("Error sending to Telegram.");
+}
 }
 </script>
+
 </body>
 </html>
