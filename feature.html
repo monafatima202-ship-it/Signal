@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX PRO FEATURE ENGINE</title>
+<title>APX MULTI MODE FEATURE ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -17,23 +17,23 @@
 }
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
 header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:24px;color:var(--neon);}
+.logo{font-family:'Orbitron';font-size:22px;color:var(--neon);}
 .container{max-width:520px;margin:15px auto;padding:10px;}
 .panel{background:var(--panel);border-radius:18px;padding:20px;}
-.tabs{display:flex;gap:8px;margin-bottom:15px;}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;font-weight:bold;}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:12px;margin-bottom:12px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
-button{width:100%;padding:14px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;margin:8px 0;cursor:pointer;text-transform:uppercase;}
+.tabs{display:flex;gap:6px;margin-bottom:12px;}
+.tab{flex:1;padding:8px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
+.tab.active{background:var(--neon);color:black;}
+select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
+button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;text-transform:uppercase;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
 .telegram{background:#0088cc;color:white;}
-#output{margin-top:15px;background:#01040a;padding:15px;border-radius:10px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:260px;}
+#output{margin-top:12px;background:#01040a;padding:12px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:240px;}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">APX PRO FEATURE ENGINE</div>
+<div class="logo">APX MULTI MODE ENGINE</div>
 </header>
 
 <div class="container">
@@ -47,11 +47,17 @@ button{width:100%;padding:14px;border:none;border-radius:12px;font-family:'Orbit
 
 <select id="pairs" multiple size="6"></select>
 
+<select id="mode">
+<option value="balanced">Balanced Professional</option>
+<option value="sniper">Sniper High Accuracy</option>
+<option value="hybrid">Hybrid Smart AI</option>
+</select>
+
 <input type="time" id="start" value="18:00">
 <input type="time" id="end" value="20:00">
 
-<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
-<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+<button class="generate" onclick="generate()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
 <div id="output">READY</div>
 
@@ -100,14 +106,15 @@ function EMA(prices,period){
  return ema;
 }
 
-async function generateSignals(){
+async function generate(){
 
  let out=document.getElementById("output");
- out.innerText="ANALYZING MARKET STRUCTURE...";
+ out.innerText="ANALYZING...";
  signals=[];
 
+ let mode=document.getElementById("mode").value;
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
- if(selected.length===0){ out.innerText="SELECT PAIRS"; return; }
+ if(selected.length===0){out.innerText="SELECT PAIRS";return;}
 
  let start=document.getElementById("start").value;
  let end=document.getElementById("end").value;
@@ -120,63 +127,73 @@ async function generateSignals(){
 
  for(let pair of selected){
 
-   try{
+   let res=await fetch(API+pair);
+   let data=await res.json();
+   if(!data || !data.data) continue;
 
-     let res=await fetch(API+pair);
-     let data=await res.json();
-     if(!data || !data.data) continue;
+   let candles=data.data;
 
-     let candles=data.data;
+   for(let i=30;i<candles.length;i++){
 
-     for(let i=25;i<candles.length;i++){
+     let c=candles[i];
+     let prev=candles[i-1];
+     let closes=candles.slice(i-30,i+1).map(x=>x.close);
 
-       let c=candles[i];
-       let prev=candles[i-1];
+     let ema9=EMA(closes,9);
+     let ema21=EMA(closes,21);
 
-       let closes=candles.slice(i-25,i+1).map(x=>x.close);
-       let ema9=EMA(closes,9);
-       let ema21=EMA(closes,21);
+     let score=0;
 
-       let score=0;
-
-       if(ema9>ema21) score++;
-       if(ema9<ema21) score++;
-       if(Math.abs(c.close-prev.close)>0) score++;
-
-       if(score<2) continue;
-
-       let totalMin=parseInt(c.time.split(":")[0])*60+parseInt(c.time.split(":")[1]);
-
-       let valid=false;
-       if(startMin<=endMin){
-         valid= totalMin>=startMin && totalMin<=endMin;
-       }else{
-         valid= totalMin>=startMin || totalMin<=endMin;
-       }
-       if(!valid) continue;
-
-       if(usedMinute.has(c.time)) continue;
-
-       if(lastPairMinute[pair]){
-         let diff=Math.abs(parseInt(c.time.split(":")[1]) - parseInt(lastPairMinute[pair].split(":")[1]));
-         if(diff<3) continue;
-       }
-
-       let direction= ema9>ema21 ? "CALL":"PUT";
-
-       usedMinute.add(c.time);
-       lastPairMinute[pair]=c.time;
-
-       signals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
-
-       if(signals.length>=15) break;
+     if(mode==="balanced"){
+        if(ema9>ema21) score++;
+        if(Math.abs(c.close-prev.close)>0) score++;
+        if(Math.abs(c.close-c.open)>(c.high-c.low)*0.4) score++;
+        if(score<2) continue;
      }
 
-   }catch(e){}
+     if(mode==="sniper"){
+        if(ema9>ema21 && c.close>prev.close) score++;
+        if(Math.abs(c.close-c.open)>(c.high-c.low)*0.6) score++;
+        if(score<2) continue;
+     }
+
+     if(mode==="hybrid"){
+        let volatility=Math.abs(c.close-prev.close);
+        if(volatility>0) score++;
+        if(ema9!==ema21) score++;
+        if(score<2) continue;
+     }
+
+     let totalMin=parseInt(c.time.split(":")[0])*60+parseInt(c.time.split(":")[1]);
+
+     let valid=false;
+     if(startMin<=endMin){
+       valid= totalMin>=startMin && totalMin<=endMin;
+     }else{
+       valid= totalMin>=startMin || totalMin<=endMin;
+     }
+     if(!valid) continue;
+
+     if(usedMinute.has(c.time)) continue;
+
+     if(lastPairMinute[pair]){
+       let diff=Math.abs(parseInt(c.time.split(":")[1]) - parseInt(lastPairMinute[pair].split(":")[1]));
+       if(diff<3) continue;
+     }
+
+     let direction= ema9>ema21 ? "CALL":"PUT";
+
+     usedMinute.add(c.time);
+     lastPairMinute[pair]=c.time;
+
+     signals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+
+     if(signals.length>= (mode==="sniper"?10:15)) break;
+   }
  }
 
  if(signals.length===0){
-   out.innerText="LOW VOLATILITY – LIMITED STRUCTURE";
+   out.innerText="MARKET SIDEWAYS – NO STRONG STRUCTURE";
    return;
  }
 
@@ -184,23 +201,16 @@ async function generateSignals(){
  out.innerText=signals.join("\n");
 }
 
-async function sendToTelegram(){
-
- if(signals.length===0){
-   alert("No signals to send");
-   return;
- }
-
+async function sendTG(){
+ if(signals.length===0){alert("No signals");return;}
  await fetch(TG,{
    method:"POST",
    headers:{"Content-Type":"application/json"},
    body:JSON.stringify({signals})
  });
-
  alert("Sent to Telegram");
 }
 
 </script>
-
 </body>
 </html>
