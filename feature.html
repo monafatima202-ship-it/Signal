@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX SMART FEATURE ENGINE</title>
+<title>APX STRUCTURE FEATURE ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -23,7 +23,7 @@ header{text-align:center;padding:20px;background:black;border-bottom:4px solid v
 .tabs{display:flex;gap:8px;margin-bottom:15px;}
 .tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold;}
 .tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
+select{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white;}
 button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;margin:8px 0;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
 .telegram{background:#0088cc;color:white;}
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX SMART FEATURE ENGINE</div>
+<div class="logo">APX STRUCTURE FEATURE ENGINE</div>
 </header>
 
 <div class="container">
@@ -104,7 +104,7 @@ async function generateSignals(){
 
  let output=document.getElementById("output");
  signals=[];
- output.innerText="BRAIN ANALYZING PAST 300 CANDLES...";
+ output.innerText="SCANNING STRUCTURE...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){
@@ -113,6 +113,8 @@ async function generateSignals(){
  }
 
  let allSignals=[];
+ let lastPairMinute={};
+ let usedMinutes=new Set();
 
  for(let pair of selected){
 
@@ -136,35 +138,40 @@ async function generateSignals(){
        let callScore=0;
        let putScore=0;
 
-       // Trend
        if(ema9>ema21) callScore++;
-       else putScore++;
+       if(ema9<ema21) putScore++;
 
-       // Momentum
        if(c.close>prev.close) callScore++;
-       else putScore++;
+       if(c.close<prev.close) putScore++;
 
-       // Strength
-       if(range(c)>0 && body(c)>range(c)*0.4){
+       if(range(c)>0 && body(c)>range(c)*0.5){
          if(c.close>c.open) callScore++;
          else putScore++;
        }
-
-       // Rejection wick
-       let upper=c.high-Math.max(c.open,c.close);
-       let lower=Math.min(c.open,c.close)-c.low;
-
-       if(lower>body(c)*1.5) callScore++;
-       if(upper>body(c)*1.5) putScore++;
 
        let direction=null;
 
        if(callScore>=3 && callScore>putScore) direction="CALL";
        if(putScore>=3 && putScore>callScore) direction="PUT";
 
-       if(direction){
-         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+       if(!direction) continue;
+
+       let minute=c.time;
+
+       // 3-minute gap per pair
+       if(lastPairMinute[pair]){
+         let prevMin=parseInt(lastPairMinute[pair].split(":")[1]);
+         let curMin=parseInt(minute.split(":")[1]);
+         if(Math.abs(curMin-prevMin)<3) continue;
        }
+
+       // Only 1 signal per minute globally
+       if(usedMinutes.has(minute)) continue;
+
+       usedMinutes.add(minute);
+       lastPairMinute[pair]=minute;
+
+       allSignals.push(`M1;${pair.replace("-otc","")};${minute};${direction}`);
 
      }
 
@@ -172,7 +179,7 @@ async function generateSignals(){
  }
 
  if(allSignals.length===0){
-   output.innerText="NO STRONG FEATURE STRUCTURE FOUND";
+   output.innerText="NO STRONG STRUCTURE FOUND";
    return;
  }
 
@@ -185,7 +192,7 @@ async function generateSignals(){
 async function sendToTelegram(){
 
  if(signals.length===0){
-   alert("No signals");
+   alert("No signals to send");
    return;
  }
 
