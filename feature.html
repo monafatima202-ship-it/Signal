@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX SIDEWAYS KILLER</title>
+<title>APX SIDEWAYS KILLER PRO</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX SIDEWAYS KILLER</div>
+<div class="logo">APX SIDEWAYS KILLER PRO</div>
 </header>
 
 <div class="container">
@@ -91,10 +91,19 @@ function loadPairs(){
 }
 loadPairs();
 
+function EMA(prices,period){
+ let k=2/(period+1);
+ let ema=prices[0];
+ for(let i=1;i<prices.length;i++){
+  ema=prices[i]*k + ema*(1-k);
+ }
+ return ema;
+}
+
 async function generate(){
 
  let out=document.getElementById("output");
- out.innerText="DETECTING SIDEWAYS RANGE...";
+ out.innerText="ADAPTIVE RANGE + MOMENTUM SCAN...";
  signals=[];
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
@@ -117,7 +126,7 @@ async function generate(){
 
    let candles=data.data;
 
-   for(let i=20;i<candles.length;i++){
+   for(let i=25;i<candles.length;i++){
 
      let slice=candles.slice(i-20,i);
      let highs=slice.map(c=>c.high);
@@ -127,9 +136,15 @@ async function generate(){
      let lower=Math.min(...lows);
 
      let c=candles[i];
+     let prev=candles[i-1];
+
+     let closes=candles.slice(i-25,i+1).map(x=>x.close);
+     let ema9=EMA(closes,9);
+     let ema21=EMA(closes,21);
 
      let direction=null;
 
+     // Range rejection
      if(c.high>=upper && c.close<c.open){
        direction="PUT";
      }
@@ -137,7 +152,17 @@ async function generate(){
        direction="CALL";
      }
 
-     if(!direction) continue;
+     // Micro momentum fallback
+     if(!direction){
+        if(Math.abs(c.close-prev.close)>0){
+           direction = c.close>prev.close ? "CALL":"PUT";
+        }
+     }
+
+     // EMA bias assist
+     if(!direction){
+        direction = ema9>ema21 ? "CALL":"PUT";
+     }
 
      let totalMin=parseInt(c.time.split(":")[0])*60+parseInt(c.time.split(":")[1]);
 
@@ -153,7 +178,7 @@ async function generate(){
 
      if(lastPairMinute[pair]){
        let diff=Math.abs(parseInt(c.time.split(":")[1]) - parseInt(lastPairMinute[pair].split(":")[1]));
-       if(diff<4) continue;
+       if(diff<3) continue;
      }
 
      usedMinute.add(c.time);
@@ -161,12 +186,12 @@ async function generate(){
 
      signals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
 
-     if(signals.length>=15) break;
+     if(signals.length>=18) break;
    }
  }
 
  if(signals.length===0){
-   out.innerText="RANGE TOO TIGHT – WAITING BREAK";
+   out.innerText="NO STRUCTURE FOUND IN WINDOW";
    return;
  }
 
