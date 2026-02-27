@@ -30,15 +30,8 @@
       text-shadow: 0 0 10px var(--neon-blue), 0 0 20px var(--neon-blue);
       margin-bottom: 10px;
     }
-    .subtitle {
-      text-align: center;
-      color: #aaa;
-      margin-bottom: 30px;
-    }
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+    .subtitle { text-align: center; color: #aaa; margin-bottom: 30px; }
+    .container { max-width: 1100px; margin: 0 auto; }
     .controls {
       display: flex;
       flex-wrap: wrap;
@@ -51,12 +44,7 @@
       box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);
       border: 1px solid var(--neon-blue);
     }
-    label {
-      display: flex;
-      flex-direction: column;
-      color: #ccc;
-      font-weight: bold;
-    }
+    label { display: flex; flex-direction: column; color: #ccc; font-weight: bold; }
     select, input[type="time"], button {
       padding: 10px 15px;
       border: none;
@@ -67,10 +55,7 @@
       border: 1px solid var(--neon-blue);
       transition: all 0.3s;
     }
-    select:focus, input:focus {
-      outline: none;
-      box-shadow: 0 0 10px var(--neon-blue);
-    }
+    select:focus, input:focus { outline: none; box-shadow: 0 0 10px var(--neon-blue); }
     button {
       background: linear-gradient(45deg, var(--neon-pink), var(--neon-blue));
       color: white;
@@ -78,10 +63,7 @@
       font-weight: bold;
       box-shadow: 0 0 15px var(--neon-pink);
     }
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 25px var(--neon-blue);
-    }
+    button:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--neon-blue); }
     #signalsTable {
       width: 100%;
       border-collapse: collapse;
@@ -91,33 +73,13 @@
       overflow: hidden;
       box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
     }
-    th, td {
-      padding: 12px;
-      text-align: center;
-      border-bottom: 1px solid #333;
-    }
-    th {
-      background: #1e1e4a;
-      color: var(--neon-green);
-      font-family: 'Orbitron', sans-serif;
-    }
+    th, td { padding: 12px; text-align: center; border-bottom: 1px solid #333; }
+    th { background: #1e1e4a; color: var(--neon-green); font-family: 'Orbitron', sans-serif; }
     .call { color: var(--neon-green); font-weight: bold; text-shadow: 0 0 8px var(--neon-green); }
     .put  { color: var(--neon-pink);  font-weight: bold; text-shadow: 0 0 8px var(--neon-pink); }
-    .send-btn {
-      background: #00cc66;
-      color: black;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-    }
+    .send-btn { background: #00cc66; color: black; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
     .send-btn:hover { background: #00ff88; }
-    #status {
-      text-align: center;
-      margin-top: 20px;
-      font-size: 18px;
-      color: #ffcc00;
-    }
+    #status { text-align: center; margin-top: 20px; font-size: 18px; color: #ffcc00; }
   </style>
 </head>
 <body>
@@ -138,7 +100,6 @@
           <option value="ETHUSD">ETHUSD (Crypto)</option>
           <option value="AXP-OTC">AXP-OTC</option>
           <option value="MSFT-OTC">MSFT-OTC</option>
-          <!-- aur pairs add kar sakte ho -->
         </select>
       </label>
 
@@ -183,41 +144,41 @@
       const tbody = document.getElementById('signalsBody');
 
       tbody.innerHTML = '';
-      status.textContent = 'Generating signals... Please wait.';
+      status.textContent = 'Fetching from API... Please wait.';
 
       try {
-        // API call (tumhara worker pair ke basis pe signals deta hai)
         const response = await fetch(API + encodeURIComponent(pair));
         if (!response.ok) throw new Error('API error: ' + response.status);
 
-        const text = await response.text();  // plain text mil raha jaise milongazi mein
+        const json = await response.json();
 
-        // Parse simple text format: PAIR => TIME => DIRECTION
-        const lines = text.split('\n').filter(line => line.includes('=>'));
+        if (!json.data || json.data.length === 0) {
+          status.textContent = 'No data returned from API for this pair.';
+          return;
+        }
+
         let signals = [];
 
-        lines.forEach(line => {
-          const parts = line.split('=>').map(p => p.trim());
-          if (parts.length >= 3) {
-            const time = parts[1];
-            // Time filter apply karo
+        json.data.forEach(item => {
+          if (item.time && item.direction) {
+            const time = item.time.padStart(5, '0'); // Ensure HH:MM format
             if (time >= start && time <= end) {
               signals.push({
-                pair: pair,
+                pair: item.pair || pair,
                 time: time,
-                direction: parts[2],
-                confidence: '80%'  // fixed jaise original mein, ya dynamic agar JSON ho to change kar dena
+                direction: item.direction.toUpperCase(),
+                confidence: '80%'
               });
             }
           }
         });
 
         if (signals.length === 0) {
-          status.textContent = 'No signals in selected time range.';
+          status.textContent = 'No signals in selected time range (try wider range or different pair).';
           return;
         }
 
-        // Table fill karo
+        // Table fill
         signals.forEach(sig => {
           const row = document.createElement('tr');
           row.innerHTML = `
@@ -230,10 +191,10 @@
           tbody.appendChild(row);
         });
 
-        status.textContent = `Generated ${signals.length} signals for \( {pair} ( \){start} - ${end})`;
+        status.textContent = `Generated ${signals.length} feature signals for \( {pair} ( \){start} - ${end})`;
 
       } catch (err) {
-        status.textContent = 'Error: ' + err.message;
+        status.textContent = 'Error: ' + err.message + ' (Check console for details)';
         console.error(err);
       }
     }
@@ -245,7 +206,7 @@
       try {
         const res = await fetch(url);
         if (res.ok) {
-          alert('Signal sent to Telegram!');
+          alert('Signal sent to Telegram successfully!');
         } else {
           alert('Telegram send failed: ' + res.status);
         }
