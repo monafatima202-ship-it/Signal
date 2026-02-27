@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID MILOGZAI PRO ENGINE</title>
+<title>APX ULTRA PRO ENGINE v5</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -14,32 +14,31 @@
 --neon:#00ff88;
 --cyan:#00ccff;
 --glow:0 0 25px #00ff88,0 0 40px #00ccff;
---error:#ff3366;
+--danger:#ff3366;
 }
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani',sans-serif}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani'}
 header{text-align:center;padding:25px;background:black;border-bottom:5px solid var(--neon);box-shadow:var(--glow)}
-.logo{font-family:'Orbitron';font-size:30px;color:var(--neon);text-shadow:0 0 20px var(--neon);letter-spacing:2px}
-.container{max-width:600px;margin:20px auto;padding:15px}
+.logo{font-family:'Orbitron';font-size:28px;color:var(--neon);text-shadow:0 0 20px var(--neon)}
+.container{max-width:620px;margin:20px auto;padding:15px}
 .panel{background:var(--panel);border-radius:25px;padding:30px;border:2px solid rgba(0,255,136,0.3);box-shadow:var(--glow)}
-.tabs{display:flex;gap:10px;margin-bottom:20px}
-.tab{flex:1;padding:14px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:12px;cursor:pointer;font-weight:bold;transition:0.3s}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow)}
-select,input{width:100%;padding:14px;margin-bottom:18px;background:#050d1a;border:1px solid #1a3a3a;border-radius:12px;color:white;font-size:16px}
-select[multiple]{height:180px}
-button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;margin:10px 0;transition:0.3s;font-size:18px}
+.tabs{display:flex;gap:10px;margin-bottom:15px}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold}
+.tab.active{background:var(--neon);color:black}
+select,input{width:100%;padding:12px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:10px;color:white}
+select[multiple]{height:150px}
+button{width:100%;padding:16px;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;margin:8px 0}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow)}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white}
-button:hover{transform:scale(1.02)}
-#output{margin-top:25px;background:#01040a;padding:25px;border-radius:18px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:14px;min-height:380px;line-height:1.5}
-#status{text-align:center;margin:15px 0;font-size:16px;color:#ffcc00;font-weight:bold}
-.spinner{display:none;border:5px solid #333;border-top:5px solid var(--neon);border-radius:50%;width:30px;height:30px;animation:spin 1s linear infinite;margin:20px auto}
-@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:2px dashed var(--neon);white-space:pre-wrap;font-family:monospace;min-height:300px}
+#status{text-align:center;margin:10px 0;font-weight:bold;color:#ffcc00}
+.rangeLabel{font-size:14px;margin-bottom:5px}
+.toggleBox{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">APX HYBRID MILOGZAI PRO v3</div>
+<div class="logo">APX HYBRID MILOGZAI ULTRA PRO v5</div>
 </header>
 
 <div class="container">
@@ -53,17 +52,24 @@ button:hover{transform:scale(1.02)}
 
 <select id="pairs" multiple></select>
 
-<div style="display:flex;gap:12px">
+<div style="display:flex;gap:10px">
 <input type="time" id="start" value="18:00">
 <input type="time" id="end" value="23:59">
 </div>
 
-<button class="generate" onclick="generateSignals()">GENERATE PRO FLOW</button>
-<button class="telegram" onclick="sendToTelegram()">SEND FLOW TO TELEGRAM</button>
+<div class="rangeLabel">Minimum Strength %: <span id="strengthVal">60</span>%</div>
+<input type="range" id="strength" min="40" max="90" value="60" oninput="strengthVal.innerText=this.value">
+
+<div class="toggleBox">
+<input type="checkbox" id="rsiToggle" checked>
+<label>Enable RSI Filter</label>
+</div>
+
+<button class="generate" onclick="generateSignals()">GENERATE ULTRA FLOW</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
 <div id="status"></div>
-<div class="spinner" id="spinner"></div>
-<div id="output">READY • SELECT MARKET + PAIRS + TIME RANGE • PRO ENGINE v3</div>
+<div id="output">READY • ULTRA MODE STANDBY</div>
 
 </div>
 </div>
@@ -73,6 +79,7 @@ const API_BASE="https://apx.mkapi009.workers.dev?pair=";
 const TG_URL="https://signal.mkapi009.workers.dev/send";
 
 let signals=[];
+let lastDirection={};
 let currentMarket="OTC";
 
 const PAIRS={
@@ -92,7 +99,7 @@ function loadPairs(){
 const select=document.getElementById("pairs");
 select.innerHTML="";
 PAIRS[currentMarket].forEach(p=>{
-const opt=document.createElement("option");
+let opt=document.createElement("option");
 opt.value=p;
 opt.textContent=p.replace(/-OTC|-otc/i,"");
 select.appendChild(opt);
@@ -101,127 +108,115 @@ select.appendChild(opt);
 loadPairs();
 
 function padTime(min){
-const h=Math.floor(min/60)%24;
-const m=min%60;
+let h=Math.floor(min/60)%24;
+let m=min%60;
 return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
 }
 
 function timeToMin(str){
-const [h,m]=str.split(":").map(Number);
+let [h,m]=str.split(":").map(Number);
 return h*60+m;
 }
 
-function EMA(prices,period){
-if(prices.length<period)return null;
-let k=2/(period+1);
+function EMA(prices,p){
+if(prices.length<p)return null;
+let k=2/(p+1);
 let ema=prices[0];
-for(let i=1;i<prices.length;i++){
-ema=prices[i]*k+ema*(1-k);
-}
+for(let i=1;i<prices.length;i++)ema=prices[i]*k+ema*(1-k);
 return ema;
 }
 
-async function getPairBias(pair){
+function RSI(closes,p=14){
+if(closes.length<p+1)return null;
+let gains=0,loss=0;
+for(let i=closes.length-p;i<closes.length;i++){
+let diff=closes[i]-closes[i-1];
+if(diff>0)gains+=diff;else loss-=diff;
+}
+let rs=gains/(loss||1);
+return 100-(100/(1+rs));
+}
+
+async function getBias(pair){
 try{
-const res=await fetch(API_BASE+encodeURIComponent(pair));
+let res=await fetch(API_BASE+encodeURIComponent(pair));
 if(!res.ok)return null;
-const json=await res.json();
+let json=await res.json();
 if(!json.data||json.data.length<40)return null;
 
-let up=0,down=0;
-json.data.slice(-20).forEach(c=>{
-if(c.direction==="CALL")up++;
-if(c.direction==="PUT")down++;
-});
+let closes=json.data.slice(-30).map(c=>c.close);
+let ema9=EMA(closes,9);
+let ema21=EMA(closes,21);
+let rsi=RSI(closes);
 
-const closes=json.data.slice(-30).map(c=>c.close);
-const ema9=EMA(closes,9);
-const ema21=EMA(closes,21);
+let dir=ema9>ema21?"CALL":"PUT";
+let strength=Math.abs(ema9-ema21)*10000;
+let conf=Math.min(95,Math.floor(strength*10));
 
-let emaBias=null;
-if(ema9&&ema21)emaBias=ema9>ema21?"CALL":"PUT";
+if(document.getElementById("rsiToggle").checked){
+if(dir==="CALL"&&rsi>70)return null;
+if(dir==="PUT"&&rsi<30)return null;
+}
 
-if(up>down&&emaBias==="CALL")return"CALL";
-if(down>up&&emaBias==="PUT")return"PUT";
-
-return emaBias;
+return {dir,conf};
 }catch(e){return null;}
 }
 
 async function generateSignals(){
 signals=[];
-const output=document.getElementById("output");
-const status=document.getElementById("status");
-const spinner=document.getElementById("spinner");
+lastDirection={};
+let output=document.getElementById("output");
+let status=document.getElementById("status");
 
-output.innerText="ANALYZING MARKET FLOW...";
-status.innerText="";
-spinner.style.display="block";
+output.innerText="Analyzing Market Structure...";
+status.innerText="Scanning...";
 
-const selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(selected.length===0){
-output.innerText="ERROR: SELECT AT LEAST ONE PAIR";
-spinner.style.display="none";
-return;
-}
+let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+if(selected.length===0){output.innerText="Select at least one pair";return;}
 
-let start=timeToMin(document.getElementById("start").value);
-let end=timeToMin(document.getElementById("end").value);
+let start=timeToMin(start.value);
+let end=timeToMin(end.value);
 if(end<=start)end+=1440;
 
-status.innerText="Analyzing Bias Structure...";
+let pointer=start;
+let minStrength=parseInt(strength.value);
 
-let biasMap={};
-for(const pair of selected){
-let bias=await getPairBias(pair);
-if(bias)biasMap[pair.replace(/-OTC|-otc/i,"")]=bias;
+while(pointer<=end){
+for(let pair of selected){
+
+let bias=await getBias(pair);
+if(!bias)continue;
+if(bias.conf<minStrength)continue;
+
+let clean=pair.replace(/-OTC|-otc/i,"");
+
+if(lastDirection[clean]===bias.dir)continue;
+lastDirection[clean]=bias.dir;
+
+signals.push(`M1;${clean};${padTime(pointer)};${bias.dir};${bias.conf}%`);
+pointer+=3;
+}
+pointer+=1;
 }
 
-const pairs=Object.keys(biasMap);
-if(pairs.length===0){
-output.innerText="NO VALID BIAS FOUND • TRY DIFFERENT PAIRS";
-spinner.style.display="none";
+if(signals.length===0){
+output.innerText="No strong structure found.";
+status.innerText="0 Signals";
 return;
 }
 
-let pointer=start;
-let rotation=0;
-
-while(pointer<=end){
-let pair=pairs[rotation%pairs.length];
-let dir=biasMap[pair];
-signals.push(`M1;${pair};${padTime(pointer)};${dir}`);
-pointer+=3+(rotation%3);
-rotation++;
-}
-
-spinner.style.display="none";
-
 output.innerText=
-"HYBRID MILOGZAI PRO FLOW\n━━━━━━━━━━━━━━━━━━━\n"+
+"HYBRID MILOGZAI ULTRA FLOW\n━━━━━━━━━━━━━━━━━━━\n"+
 signals.join("\n")+
-"\n━━━━━━━━━━━━━━━━━━━\nCluster Bias • EMA Hybrid Confirmed\nMax 1 Martingale • Trade Safe";
+"\n━━━━━━━━━━━━━━━━━━━\nAI Confidence Filtered";
 
-status.innerText=`Generated ${signals.length} Signals • ${pairs.length} Pairs`;
+status.innerText=`Generated ${signals.length} Signals`;
 }
 
 async function sendToTelegram(){
-if(signals.length===0){
-alert("Generate signals first.");
-return;
-}
-
-try{
-const res=await fetch(TG_URL,{
-method:"POST",
-body:"HYBRID MILOGZAI PRO FLOW\n━━━━━━━━━━━━━━━━━━━\n"+signals.join("\n"),
-headers:{"Content-Type":"text/plain"}
-});
-if(res.ok)alert("Sent to Telegram Successfully!");
-else alert("Telegram Send Failed.");
-}catch(e){
-alert("Error sending to Telegram.");
-}
+if(signals.length===0){alert("Generate signals first");return;}
+await fetch(TG_URL,{method:"POST",body:signals.join("\n"),headers:{"Content-Type":"text/plain"}});
+alert("Sent to Telegram");
 }
 </script>
 
