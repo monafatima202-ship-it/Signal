@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX FEATURE ENGINE PRO</title>
+<title>APX FLOW BALANCED ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -13,13 +13,13 @@
  --panel:#0a111f;
  --neon:#00ff88;
  --cyan:#00ccff;
- --glow:0 0 15px #00ff88,0 0 25px #00ccff;
+ --glow:0 0 15px #00ff88,0 0 30px #00ccff;
 }
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
 header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
 .logo{font-family:'Orbitron';font-size:22px;color:var(--neon);}
 .container{max-width:520px;margin:15px auto;padding:10px;}
-.panel{background:var(--panel);border-radius:20px;padding:20px;border:1px solid rgba(0,255,136,.2);}
+.panel{background:var(--panel);border-radius:20px;padding:20px;}
 .tabs{display:flex;gap:6px;margin-bottom:10px;}
 .tab{flex:1;padding:8px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
 .tab.active{background:var(--neon);color:black;}
@@ -27,13 +27,13 @@ select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;borde
 button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
 .telegram{background:#0088cc;color:white;}
-#output{margin-top:10px;background:#01040a;padding:12px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:250px;}
+#output{margin-top:10px;background:#01040a;padding:12px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:260px;}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">APX FEATURE SIGNAL ENGINE</div>
+<div class="logo">APX FLOW BALANCED ENGINE</div>
 </header>
 
 <div class="container">
@@ -53,7 +53,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • SELECT PAIRS + TIME</div>
+<div id="output">READY • FLOW BALANCED MODE</div>
 
 </div>
 </div>
@@ -67,7 +67,7 @@ let signals=[];
 let currentMarket="OTC";
 
 const PAIRS={
-OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc"],
+OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc"],
 CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
 STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
 };
@@ -104,25 +104,26 @@ return ema;
 function body(c){return Math.abs(c.close-c.open);}
 function rangeC(c){return c.high-c.low;}
 
-function confidenceScore(c,ema9,ema21,prev){
+function calcConfidence(c,ema9,ema21,prev){
 let score=0;
-if(ema9>ema21 && c.close>prev.close) score+=40;
-if(ema9<ema21 && c.close<prev.close) score+=40;
-if(body(c)>=rangeC(c)*0.6) score+=30;
+if(ema9>ema21) score+=25;
+if(ema9<ema21) score+=25;
+if(c.close>prev.close) score+=15;
+if(c.close<prev.close) score+=15;
+if(body(c)>=rangeC(c)*0.45) score+=25;
 if(rangeC(c)>0) score+=10;
 return score;
 }
 
 function removeBackToBack(list){
 let cleaned=[];
-let lastTime=-999;
-
+let last=-999;
 for(let s of list){
 let t=s.split(";")[2];
-let minute=parseInt(t.split(":")[0])*60+parseInt(t.split(":")[1]);
-if(Math.abs(minute-lastTime)>=3){
+let total=parseInt(t.split(":")[0])*60+parseInt(t.split(":")[1]);
+if(Math.abs(total-last)>=2){
 cleaned.push(s);
-lastTime=minute;
+last=total;
 }
 }
 return cleaned;
@@ -132,10 +133,10 @@ async function generateSignals(){
 
 signals=[];
 let out=document.getElementById("output");
-out.innerText="ANALYZING STRUCTURE...";
+out.innerText="FLOW ANALYZING...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(selected.length==0){out.innerText="Select pairs first";return;}
+if(selected.length==0){out.innerText="Select pairs";return;}
 
 let start=document.getElementById("start").value;
 let end=document.getElementById("end").value;
@@ -152,6 +153,8 @@ let j=await r.json();
 if(!j.data||j.data.length<30) continue;
 
 let candles=j.data;
+let pairSignals=[];
+let lastBias=null;
 
 for(let i=20;i<candles.length;i++){
 
@@ -175,41 +178,52 @@ if(!ema9||!ema21) continue;
 let direction=null;
 if(ema9>ema21 && c.close>prev.close) direction="CALL";
 if(ema9<ema21 && c.close<prev.close) direction="PUT";
-if(!direction) continue;
 
-let conf=confidenceScore(c,ema9,ema21,prev);
-if(conf<80) continue;
+let conf=calcConfidence(c,ema9,ema21,prev);
 
-all.push(`M1;${pair.replace("-otc","")};${c.time.slice(0,5)};${direction}`);
+if(conf>=65){
+pairSignals.push(`M1;${pair.replace("-otc","")};${c.time.slice(0,5)};${direction}`);
+lastBias=direction;
 }
+
+if(pairSignals.length>=5) break;
 }
 
-if(all.length==0){
-out.innerText="NO HIGH CONFIDENCE STRUCTURE FOUND";
-return;
+// Bias carry if no signals
+if(pairSignals.length==0 && lastBias){
+pairSignals.push(`M1;${pair.replace("-otc","")};${start};${lastBias}`);
+}
+
+all=all.concat(pairSignals);
+if(all.length>=20) break;
 }
 
 all=removeBackToBack(all);
 all.sort((a,b)=>a.split(";")[2].localeCompare(b.split(";")[2]));
+
 signals=all;
 
-let msg="FEATURE SIGNALS\n━━━━━━━━━━━━━━\n";
+if(all.length==0){
+out.innerText="NO FLOW STRUCTURE FOUND";
+return;
+}
+
+let msg="FLOW BALANCED SIGNALS\n━━━━━━━━━━━━━━\n";
 msg+=all.join("\n");
-msg+="\n━━━━━━━━━━━━━━\nConfidence ≥ 80%\nBackToBack Removed";
+msg+="\n━━━━━━━━━━━━━━\nConfidence ≥ 65\nPer Pair Max: 5\nTotal Max: 20";
 
 out.innerText=msg;
 }
 
 async function sendToTelegram(){
 if(signals.length==0){alert("No signals");return;}
-let text="APX FEATURE SIGNALS\nUTC+6 | M1\n━━━━━━━━━━\n";
+let text="APX FLOW SIGNALS\nUTC+6 | M1\n━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━\nConfidence ≥ 80%";
+text+="\n━━━━━━━━━━\nFlow Balanced Mode";
 await fetch(TG,{method:"POST",body:text});
 alert("Sent to Telegram");
 }
 
 </script>
-
 </body>
 </html>
