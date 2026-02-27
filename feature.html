@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX BALANCED FEATURE ENGINE</title>
+<title>APX SMART FEATURE ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX BALANCED FEATURE ENGINE</div>
+<div class="logo">APX SMART FEATURE ENGINE</div>
 </header>
 
 <div class="container">
@@ -46,11 +46,6 @@ button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbit
 </div>
 
 <select id="pairs" multiple size="6"></select>
-
-<div style="display:flex;gap:10px;">
- <input type="time" id="start" value="12:00">
- <input type="time" id="end" value="02:00">
-</div>
 
 <button class="generate" onclick="generateSignals()">GENERATE FEATURE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
@@ -102,23 +97,20 @@ function EMA(prices,period){
  return ema;
 }
 
+function body(c){return Math.abs(c.close-c.open);}
+function range(c){return c.high-c.low;}
+
 async function generateSignals(){
 
  let output=document.getElementById("output");
  signals=[];
- output.innerText="ANALYZING MARKET FLOW...";
+ output.innerText="BRAIN ANALYZING PAST 300 CANDLES...";
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
  if(selected.length===0){
    output.innerText="SELECT PAIRS";
    return;
  }
-
- let startVal=document.getElementById("start").value;
- let endVal=document.getElementById("end").value;
-
- let startMin=parseInt(startVal.split(":")[0])*60+parseInt(startVal.split(":")[1]);
- let endMin=parseInt(endVal.split(":")[0])*60+parseInt(endVal.split(":")[1]);
 
  let allSignals=[];
 
@@ -137,49 +129,50 @@ async function generateSignals(){
        let c=candles[i];
        let prev=candles[i-1];
 
-       if(!c.time) continue;
-
-       let parts=c.time.split(":");
-       if(parts.length!==2) continue;
-
-       let totalMin=parseInt(parts[0])*60+parseInt(parts[1]);
-
-       let valid=false;
-       if(startMin<=endMin){
-         valid= totalMin>=startMin && totalMin<=endMin;
-       }else{
-         valid= totalMin>=startMin || totalMin<=endMin;
-       }
-
-       if(!valid) continue;
-
        let closes=candles.slice(i-21,i+1).map(x=>x.close);
        let ema9=EMA(closes,9);
        let ema21=EMA(closes,21);
 
+       let callScore=0;
+       let putScore=0;
+
+       // Trend
+       if(ema9>ema21) callScore++;
+       else putScore++;
+
+       // Momentum
+       if(c.close>prev.close) callScore++;
+       else putScore++;
+
+       // Strength
+       if(range(c)>0 && body(c)>range(c)*0.4){
+         if(c.close>c.open) callScore++;
+         else putScore++;
+       }
+
+       // Rejection wick
+       let upper=c.high-Math.max(c.open,c.close);
+       let lower=Math.min(c.open,c.close)-c.low;
+
+       if(lower>body(c)*1.5) callScore++;
+       if(upper>body(c)*1.5) putScore++;
+
        let direction=null;
 
-       // Relaxed Professional Logic
+       if(callScore>=3 && callScore>putScore) direction="CALL";
+       if(putScore>=3 && putScore>callScore) direction="PUT";
 
-       if(ema9>ema21 && c.close>=prev.close){
-         direction="CALL";
-       }
-       else if(ema9<ema21 && c.close<=prev.close){
-         direction="PUT";
-       }
-       else{
-         // soft fallback
-         direction = c.close>=prev.close ? "CALL":"PUT";
+       if(direction){
+         allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
        }
 
-       allSignals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
      }
 
    }catch(e){}
  }
 
  if(allSignals.length===0){
-   output.innerText="NO SIGNAL FLOW IN WINDOW";
+   output.innerText="NO STRONG FEATURE STRUCTURE FOUND";
    return;
  }
 
@@ -192,7 +185,7 @@ async function generateSignals(){
 async function sendToTelegram(){
 
  if(signals.length===0){
-   alert("No signals to send");
+   alert("No signals");
    return;
  }
 
