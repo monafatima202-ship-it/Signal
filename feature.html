@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID FLOW ENGINE</title>
+<title>APX HYBRID MILOGZAI ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -13,185 +13,194 @@
  --panel:#0a111f;
  --neon:#00ff88;
  --cyan:#00ccff;
- --glow:0 0 20px #00ff88,0 0 35px #00ccff;
+ --glow:0 0 20px #00ff88, 0 0 35px #00ccff;
 }
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:22px;color:var(--neon);}
+header{text-align:center;padding:22px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
 .container{max-width:520px;margin:15px auto;padding:10px;}
-.panel{background:var(--panel);border-radius:20px;padding:20px;border:1px solid rgba(0,255,136,.3);}
-.tabs{display:flex;gap:6px;margin-bottom:10px;}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;font-weight:bold;}
+.panel{background:var(--panel);border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.25);}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold;}
 .tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
-button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;}
+select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:12px;color:white;}
+button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;margin:8px 0;}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
 .telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;}
-#output{margin-top:10px;background:#01040a;padding:15px;border-radius:8px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:260px;}
+#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:320px;}
 </style>
 </head>
 <body>
 
 <header>
-<div class="logo">APX HYBRID MILOGZAI FLOW</div>
+<div class="logo">APX HYBRID MILOGZAI ENGINE</div>
 </header>
 
 <div class="container">
 <div class="panel">
 
 <div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+ <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+ <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+ <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
 </div>
 
-<select id="pairs" multiple size="6"></select>
+<select id="pairs" multiple size="8"></select>
 
-<input type="time" id="start" value="18:00">
-<input type="time" id="end" value="20:00">
+<div style="display:flex;gap:10px;">
+ <input type="time" id="start" value="18:00">
+ <input type="time" id="end" value="20:30">
+</div>
 
 <button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • HYBRID MODE</div>
+<div id="output">READY • SELECT PAIRS + TIME RANGE</div>
 
 </div>
 </div>
 
 <script>
 
-const API="https://apx.mkapi009.workers.dev?pair=";
-const TG="https://signal.mkapi009.workers.dev/send";
+const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG  = "https://signal.mkapi009.workers.dev/send";
 
-let signals=[];
-let currentMarket="OTC";
+let signals = [];
+let currentMarket = "OTC";
 
-const PAIRS={
-OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
-CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
-STOCK:["MCDSTK-otc","JNJSTK-otc","AXPSTK-otc"]
+const PAIRS = {
+  OTC: ["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
+  CRYPTO: ["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
 };
 
-function setMarket(type,el){
-currentMarket=type;
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-loadPairs();
+function setMarket(type, el){
+  currentMarket = type;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  loadPairs();
 }
 
 function loadPairs(){
-let s=document.getElementById("pairs");
-s.innerHTML="";
-PAIRS[currentMarket].forEach(p=>{
-let o=document.createElement("option");
-o.value=p;
-o.textContent=p.replace("-otc","");
-s.appendChild(o);
-});
+  let select = document.getElementById("pairs");
+  select.innerHTML="";
+  PAIRS[currentMarket].forEach(p=>{
+    let opt=document.createElement("option");
+    opt.value=p;
+    opt.textContent=p.replace("-otc","");
+    select.appendChild(opt);
+  });
 }
 loadPairs();
 
-function minutes(t){let[a,b]=t.split(":").map(Number);return a*60+b;}
+function EMA(prices, period){
+  if(prices.length<period) return null;
+  let k=2/(period+1);
+  let ema=prices[0];
+  for(let i=1;i<prices.length;i++){
+    ema=prices[i]*k+ema*(1-k);
+  }
+  return ema;
+}
 
-function strongCandle(c){
-let body=Math.abs(c.close-c.open);
-let range=c.high-c.low;
-return range>0 && body>=range*0.28;
+function getBias(candles){
+  let up=0,down=0;
+  for(let i=candles.length-15;i<candles.length;i++){
+    if(candles[i].close>candles[i].open) up++;
+    else down++;
+  }
+  if(up>down) return "CALL";
+  if(down>up) return "PUT";
+  return null;
+}
+
+function formatTime(min){
+  let h=Math.floor(min/60)%24;
+  let m=min%60;
+  return (h<10?"0"+h:h)+":"+(m<10?"0"+m:m);
 }
 
 async function generateSignals(){
+  signals=[];
+  const output=document.getElementById("output");
+  output.innerText="ANALYZING...";
 
-signals=[];
-let out=document.getElementById("output");
-out.innerText="SCANNING REAL STRUCTURE...";
+  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+  if(selected.length===0){
+    output.innerText="Select pairs first.";
+    return;
+  }
 
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(selected.length===0){out.innerText="Select pairs";return;}
+  let start=document.getElementById("start").value;
+  let end=document.getElementById("end").value;
 
-let startMin=minutes(document.getElementById("start").value);
-let endMin=minutes(document.getElementById("end").value);
+  let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
+  let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
+  if(endMin<=startMin) endMin+=1440;
 
-let collected=[];
+  let biasMap={};
 
-for(let pair of selected){
+  for(let pair of selected){
+    try{
+      let r=await fetch(API+pair);
+      let j=await r.json();
+      if(!j.data || j.data.length<30) continue;
 
-let r=await fetch(API+pair);
-let j=await r.json();
-if(!j.data||j.data.length<30) continue;
+      let bias=getBias(j.data);
+      if(!bias){
+        let closes=j.data.map(x=>x.close);
+        let ema9=EMA(closes.slice(-20),9);
+        let ema21=EMA(closes.slice(-20),21);
+        if(ema9 && ema21){
+          bias=ema9>ema21?"CALL":"PUT";
+        }
+      }
 
-let candles=j.data;
+      biasMap[pair.replace("-otc","")]=bias||"CALL";
 
-// ---- Bias ----
-let up=0,down=0;
-for(let i=candles.length-20;i<candles.length;i++){
-if(candles[i].close>candles[i-1].close) up++;
-else down++;
-}
-let bias= up>=down?"CALL":"PUT";
+    }catch(e){}
+  }
 
-// ---- Real Strong Candles ----
-for(let i=5;i<candles.length;i++){
-let c=candles[i];
-let total=minutes(c.time.slice(0,5));
+  let pointer=startMin;
+  let rotation=0;
+  let pairNames=Object.keys(biasMap);
 
-if(startMin<=endMin){
-if(total<startMin||total>endMin) continue;
-}else{
-if(total>endMin && total<startMin) continue;
-}
+  while(pointer<=endMin && pairNames.length>0){
+    let pairName=pairNames[rotation%pairNames.length];
+    let dir=biasMap[pairName];
 
-if(strongCandle(c)){
-collected.push({
-time:c.time.slice(0,5),
-pair:pair.replace("-otc",""),
-signal: bias
-});
-}
+    signals.push(`M1;${pairName};${formatTime(pointer)};${dir}`);
 
-}
+    let gap=3+(rotation%4);
+    pointer+=gap;
+    rotation++;
+  }
 
-}
+  if(signals.length===0){
+    output.innerText="NO FLOW GENERATED";
+    return;
+  }
 
-// ---- Sort by real time ----
-collected.sort((a,b)=>a.time.localeCompare(b.time));
+  let header="HYBRID MILOGZAI FLOW\n━━━━━━━━━━━━━━\n";
+  let footer="\n━━━━━━━━━━━━━━\nCluster Bias Mode\nAvoid News\nMax 1 Step MG";
 
-// ---- Interleave + Limit ----
-let usedTimes=new Set();
-for(let item of collected){
-if(!usedTimes.has(item.time)){
-signals.push(`M1;${item.pair};${item.time};${item.signal}`);
-usedTimes.add(item.time);
-}
-if(signals.length>=20) break;
-}
-
-// ---- Smart Projection if Low Signals ----
-if(signals.length<5){
-let fallbackTime=document.getElementById("start").value;
-for(let pair of selected){
-signals.push(`M1;${pair.replace("-otc","")};${fallbackTime};CALL`);
-if(signals.length>=10) break;
-}
-}
-
-let msg="HYBRID MILOGZAI FLOW\n━━━━━━━━━━━━━━\n";
-msg+=signals.join("\n");
-msg+="\n━━━━━━━━━━━━━━\nReal Structure + Smart Projection\nAvoid News\nMax 1 Step MG";
-
-out.innerText=msg;
-
+  output.innerText=header+signals.join("\n")+footer;
 }
 
 async function sendToTelegram(){
-if(signals.length===0){alert("No signals");return;}
-let text="APX HYBRID FLOW\nUTC+6 | M1\n━━━━━━━━━━\n";
-text+=signals.join("\n");
-text+="\n━━━━━━━━━━\nTrade Safe";
-await fetch(TG,{method:"POST",body:text});
-alert("Sent to Telegram");
+  if(signals.length===0){
+    alert("No signals.");
+    return;
+  }
+
+  let msg="HYBRID MILOGZAI FLOW\n━━━━━━━━━━━━━━\n"+
+          signals.join("\n")+
+          "\n━━━━━━━━━━━━━━\nTrade Safe";
+
+  await fetch(TG,{method:"POST",body:msg});
+  alert("Sent to Telegram");
 }
 
 </script>
-
 </body>
 </html>
