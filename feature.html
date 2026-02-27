@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX SIDEWAYS KILLER PRO</title>
+<title>APX HYBRID PROJECTION ENGINE</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
@@ -33,7 +33,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX SIDEWAYS KILLER PRO</div>
+<div class="logo">APX HYBRID PROJECTION ENGINE</div>
 </header>
 
 <div class="container">
@@ -100,10 +100,14 @@ function EMA(prices,period){
  return ema;
 }
 
+function randomStep(){
+ return Math.floor(Math.random()*6)+3; // 3-8 minute natural gap
+}
+
 async function generate(){
 
  let out=document.getElementById("output");
- out.innerText="ADAPTIVE RANGE + MOMENTUM SCAN...";
+ out.innerText="ANALYZING BIAS & PROJECTING...";
  signals=[];
 
  let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
@@ -115,8 +119,18 @@ async function generate(){
  let startMin=parseInt(start.split(":")[0])*60+parseInt(start.split(":")[1]);
  let endMin=parseInt(end.split(":")[0])*60+parseInt(end.split(":")[1]);
 
- let usedMinute=new Set();
- let lastPairMinute={};
+ let projectionTimes=[];
+ let t=startMin;
+
+ while(true){
+   if(startMin<=endMin){
+     if(t>endMin) break;
+   }else{
+     if(t>endMin && t<startMin) break;
+   }
+   projectionTimes.push(t);
+   t+=randomStep();
+ }
 
  for(let pair of selected){
 
@@ -125,73 +139,46 @@ async function generate(){
    if(!data || !data.data) continue;
 
    let candles=data.data;
+   if(candles.length<40) continue;
 
-   for(let i=25;i<candles.length;i++){
+   let closes=candles.slice(-40).map(c=>c.close);
 
-     let slice=candles.slice(i-20,i);
-     let highs=slice.map(c=>c.high);
-     let lows=slice.map(c=>c.low);
+   let ema9=EMA(closes,9);
+   let ema21=EMA(closes,21);
 
-     let upper=Math.max(...highs);
-     let lower=Math.min(...lows);
+   let upCount=0;
+   let downCount=0;
 
-     let c=candles[i];
-     let prev=candles[i-1];
+   for(let i=1;i<closes.length;i++){
+     if(closes[i]>closes[i-1]) upCount++;
+     else downCount++;
+   }
 
-     let closes=candles.slice(i-25,i+1).map(x=>x.close);
-     let ema9=EMA(closes,9);
-     let ema21=EMA(closes,21);
+   let bias;
 
-     let direction=null;
+   if(upCount>downCount && ema9>ema21){
+     bias="CALL";
+   }else if(downCount>upCount && ema9<ema21){
+     bias="PUT";
+   }else{
+     bias = ema9>ema21 ? "CALL":"PUT";
+   }
 
-     // Range rejection
-     if(c.high>=upper && c.close<c.open){
-       direction="PUT";
-     }
-     else if(c.low<=lower && c.close>c.open){
-       direction="CALL";
-     }
+   for(let minute of projectionTimes){
 
-     // Micro momentum fallback
-     if(!direction){
-        if(Math.abs(c.close-prev.close)>0){
-           direction = c.close>prev.close ? "CALL":"PUT";
-        }
-     }
+     let hh=Math.floor(minute/60).toString().padStart(2,"0");
+     let mm=(minute%60).toString().padStart(2,"0");
 
-     // EMA bias assist
-     if(!direction){
-        direction = ema9>ema21 ? "CALL":"PUT";
-     }
-
-     let totalMin=parseInt(c.time.split(":")[0])*60+parseInt(c.time.split(":")[1]);
-
-     let valid=false;
-     if(startMin<=endMin){
-       valid= totalMin>=startMin && totalMin<=endMin;
-     }else{
-       valid= totalMin>=startMin || totalMin<=endMin;
-     }
-     if(!valid) continue;
-
-     if(usedMinute.has(c.time)) continue;
-
-     if(lastPairMinute[pair]){
-       let diff=Math.abs(parseInt(c.time.split(":")[1]) - parseInt(lastPairMinute[pair].split(":")[1]));
-       if(diff<3) continue;
-     }
-
-     usedMinute.add(c.time);
-     lastPairMinute[pair]=c.time;
-
-     signals.push(`M1;${pair.replace("-otc","")};${c.time};${direction}`);
+     signals.push(`M1;${pair.replace("-otc","")};${hh}:${mm};${bias}`);
 
      if(signals.length>=18) break;
    }
+
+   if(signals.length>=18) break;
  }
 
  if(signals.length===0){
-   out.innerText="NO STRUCTURE FOUND IN WINDOW";
+   out.innerText="NO DATA AVAILABLE";
    return;
  }
 
