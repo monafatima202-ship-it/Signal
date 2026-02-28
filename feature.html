@@ -2,43 +2,53 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>✦ ADOX PREMIUM OTC ENGINE ✦</title>
+<title>✦ ADOX HIGH ACCURACY ENGINE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
-body{margin:0;background:#050b14;color:#e0fbee;font-family:'Rajdhani'}
-header{text-align:center;padding:20px;background:black;border-bottom:3px solid #00ff88}
-.logo{font-family:'Orbitron';color:#00ff88;font-size:22px}
-.container{max-width:700px;margin:20px auto;padding:15px}
-.panel{background:#0f1c2c;padding:20px;border-radius:12px}
+:root{
+--bg:#050b14;
+--panel:#0f1c2c;
+--neon:#00ff88;
+--cyan:#00ccff;
+}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani'}
+header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon)}
+.logo{font-family:'Orbitron';color:var(--neon);font-size:22px}
+.container{max-width:720px;margin:20px auto;padding:15px}
+.panel{background:var(--panel);padding:20px;border-radius:12px}
+.tabs{display:flex;gap:8px;margin-bottom:10px}
+.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);cursor:pointer}
+.tab.active{background:var(--neon);color:black}
 select,input{width:100%;padding:10px;margin:8px 0;background:#06121f;color:white;border:1px solid #1a3a3a}
 button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
-.generate{background:#00ff88;color:black}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black}
 .telegram{background:#0088cc;color:white}
-#output{margin-top:10px;background:black;padding:10px;min-height:300px;font-family:monospace;white-space:pre-wrap}
+#output{margin-top:10px;background:black;padding:12px;min-height:300px;font-family:monospace;white-space:pre-wrap}
 </style>
 </head>
 <body>
 
-<header><div class="logo">✦ ADOX PREMIUM OTC ENGINE ✦</div></header>
+<header><div class="logo">✦ ADOX HIGH ACCURACY ENGINE ✦</div></header>
 
 <div class="container">
 <div class="panel">
 
-<select id="pairs" multiple size="6">
-<option value="USDINR_otc">USDINR</option>
-<option value="USDPKR_otc">USDPKR</option>
-<option value="USDBDT_otc">USDBDT</option>
-<option value="USDARS_otc">USDARS</option>
-<option value="USDNGN_otc">USDNGN</option>
-</select>
+<div class="tabs">
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
+
+<select id="pairs" multiple size="6"></select>
 
 <input type="time" id="start" value="14:00">
 <input type="time" id="end" value="18:00">
 
-<button class="generate" onclick="generate()">GENERATE FLOW</button>
+<button class="generate" onclick="generate()">GENERATE HIGH ACCURACY FLOW</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY</div>
+<div id="output">READY • SELECT PAIRS</div>
 
 </div>
 </div>
@@ -48,7 +58,33 @@ button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-w
 const API="https://mrbeaxt.site/Qx/Qx.php?format=json&pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
+const PAIRS={
+OTC:["USDINR_otc","USDPKR_otc","USDBDT_otc","USDARS_otc","USDNGN_otc"],
+CRYPTO:["BTCUSD_otc","ETHUSD_otc","XAUUSD_otc"],
+STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc"]
+};
+
 let signals=[];
+let currentMarket="OTC";
+
+function setMarket(type,el){
+currentMarket=type;
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+el.classList.add("active");
+loadPairs();
+}
+
+function loadPairs(){
+let select=document.getElementById("pairs");
+select.innerHTML="";
+PAIRS[currentMarket].forEach(p=>{
+let opt=document.createElement("option");
+opt.value=p;
+opt.textContent=p.replace("_otc","");
+select.appendChild(opt);
+});
+}
+loadPairs();
 
 function EMA(arr,p){
 let k=2/(p+1);
@@ -75,39 +111,51 @@ async function getBias(pair){
 let res=await fetch(API+pair);
 let json=await res.json();
 
-if(!json.success || !json.data || json.data.length<30)
+if(!json.success || !json.data || json.data.length<50)
 return null;
 
 let data=json.data.reverse();
 
 let closes=data.map(c=>parseFloat(c.close));
+let opens=data.map(c=>parseFloat(c.open));
 
-let ema9=EMA(closes.slice(-20),9);
-let ema21=EMA(closes.slice(-20),21);
+let ema9=EMA(closes.slice(-40),9);
+let ema21=EMA(closes.slice(-40),21);
 
-let dir=ema9>ema21?"CALL":"PUT";
+let separation=Math.abs(ema9-ema21);
 
-let momentum=0;
+if(separation<0.002) return null;
+
+let bullish=0,bearish=0,strongBody=0;
+
 for(let i=closes.length-6;i<closes.length;i++){
-if(closes[i]>closes[i-1]) momentum++;
-if(closes[i]<closes[i-1]) momentum--;
+let body=Math.abs(closes[i]-opens[i]);
+if(body>0.0015) strongBody++;
+if(closes[i]>opens[i]) bullish++;
+if(closes[i]<opens[i]) bearish++;
 }
 
-let confidence=Math.min(90,55+Math.abs(momentum)*7);
+if(strongBody<3) return null;
 
-return {dir,confidence};
+if(ema9>ema21 && bullish>=4)
+return {dir:"CALL",confidence:80+strongBody};
+
+if(ema9<ema21 && bearish>=4)
+return {dir:"PUT",confidence:80+strongBody};
+
+return null;
 }
 
 async function generate(){
 
 signals=[];
 let output=document.getElementById("output");
-output.innerText="Analyzing MRBEAXT Data...";
+output.innerText="Analyzing structure...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 
-if(selected.length<2){
-output.innerText="Select at least 2 pairs";
+if(selected.length<1){
+output.innerText="Select at least 1 pair";
 return;
 }
 
@@ -115,42 +163,40 @@ let start=toMin(document.getElementById("start").value);
 let end=toMin(document.getElementById("end").value);
 if(end<=start) end+=1440;
 
-let biasMap={};
+let pointer=start;
+
+while(pointer<=end && signals.length<20){
+
+let bestPair=null;
+let bestScore=0;
+let bestData=null;
 
 for(let p of selected){
-biasMap[p]=await getBias(p);
+let data=await getBias(p);
+if(data && data.confidence>bestScore){
+bestScore=data.confidence;
+bestPair=p;
+bestData=data;
+}
 }
 
-let pointer=start;
-let index=0;
-let lastPair=null;
+if(!bestPair) break;
 
-while(pointer<=end && signals.length<40){
+signals.push(
+`M1;${bestPair.replace("_otc","").padEnd(8)};${padTime(pointer)};${bestData.dir};${bestData.confidence}%`
+);
 
-let pair=selected[index%selected.length];
-let data=biasMap[pair];
-
-if(data && pair!==lastPair){
-
-signals.push(`M1;${pair.replace("_otc","").padEnd(8)};${padTime(pointer)};${data.dir};${data.confidence}%`);
-lastPair=pair;
-
-let gap = data.confidence>=75 ? 7 : 9;
-pointer+=gap;
-}
-
-index++;
-if(index>300) break;
+pointer+=10; // fixed logical spacing (structure mode)
 }
 
 if(signals.length===0){
-output.innerText="Structure weak.";
+output.innerText="No strong structure detected.";
 return;
 }
 
-let text="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
+let text="✦ PREMIUM HIGH ACCURACY FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━━━━━━━━━\n• Exact Entry\n• 1 Step MG Max\n• Stop After 2 Loss";
+text+="\n━━━━━━━━━━━━━━━━━━\n• Strict Trend Filter\n• 1 Step MG Max\n• Avoid News\n• Stop After 2 Loss";
 
 output.innerText=text;
 }
@@ -162,18 +208,17 @@ alert("Generate first");
 return;
 }
 
-let msg="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
+let msg="✦ PREMIUM HIGH ACCURACY FLOW ✦\n━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
 
 await fetch(TG,{
 method:"POST",
-headers:{ "Content-Type":"text/plain" },
+headers:{"Content-Type":"text/plain"},
 body:msg
 });
 
-alert("Sent");
+alert("Sent to Telegram");
 }
 
 </script>
-
 </body>
 </html>
