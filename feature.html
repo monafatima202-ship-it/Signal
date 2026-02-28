@@ -1,61 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX HYBRID MILOGZAI PRO v10</title>
-
+<title>APX HYBRID MILOGZAI PRO v11</title>
 <style>
-body{
-background:#0b1420;
-color:#00ff88;
-font-family:Arial;
-margin:0;
-padding:20px;
-}
-.container{
-max-width:750px;
-margin:auto;
-background:#122235;
-padding:20px;
-border-radius:12px;
-}
-h2{text-align:center;margin-bottom:15px;}
-select,input,button{
-width:100%;
-padding:10px;
-margin:6px 0;
-border-radius:6px;
-border:none;
-}
-button{
-background:#00ff88;
-color:black;
-font-weight:bold;
-cursor:pointer;
-}
-#output{
-background:#000;
-padding:12px;
-margin-top:10px;
-white-space:pre-wrap;
-min-height:220px;
-border-radius:6px;
-}
-#status{
-color:yellow;
-margin-top:6px;
-font-weight:bold;
-text-align:center;
-}
+body{background:#0e1624;color:#00ff88;font-family:Arial;margin:0;padding:20px}
+.container{max-width:750px;margin:auto;background:#16273b;padding:20px;border-radius:12px}
+h2{text-align:center}
+select,input,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none}
+button{background:#00ff88;color:black;font-weight:bold;cursor:pointer}
+#output{background:#000;padding:12px;margin-top:10px;white-space:pre-wrap;min-height:220px;border-radius:6px}
+#status{color:yellow;text-align:center;margin-top:5px;font-weight:bold}
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2>APX HYBRID MILOGZAI PRO v10</h2>
+<h2>APX HYBRID MILOGZAI PRO v11 SMART</h2>
 
-<label>Select Pairs:</label>
 <select id="pairs" multiple>
 <option value="USDTRY-OTC">USDTRY</option>
 <option value="USDPKR-OTC">USDPKR</option>
@@ -65,13 +27,10 @@ text-align:center;
 <option value="USDNGN-OTC">USDNGN</option>
 </select>
 
-<label>Start Time:</label>
 <input type="time" id="start" value="18:00">
-
-<label>End Time:</label>
 <input type="time" id="end" value="23:00">
 
-<button onclick="generateSignals()">GENERATE REAL FLOW</button>
+<button onclick="generateSignals()">GENERATE SMART FLOW</button>
 
 <div id="status"></div>
 <div id="output">READY</div>
@@ -79,7 +38,7 @@ text-align:center;
 
 <script>
 const API="https://apx.mkapi009.workers.dev?pair=";
-const MAX_SIGNALS=50;
+const MAX_SIGNALS=40;
 
 function padTime(min){
 let h=Math.floor(min/60)%24;
@@ -100,7 +59,6 @@ new Promise((_,rej)=>setTimeout(()=>rej("timeout"),ms))
 }
 
 function EMA(prices,period){
-if(prices.length<period) return null;
 let k=2/(period+1);
 let ema=prices[0];
 for(let i=1;i<prices.length;i++){
@@ -109,26 +67,35 @@ ema=prices[i]*k+ema*(1-k);
 return ema;
 }
 
-async function getRealBias(pair){
+async function getSmartBias(pair){
 try{
 let res=await timeoutFetch(API+pair);
 if(!res.ok) return null;
 
 let json=await res.json();
-if(!json.data || json.data.length<30) return null;
+if(!json.data || json.data.length<20) return null;
 
 let closes=json.data.map(c=>c.close);
 
-let ema9=EMA(closes.slice(-25),9);
-let ema21=EMA(closes.slice(-25),21);
+// EMA trend
+let ema9=EMA(closes.slice(-15),9);
+let ema21=EMA(closes.slice(-15),21);
 
-if(!ema9 || !ema21) return null;
+// Last 3 candles direction weight
+let up=0,down=0;
+for(let i=closes.length-3;i<closes.length;i++){
+if(closes[i]>closes[i-1]) up++;
+if(closes[i]<closes[i-1]) down++;
+}
 
-// Strength threshold
-let diff=Math.abs(ema9-ema21);
-if(diff < 0.00001) return null;
+if(ema9>ema21 && up>=2) return "CALL";
+if(ema9<ema21 && down>=2) return "PUT";
 
-return ema9>ema21 ? "CALL" : "PUT";
+// If EMA equal, fallback to momentum only
+if(up>=2) return "CALL";
+if(down>=2) return "PUT";
+
+return null;
 
 }catch(e){
 return null;
@@ -140,29 +107,25 @@ async function generateSignals(){
 let output=document.getElementById("output");
 let status=document.getElementById("status");
 
-output.innerText="Analyzing Market...";
-status.innerText="Fetching EMA structure...";
+output.innerText="Analyzing Market Structure...";
+status.innerText="Scanning...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-
 if(selected.length===0){
-output.innerText="Please select at least one pair.";
-status.innerText="";
+output.innerText="Select at least one pair.";
 return;
 }
 
-// Fetch bias once per pair
 let biasMap={};
 
-await Promise.all(selected.map(async pair=>{
-biasMap[pair]=await getRealBias(pair);
+await Promise.all(selected.map(async p=>{
+biasMap[p]=await getSmartBias(p);
 }));
 
 status.innerText="Generating signals...";
 
 let startMin=toMin(document.getElementById("start").value);
 let endMin=toMin(document.getElementById("end").value);
-
 if(endMin<=startMin) endMin+=1440;
 
 let pointer=startMin;
@@ -189,15 +152,15 @@ pointer+=1;
 }
 
 if(signals.length===0){
-output.innerText="No valid market structure found.";
+output.innerText="Market is too flat right now.";
 status.innerText="0 Signals";
 return;
 }
 
 output.innerText=
-"HYBRID REAL FLOW\n━━━━━━━━━━━━━━\n"+
+"HYBRID SMART FLOW\n━━━━━━━━━━━━━━\n"+
 signals.join("\n")+
-"\n━━━━━━━━━━━━━━\nEMA 9/21 Structure Based";
+"\n━━━━━━━━━━━━━━\nEMA + Momentum Confirmed";
 
 status.innerText="Generated "+signals.length+" Signals";
 }
