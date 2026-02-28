@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA PRO v77 - GUARANTEED SIGNALS</title>
+<title>APX ULTRA PRO v78 - REAL CANDLE LOGIC</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -32,7 +32,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 <body>
 
 <header>
-<div class="logo">APX ULTRA PRO v77</div>
+<div class="logo">APX ULTRA PRO v78</div>
 </header>
 
 <div class="container">
@@ -48,7 +48,7 @@ button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbit
 
 <div style="display:flex;gap:10px;">
  <input type="time" id="start" value="18:00">
- <input type="time" id="end" value="20:30">
+ <input type="time" id="end" value="21:00">
 </div>
 
 <button class="generate" onclick="generate()">GENERATE SIGNALS</button>
@@ -95,6 +95,18 @@ function EMA(prices,period){
  return ema;
 }
 
+function rsi(candles) {
+  if (candles.length < 15) return 50;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= 14; i++) {
+    let diff = candles[candles.length - i].close - candles[candles.length - i - 1].close;
+    if (diff > 0) gains += diff; else losses -= diff;
+  }
+  let ag = gains / 14;
+  let al = losses / 14 || 0.0001;
+  return 100 - (100 / (1 + ag / al));
+}
+
 async function generate(){
   signals = [];
   let out = document.getElementById("output");
@@ -135,13 +147,14 @@ async function generate(){
         let closes = candles.slice(i-15, i+1).map(x => x.close);
         let ema9 = EMA(closes, 9);
         let ema21 = EMA(closes, 21);
+        let rsiVal = rsi(candles.slice(Math.max(0, i-14), i+1));
 
         let direction = null;
 
         // Relaxed logic taake signals aayein
-        if(ema9 > ema21){
+        if(ema9 > ema21 && rsiVal < 65){
           direction = "CALL";
-        } else if(ema9 < ema21){
+        } else if(ema9 < ema21 && rsiVal > 35){
           direction = "PUT";
         }
 
