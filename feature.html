@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>✦ ADOX PREMIUM ENGINE ✦</title>
+<title>✦ ADOX PREMIUM OTC ENGINE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -31,19 +31,20 @@ button{width:100%;padding:16px;margin:8px 0;border:none;border-radius:12px;font-
 <body>
 
 <header>
-<div class="logo">✦ ADOX PREMIUM ENGINE ✦</div>
+<div class="logo">✦ ADOX PREMIUM OTC ENGINE ✦</div>
 </header>
 
 <div class="container">
 <div class="panel">
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
-
-<select id="pairs" multiple size="6"></select>
+<select id="pairs" multiple size="6">
+<option value="USDPKR-otc">USDPKR</option>
+<option value="USDINR-otc">USDINR</option>
+<option value="USDARS-otc">USDARS</option>
+<option value="USDBDT-otc">USDBDT</option>
+<option value="USDNGN-otc">USDNGN</option>
+<option value="BRLUSD-otc">BRLUSD</option>
+</select>
 
 <input type="time" id="start" value="14:00">
 <input type="time" id="end" value="18:00">
@@ -51,43 +52,17 @@ button{width:100%;padding:16px;margin:8px 0;border:none;border-radius:12px;font-
 <button class="generate" onclick="generate()">GENERATE PREMIUM FLOW</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • SELECT PAIRS + TIME RANGE</div>
+<div id="output">READY • SELECT PAIRS + TIME</div>
 
 </div>
 </div>
 
 <script>
 
-const API="https://milongazi197.serv00.net/otc.php?pair=";
+const API="https://otcapi.mkapi009.workers.dev/?pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 let signals=[];
-let currentMarket="OTC";
-
-const PAIRS={
-OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
-CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
-STOCK:["MSFSTK-otc","AXPSTK-otc","PFESTK-otc","MCDSTK-otc"]
-};
-
-function setMarket(type,el){
-currentMarket=type;
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-loadPairs();
-}
-
-function loadPairs(){
-const select=document.getElementById("pairs");
-select.innerHTML="";
-PAIRS[currentMarket].forEach(p=>{
-let opt=document.createElement("option");
-opt.value=p;
-opt.textContent=p.replace("-otc","");
-select.appendChild(opt);
-});
-}
-loadPairs();
 
 function padTime(min){
 let h=Math.floor(min/60)%24;
@@ -100,22 +75,36 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
+function EMA(arr,p){
+let k=2/(p+1);
+let ema=arr[0];
+for(let i=1;i<arr.length;i++){
+ema=arr[i]*k+ema*(1-k);
+}
+return ema;
+}
+
 async function getBias(pair){
 try{
-let res=await fetch(API+pair);
+let res=await fetch(API+pair+"&tf=M1&limit=200");
 let json=await res.json();
-if(!json.data||json.data.length<20) return null;
 
-let candles=json.data.slice(-20);
-let call=0, put=0;
+let closes=json.data.map(c=>c.close);
+if(closes.length<50) return null;
 
-candles.forEach(c=>{
-if(c.direction==="CALL") call++;
-if(c.direction==="PUT") put++;
-});
+let ema9=EMA(closes.slice(-20),9);
+let ema21=EMA(closes.slice(-20),21);
 
-let dir = call>=put?"CALL":"PUT";
-let confidence=Math.round((Math.max(call,put)/20)*100);
+let dir=ema9>ema21?"CALL":"PUT";
+
+let momentum=0;
+for(let i=closes.length-6;i<closes.length;i++){
+if(closes[i]>closes[i-1]) momentum++;
+if(closes[i]<closes[i-1]) momentum--;
+}
+
+let strength=Math.abs(momentum);
+let confidence=Math.min(90,50+(strength*8));
 
 return {dir,confidence};
 
@@ -128,11 +117,11 @@ async function generate(){
 
 signals=[];
 const output=document.getElementById("output");
-output.innerText="Analyzing Real Market Structure...";
+output.innerText="Analyzing OTCAPI Data...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 if(selected.length<2){
-output.innerText="Select at least 2 pairs";
+output.innerText="Select minimum 2 pairs";
 return;
 }
 
@@ -160,7 +149,6 @@ if(data && pair!==lastPair){
 signals.push(`M1;${clean.padEnd(8)};${padTime(pointer)};${data.dir};${data.confidence}%`);
 lastPair=pair;
 
-// strength-based dynamic gap
 let gap;
 if(data.confidence>=75) gap=7;
 else if(data.confidence>=60) gap=9;
@@ -199,30 +187,15 @@ return;
 
 let message="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
 message+=signals.join("\n");
-message+="\n━━━━━━━━━━━━━━━━━━\n";
-message+="Rules:\n";
-message+="• Exact Time Entry\n";
-message+="• Max 1 Step MG\n";
-message+="• Stop After 2 Loss\n";
-message+="• Avoid High Impact News\n";
-message+="• Risk 2% Per Trade";
+message+="\n━━━━━━━━━━━━━━━━━━\nTrade Safe";
 
-try{
-const res = await fetch(TG,{
+await fetch(TG,{
 method:"POST",
 headers:{ "Content-Type":"text/plain" },
 body: message
 });
 
-if(res.ok){
-alert("Signals sent to Telegram successfully");
-}else{
-alert("Telegram send failed: "+res.status);
-}
-
-}catch(err){
-alert("Telegram error: "+err.message);
-}
+alert("Signals sent to Telegram");
 }
 
 </script>
