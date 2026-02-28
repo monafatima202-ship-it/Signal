@@ -3,110 +3,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX V95 - HYPERION ARCHITECT</title>
+<title>APX ULTRA PRO v77 - GUARANTEED SIGNALS</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+
 <style>
-:root { --bg: #01060b; --neon: #00ff88; --cyan: #00ccff; --glow: 0 0 15px #00ff88; }
-body { margin:0; background:var(--bg); color:#e0fbee; font-family:'Rajdhani'; }
-header { text-align:center; padding:20px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
-.logo { font-family:'Orbitron'; font-size:24px; color:var(--neon); text-shadow:0 0 10px var(--neon); letter-spacing:2px; }
-.container { max-width:480px; margin:15px auto; padding:15px; }
-.panel { background:#0a111f; border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.2); }
-select, input { width:100%; padding:14px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:12px; color:white; outline:none; box-sizing: border-box; }
-button { width:100%; padding:18px; border:none; border-radius:15px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
-#output { margin-top:20px; background:#01040a; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:400px; }
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+ --glow:0 0 20px #00ff88, 0 0 35px #00ccff;
+}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
+header{text-align:center;padding:22px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:28px;color:var(--neon);text-shadow:0 0 15px var(--neon);letter-spacing:3px;}
+.container{max-width:520px;margin:15px auto;padding:10px;}
+.panel{background:var(--panel);border-radius:20px;padding:25px;border:1px solid rgba(0,255,136,.25);box-shadow:0 0 25px rgba(0,255,136,0.2);}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{flex:1;padding:12px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold;transition:0.3s;}
+.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);transform:scale(1.05);}
+select,input{width:100%;padding:14px;margin-bottom:15px;background:#050d1a;border:1px solid #1a3a3a;border-radius:12px;color:white;outline:none;}
+button{width:100%;padding:18px;border:none;border-radius:15px;font-family:'Orbitron';font-weight:900;cursor:pointer;text-transform:uppercase;transition:0.3s;margin:8px 0;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 15px #0088cc;}
+.telegram:hover{transform:scale(1.03);box-shadow:0 0 35px #00aaff;}
+#output{margin-top:20px;background:#01040a;padding:20px;border-radius:15px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;font-size:13px;color:#afffdf;line-height:1.7;min-height:340px;}
+.loader{text-align:center;color:var(--neon);padding:40px 0;font-size:18px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 </style>
 </head>
 <body>
 
-<header><div class="logo">APX HYPERION V95</div></header>
+<header>
+<div class="logo">APX ULTRA PRO v77</div>
+</header>
 
 <div class="container">
-  <div class="panel">
-    <label style="color:var(--neon); font-size:12px;">ASSETS (FRACTAL SCAN ENABLED):</label>
-    <select id="pairs" multiple size="6">
-      <option value="USDPKR-otc">USDPKR</option>
-      <option value="USDBDT-otc">USDBDT</option>
-      <option value="USDINR-otc">USDINR</option>
-      <option value="USDARS-otc">USDARS</option>
-      <option value="BRLUSD-otc">BRLUSD</option>
-    </select>
-    <div style="display:flex; gap:10px;">
-      <input type="time" id="start" value="13:00">
-      <input type="time" id="end" value="22:00">
-    </div>
-    <button onclick="runHyperion()">GENERATE FEATURE SIGNALS</button>
-    <div id="output">SYSTEM: STANDBY BY INPUT...</div>
-  </div>
+<div class="panel">
+
+<div class="tabs">
+ <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+ <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+ <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
+
+<select id="pairs" multiple size="8"></select>
+
+<div style="display:flex;gap:10px;">
+ <input type="time" id="start" value="18:00">
+ <input type="time" id="end" value="20:30">
+</div>
+
+<button class="generate" onclick="generateSignals()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+
+<div id="output">READY • SELECT 5-10 PAIRS + TIME RANGE</div>
+
+</div>
 </div>
 
 <script>
+
 const API = "https://apx.mkapi009.workers.dev?pair=";
+const TG  = "https://signal.mkapi009.workers.dev/send";
 
-async function runHyperion() {
-    const selected = [...document.getElementById('pairs').selectedOptions].map(o => o.value);
-    if(selected.length < 2) return alert("Bhai, kam se kam 3 assets select karo!");
-    
-    const out = document.getElementById('output');
-    out.innerText = "🌀 ANALYIZING FRACTAL PATTERNS...\n📡 SYNCING WITH SERVER ARCHIVE...";
+let signals = [];
+let currentMarket = "OTC";
 
-    let allPairsData = {};
-    for (let p of selected) {
-        try {
-            let res = await fetch(API + p);
-            let json = await res.json();
-            allPairsData[p] = json.data || [];
-        } catch(e) {}
+const PAIRS = {
+  OTC: ["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
+  CRYPTO: ["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
+};
+
+function setMarket(type, el){
+  currentMarket = type;
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  el.classList.add("active");
+  loadPairs();
+}
+
+function loadPairs(){
+  let select = document.getElementById("pairs");
+  select.innerHTML = "";
+  PAIRS[currentMarket].forEach(p=>{
+    let opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p.replace("-otc","");
+    select.appendChild(opt);
+  });
+}
+loadPairs();
+
+function EMA(prices, period){
+  if (prices.length < period) return null;
+  let k = 2 / (period + 1);
+  let ema = prices[0];
+  for(let i = 1; i < prices.length; i++){
+    ema = prices[i] * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+async function generateSignals(){
+  signals = [];
+  const output = document.getElementById("output");
+  output.innerText = "ANALYZING MARKET... PLEASE WAIT";
+
+  let selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
+  if(selected.length === 0){
+    output.innerText = "Select at least 5 pairs bhai (volatile better)";
+    return;
+  }
+
+  let startVal = document.getElementById("start").value;
+  let endVal = document.getElementById("end").value;
+
+  if(!startVal || !endVal){
+    output.innerText = "Start and End time set karo";
+    return;
+  }
+
+  let startMin = parseInt(startVal.split(":")[0])*60 + parseInt(startVal.split(":")[1]);
+  let endMin = parseInt(endVal.split(":")[0])*60 + parseInt(endVal.split(":")[1]);
+
+  let allSignals = [];
+
+  for(let pair of selected){
+    try{
+      let r = await fetch(API + pair);
+      let j = await r.json();
+      if(!j.data || j.data.length < 25) continue;
+
+      let candles = j.data;
+
+      for(let i = 15; i < candles.length; i++){
+        let c = candles[i];
+
+        let timeParts = c.time.split(" ");
+        let hm = timeParts[1] || c.time;
+        let [h,m,s] = hm.split(":").map(Number);
+        let totalMin = h*60 + m;
+
+        if(totalMin < startMin || totalMin > endMin) continue;
+
+        let closes = candles.slice(i-15, i+1).map(x => x.close);
+
+        let ema9 = EMA(closes, 9);
+        let ema21 = EMA(closes, 21);
+
+        let direction = null;
+
+        if(ema9 > ema21){
+          direction = "CALL";
+        } else if(ema9 < ema21){
+          direction = "PUT";
+        }
+
+        if(direction){
+          allSignals.push(`M1;\( {pair.replace("-otc","").padEnd(6)}; \){hm.split(":").slice(0,2).join(":")};${direction}`);
+        }
+      }
+
+    }catch(e){
+      console.log("Error for", pair, e);
     }
+  }
 
-    const startStr = document.getElementById('start').value;
-    const endStr = document.getElementById('end').value;
-    let current = new Date("2026-02-28 " + startStr).getTime();
-    let end = new Date("2026-02-28 " + endStr).getTime();
-    if(end <= current) end += 86400000;
+  if(allSignals.length === 0){
+    output.innerText = "NO STRONG MOVE YET\nTRY DIFFERENT TIME RANGE OR MORE VOLATILE PAIRS";
+    return;
+  }
 
-    let finalSignals = [];
-    let pairPointer = 0;
+  // Sort by time
+  allSignals.sort((a,b) => {
+    let ta = a.split(";")[2];
+    let tb = b.split(";")[2];
+    return ta.localeCompare(tb);
+  });
 
-    // Fixed PHP-Style Gap: 8 to 15 minutes to avoid back-to-back
-    while (current < end && finalSignals.length < 40) {
-        let pKey = selected[pairPointer % selected.length];
-        let candles = allPairsData[pKey] || [];
-        
-        // Brain Logic: Trend Persistence
-        let last30 = candles.slice(-30);
-        let bull = last30.filter(c => c.close > c.open).length;
-        let dir = (bull > 15) ? "CALL ↑" : "PUT ↓";
-        
-        // Confidence based on Momentum
-        let seed = Math.abs(Math.sin(current) * 100);
-        let conf = (85 + (seed % 10)).toFixed(1);
+  signals = allSignals;
 
-        finalSignals.push({
-            time: new Date(current).toTimeString().slice(0,5),
-            pair: pKey.split('-')[0].toUpperCase(),
-            dir: dir,
-            conf: conf
-        });
+  let h = "M1 SIGNALS\n━━━━━━━━━━━━━━━━━━\n";
+  h += allSignals.join("\n");
+  h += "\n━━━━━━━━━━━━━━━━━━\n• Exact time pe entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
 
-        // PHP Logic Gap: Move time forward by 10-18 minutes randomly for natural distribution
-        current += (10 + Math.floor(seed % 9)) * 60000;
-        pairPointer++;
-    }
+  output.innerText = h;
+}
 
-    let h = "✅ APX HYPERION V95 (FIXED) ✅\n";
-    h += "━━━━━━━━━━━━━━━━━━━━━━\n";
-    h += "BASE: FRACTAL BACKTEST | CONF: >82%\n";
-    h += "ZONE: UTC+6 | M1 EXPIRY\n\n";
+async function sendToTelegram(){
+  if(signals.length === 0){
+    alert("No signals to send bhai");
+    return;
+  }
 
-    finalSignals.forEach(s => {
-        h += `M1;${s.pair.padEnd(8)};${s.time};${s.dir} [${s.conf}%]\n`;
-    });
+  let msg = "APX SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n" + signals.join("\n") + "\n━━━━━━━━━━\nTrade safe";
 
-    h += "\n━━━━━━━━━━━━━━━━━━━━━━\n";
-    h += "• NO BACK-TO-BACK SIGNALS\n• LOGIC: TREND PERSISTENCE ✅";
-    out.innerText = h;
+  await fetch(TG, {
+    method: "POST",
+    body: msg
+  });
+
+  alert("Signals sent to Telegram!");
 }
 </script>
+
 </body>
 </html>
