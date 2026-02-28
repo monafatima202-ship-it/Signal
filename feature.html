@@ -1,120 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✦ ADOX PREMIUM REAL STRUCTURE ✦</title>
+<title>✦ ADOX PWME ENGINE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#02060c;
-  --panel:#0a111f;
-  --neon:#00ff88;
-  --cyan:#00ccff;
-  --glow:0 0 15px #00ff88,0 0 25px #00ccff;
+--bg:#02060c;
+--panel:#0a111f;
+--neon:#00ff88;
+--cyan:#00ccff;
+--glow:0 0 20px #00ff88,0 0 30px #00ccff;
 }
-*{margin:0;padding:0;box-sizing:border-box;}
+
 body{
-  background:var(--bg);
-  color:#e0fbee;
-  font-family:'Rajdhani',sans-serif;
-  padding:20px;
+background:var(--bg);
+color:#e0fbee;
+font-family:'Rajdhani',sans-serif;
+padding:20px;
 }
+
 header{
-  text-align:center;
-  padding:25px 0;
-  background:black;
-  border-bottom:4px solid var(--neon);
-  box-shadow:var(--glow);
+text-align:center;
+padding:25px;
+background:black;
+border-bottom:4px solid var(--neon);
+box-shadow:var(--glow);
 }
+
 .logo{
-  font-family:'Orbitron';
-  font-size:2rem;
-  color:var(--neon);
-  text-shadow:0 0 15px var(--neon);
-  letter-spacing:3px;
+font-family:'Orbitron';
+font-size:22px;
+color:var(--neon);
+text-shadow:0 0 15px var(--neon);
 }
-.container{max-width:600px;margin:20px auto;}
+
+.container{
+max-width:520px;
+margin:20px auto;
+}
+
 .panel{
-  background:var(--panel);
-  border-radius:20px;
-  padding:25px;
-  border:1px solid rgba(0,255,136,.2);
-  box-shadow:0 0 25px rgba(0,255,136,.15);
+background:var(--panel);
+padding:25px;
+border-radius:20px;
+box-shadow:0 0 25px rgba(0,255,136,.2);
 }
-.tabs{display:flex;gap:8px;margin-bottom:15px;}
+
+.tabs{
+display:flex;
+gap:8px;
+margin-bottom:15px;
+}
+
 .tab{
-  flex:1;
-  padding:12px;
-  border:2px solid var(--neon);
-  background:transparent;
-  color:var(--neon);
-  border-radius:10px;
-  cursor:pointer;
-  font-weight:bold;
+flex:1;
+padding:10px;
+border:2px solid var(--neon);
+background:transparent;
+color:var(--neon);
+cursor:pointer;
+border-radius:8px;
+font-weight:bold;
 }
+
 .tab.active{
-  background:var(--neon);
-  color:black;
+background:var(--neon);
+color:black;
+box-shadow:var(--glow);
 }
+
 select,input{
-  width:100%;
-  padding:12px;
-  margin:10px 0;
-  background:#050d1a;
-  border:1px solid #1a3a3a;
-  border-radius:12px;
-  color:white;
+width:100%;
+padding:12px;
+margin:10px 0;
+background:#050d1a;
+border:1px solid #1a3a3a;
+color:white;
+border-radius:10px;
 }
+
 button{
-  width:100%;
-  padding:16px;
-  border:none;
-  border-radius:15px;
-  font-family:'Orbitron';
-  font-weight:900;
-  cursor:pointer;
-  margin:10px 0;
+width:100%;
+padding:16px;
+margin:10px 0;
+border:none;
+border-radius:12px;
+font-family:'Orbitron';
+font-weight:900;
+cursor:pointer;
 }
+
 .generate{
-  background:linear-gradient(135deg,#00ff88,#00ccff);
-  color:black;
-  box-shadow:var(--glow);
+background:linear-gradient(135deg,#00ff88,#00ccff);
+color:black;
+box-shadow:var(--glow);
 }
+
 .telegram{
-  background:linear-gradient(135deg,#0088cc,#00aaff);
-  color:white;
+background:linear-gradient(135deg,#0088cc,#00aaff);
+color:white;
 }
-#loader{
-  display:none;
-  text-align:center;
-  margin:20px 0;
-  color:var(--neon);
-}
+
 #output{
-  margin-top:20px;
-  background:#01040a;
-  padding:15px;
-  border-radius:15px;
-  border:1px dashed var(--neon);
-  white-space:pre-wrap;
-  font-family:monospace;
-  font-size:13px;
-  min-height:300px;
+margin-top:20px;
+background:#01040a;
+padding:15px;
+border-radius:12px;
+border:1px dashed var(--neon);
+white-space:pre-wrap;
+font-family:monospace;
+min-height:320px;
 }
-.footer{
-  text-align:center;
-  margin-top:30px;
-  font-size:.9rem;
-  color:var(--cyan);
+
+.loader{
+display:none;
+text-align:center;
+color:var(--neon);
+margin-top:10px;
 }
 </style>
 </head>
+
 <body>
 
 <header>
-<div class="logo">✦ ADOX PREMIUM REAL STRUCTURE ✦</div>
+<div class="logo">✦ ADOX PWME HIGH ACCURACY ✦</div>
 </header>
 
 <div class="container">
@@ -128,199 +141,176 @@ button{
 
 <select id="pairs" multiple size="8"></select>
 
+<div style="display:flex; gap:10px;">
 <input type="time" id="start" value="14:00">
 <input type="time" id="end" value="18:00">
+</div>
 
-<button class="generate" onclick="generateFlow()">GENERATE REAL STRUCTURE</button>
+<button class="generate" onclick="generateFlow()">GENERATE FLOW</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="loader">Analyzing Market Structure...</div>
+<div class="loader" id="loader">Analyzing Structure...</div>
+
 <div id="output">READY • SELECT PAIRS</div>
 
 </div>
 </div>
 
-<div class="footer">
-UTC+6 • EMA Trend + Momentum Filter • 1 Step MG Max • Avoid News
-</div>
-
 <script>
+
 const API="https://mrbeaxt.site/Qx/Qx.php?format=json&pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const PAIRS={
-  OTC:["USDINR_otc","USDPKR_otc","USDBDT_otc","USDARS_otc","USDNGN_otc","BRLUSD_otc","USDMXN_otc","USDEGP_otc"],
-  CRYPTO:["BTCUSD_otc","ETHUSD_otc","XAUUSD_otc"],
-  STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc"]
+OTC:["USDINR_otc","USDPKR_otc","USDBDT_otc","USDARS_otc","USDNGN_otc"],
+CRYPTO:["BTCUSD_otc","ETHUSD_otc","XAUUSD_otc"],
+STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc"]
 };
 
 let currentMarket="OTC";
 let signals=[];
 
 function setMarket(type,el){
-  currentMarket=type;
-  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  el.classList.add("active");
-  loadPairs();
+currentMarket=type;
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+el.classList.add("active");
+let select=document.getElementById("pairs");
+select.innerHTML="";
+PAIRS[type].forEach(p=>{
+let o=document.createElement("option");
+o.value=p;
+o.textContent=p.replace("_otc","");
+select.appendChild(o);
+});
+}
+setMarket("OTC",document.querySelector(".tab"));
+
+function EMA(arr,period){
+let k=2/(period+1);
+let ema=arr[0];
+for(let i=1;i<arr.length;i++){
+ema=arr[i]*k+ema*(1-k);
+}
+return ema;
 }
 
-function loadPairs(){
-  const select=document.getElementById("pairs");
-  select.innerHTML="";
-  PAIRS[currentMarket].forEach(p=>{
-    const opt=document.createElement("option");
-    opt.value=p;
-    opt.textContent=p.replace("_otc","");
-    select.appendChild(opt);
-  });
+function momentum(closes,opens){
+let bull=0,bear=0;
+for(let i=closes.length-6;i<closes.length;i++){
+if(closes[i]>opens[i]) bull++;
+if(closes[i]<opens[i]) bear++;
 }
-loadPairs();
-
-function EMA(arr,p){
-  let k=2/(p+1);
-  let ema=arr[0];
-  for(let i=1;i<arr.length;i++){
-    ema=arr[i]*k+ema*(1-k);
-  }
-  return ema;
-}
-
-function padTime(min){
-  let h=Math.floor(min/60)%24;
-  let m=min%60;
-  return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+return {bull,bear};
 }
 
 function toMin(t){
-  let [h,m]=t.split(":").map(Number);
-  return h*60+m;
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
 }
 
-async function getStructure(pair){
-
-  let res=await fetch(API+pair);
-  let json=await res.json();
-
-  if(!json.success || !json.data || json.data.length<50)
-    return null;
-
-  let data=json.data.reverse();
-  let closes=data.map(c=>parseFloat(c.close));
-  let opens=data.map(c=>parseFloat(c.open));
-
-  let ema9=EMA(closes.slice(-40),9);
-  let ema21=EMA(closes.slice(-40),21);
-
-  let separation=Math.abs(ema9-ema21);
-  if(separation<0.0012) return null;
-
-  let bull=0,bear=0,strongBody=0;
-
-  for(let i=closes.length-5;i<closes.length;i++){
-    let body=Math.abs(closes[i]-opens[i]);
-    if(body>0.0015) strongBody++;
-    if(closes[i]>opens[i]) bull++;
-    if(closes[i]<opens[i]) bear++;
-  }
-
-  if(strongBody<3) return null;
-
-  if(ema9>ema21 && bull>=4)
-    return {dir:"CALL",confidence:80+strongBody,gap:7};
-
-  if(ema9<ema21 && bear>=4)
-    return {dir:"PUT",confidence:80+strongBody,gap:7};
-
-  return null;
+function pad(min){
+let h=Math.floor(min/60)%24;
+let m=min%60;
+return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
 }
 
 async function generateFlow(){
 
-  signals=[];
-  const output=document.getElementById("output");
-  const loader=document.getElementById("loader");
+signals=[];
+let output=document.getElementById("output");
+let loader=document.getElementById("loader");
 
-  loader.style.display="block";
-  output.innerText="";
+loader.style.display="block";
+output.innerText="";
 
-  const selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+if(selected.length<2){
+loader.style.display="none";
+output.innerText="Select at least 2 pairs";
+return;
+}
 
-  if(selected.length<1){
-    loader.style.display="none";
-    output.innerText="Select at least 1 pair";
-    return;
-  }
+let start=toMin(document.getElementById("start").value);
+let end=toMin(document.getElementById("end").value);
+if(end<=start) end+=1440;
 
-  let start=toMin(document.getElementById("start").value);
-  let end=toMin(document.getElementById("end").value);
-  if(end<=start) end+=1440;
+let structures=[];
 
-  let pointer=start;
+for(let pair of selected){
 
-  while(pointer<=end && signals.length<25){
+try{
+let r=await fetch(API+pair);
+let j=await r.json();
+if(!j.success||j.data.length<50) continue;
 
-    let bestPair=null;
-    let bestData=null;
-    let bestScore=0;
+let data=j.data.reverse();
+let closes=data.map(c=>parseFloat(c.close));
+let opens=data.map(c=>parseFloat(c.open));
 
-    for(let p of selected){
-      let s=await getStructure(p);
-      if(s && s.confidence>bestScore){
-        bestScore=s.confidence;
-        bestPair=p;
-        bestData=s;
-      }
-    }
+let ema9=EMA(closes.slice(-40),9);
+let ema21=EMA(closes.slice(-40),21);
 
-    if(!bestPair) break;
+let sep=Math.abs(ema9-ema21);
+if(sep<0.0005) continue;
 
-    signals.push(
-      `M1;${bestPair.replace("_otc","")};${padTime(pointer)};${bestData.dir};${bestData.confidence}%`
-    );
+let m=momentum(closes,opens);
+let dir=ema9>ema21?"CALL":"PUT";
+let strength=sep*1000+Math.max(m.bull,m.bear)*2;
 
-    pointer+=bestData.gap+3;
-  }
+structures.push({pair,dir,strength});
+}catch(e){}
+}
 
-  loader.style.display="none";
+if(structures.length===0){
+loader.style.display="none";
+output.innerText="No strong structure detected.";
+return;
+}
 
-  if(signals.length===0){
-    output.innerText="No strong structure detected.";
-    return;
-  }
+structures.sort((a,b)=>b.strength-a.strength);
 
-  let text=
-  "✦ ADOX PREMIUM REAL STRUCTURE FLOW ✦\n"+
-  "━━━━━━━━━━━━━━━━━━\nUTC+6 | 1 MIN\n\n"+
-  signals.join("\n")+
-  "\n━━━━━━━━━━━━━━━━━━\n"+
-  "Rules:\n"+
-  "• EMA Trend Confirmed\n"+
-  "• Momentum Verified\n"+
-  "• 1 Step Martingale Max\n"+
-  "• Avoid News\n"+
-  "• Stop After 2 Loss";
+let pointer=start;
+let index=0;
+let phase=0;
 
-  output.innerText=text;
+while(pointer<=end && signals.length<30){
+
+let s=structures[index%structures.length];
+let direction=s.dir;
+
+if(phase===1) direction=direction==="CALL"?"PUT":"CALL";
+if(phase===2) direction=s.dir;
+
+signals.push(`M1;${s.pair.replace("_otc","")};${pad(pointer)};${direction}`);
+
+pointer+=6+(Math.floor(s.strength)%3);
+index++;
+
+if(index%structures.length===0){
+phase++;
+if(phase>2) phase=0;
+}
+}
+
+loader.style.display="none";
+
+let text="✦ ADOX PWME REAL FLOW ✦\n━━━━━━━━━━━━━━━━━━\nUTC+6 | Weighted Structure\n\n";
+text+=signals.join("\n");
+text+="\n━━━━━━━━━━━━━━━━━━\n• EMA Ranked\n• Momentum Weighted\n• Pullback Phase Injected\n• 1 Step MG Max\n• Avoid News";
+
+output.innerText=text;
 }
 
 async function sendToTelegram(){
-  if(signals.length===0){
-    alert("Generate first");
-    return;
-  }
-
-  let msg="✦ ADOX PREMIUM REAL STRUCTURE FLOW ✦\n━━━━━━━━━━\n"+
-          signals.join("\n")+
-          "\n━━━━━━━━━━\nTrade Safe";
-
-  await fetch(TG,{
-    method:"POST",
-    headers:{"Content-Type":"text/plain"},
-    body:msg
-  });
-
-  alert("Sent to Telegram");
+if(signals.length===0){
+alert("Generate flow first");
+return;
 }
+let msg="✦ ADOX PWME FLOW ✦\n━━━━━━━━━━\nUTC+6\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
+await fetch(TG,{method:"POST",headers:{"Content-Type":"text/plain"},body:msg});
+alert("Sent to Telegram");
+}
+
 </script>
 </body>
 </html>
