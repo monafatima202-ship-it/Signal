@@ -4,65 +4,60 @@
 <meta charset="UTF-8">
 <title>✦ ADOX PREMIUM OTC ENGINE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
 <style>
-:root{
---bg:#050b14;
---panel:#0f1c2c;
---neon:#00ff88;
---cyan:#00ccff;
---glow:0 0 20px #00ff88,0 0 40px #00ccff;
-}
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani'}
-header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow)}
-.logo{font-family:'Orbitron';font-size:24px;color:var(--neon)}
-.container{max-width:750px;margin:20px auto;padding:15px}
-.panel{background:var(--panel);padding:25px;border-radius:15px;box-shadow:0 0 25px rgba(0,255,136,0.15)}
-.tabs{display:flex;gap:8px;margin-bottom:15px}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow)}
-select,input{width:100%;padding:12px;margin:10px 0;background:#06121f;border:1px solid #1a3a3a;border-radius:10px;color:white}
-button{width:100%;padding:16px;margin:8px 0;border:none;border-radius:12px;font-family:'Orbitron';font-weight:bold;cursor:pointer}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow)}
-.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white}
-#output{margin-top:15px;background:#000;padding:15px;border-radius:10px;white-space:pre-wrap;min-height:340px;font-family:monospace}
+body{margin:0;background:#050b14;color:#e0fbee;font-family:'Rajdhani'}
+header{text-align:center;padding:20px;background:black;border-bottom:3px solid #00ff88}
+.logo{font-family:'Orbitron';color:#00ff88;font-size:22px}
+.container{max-width:700px;margin:20px auto;padding:15px}
+.panel{background:#0f1c2c;padding:20px;border-radius:12px}
+select,input{width:100%;padding:10px;margin:8px 0;background:#06121f;color:white;border:1px solid #1a3a3a}
+button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
+.generate{background:#00ff88;color:black}
+.telegram{background:#0088cc;color:white}
+#output{margin-top:10px;background:black;padding:10px;min-height:300px;font-family:monospace;white-space:pre-wrap}
 </style>
 </head>
 <body>
 
-<header>
-<div class="logo">✦ ADOX PREMIUM OTC ENGINE ✦</div>
-</header>
+<header><div class="logo">✦ ADOX PREMIUM OTC ENGINE ✦</div></header>
 
 <div class="container">
 <div class="panel">
 
 <select id="pairs" multiple size="6">
-<option value="USDPKR-otc">USDPKR</option>
-<option value="USDINR-otc">USDINR</option>
-<option value="USDARS-otc">USDARS</option>
-<option value="USDBDT-otc">USDBDT</option>
-<option value="USDNGN-otc">USDNGN</option>
-<option value="BRLUSD-otc">BRLUSD</option>
+<option value="USDINR_otc">USDINR</option>
+<option value="USDPKR_otc">USDPKR</option>
+<option value="USDBDT_otc">USDBDT</option>
+<option value="USDARS_otc">USDARS</option>
+<option value="USDNGN_otc">USDNGN</option>
 </select>
 
 <input type="time" id="start" value="14:00">
 <input type="time" id="end" value="18:00">
 
-<button class="generate" onclick="generate()">GENERATE PREMIUM FLOW</button>
+<button class="generate" onclick="generate()">GENERATE FLOW</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • SELECT PAIRS + TIME</div>
+<div id="output">READY</div>
 
 </div>
 </div>
 
 <script>
 
-const API="https://otcapi.mkapi009.workers.dev/?pair=";
+const API="https://mrbeaxt.site/Qx/Qx.php?format=json&pair=";
 const TG="https://signal.mkapi009.workers.dev/send";
 
 let signals=[];
+
+function EMA(arr,p){
+let k=2/(p+1);
+let ema=arr[0];
+for(let i=1;i<arr.length;i++){
+ema=arr[i]*k+ema*(1-k);
+}
+return ema;
+}
 
 function padTime(min){
 let h=Math.floor(min/60)%24;
@@ -75,22 +70,17 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-function EMA(arr,p){
-let k=2/(p+1);
-let ema=arr[0];
-for(let i=1;i<arr.length;i++){
-ema=arr[i]*k+ema*(1-k);
-}
-return ema;
-}
-
 async function getBias(pair){
-try{
-let res=await fetch(API+pair+"&tf=M1&limit=200");
+
+let res=await fetch(API+pair);
 let json=await res.json();
 
-let closes=json.data.map(c=>c.close);
-if(closes.length<50) return null;
+if(!json.success || !json.data || json.data.length<30)
+return null;
+
+let data=json.data.reverse();
+
+let closes=data.map(c=>parseFloat(c.close));
 
 let ema9=EMA(closes.slice(-20),9);
 let ema21=EMA(closes.slice(-20),21);
@@ -103,25 +93,21 @@ if(closes[i]>closes[i-1]) momentum++;
 if(closes[i]<closes[i-1]) momentum--;
 }
 
-let strength=Math.abs(momentum);
-let confidence=Math.min(90,50+(strength*8));
+let confidence=Math.min(90,55+Math.abs(momentum)*7);
 
 return {dir,confidence};
-
-}catch(e){
-return null;
-}
 }
 
 async function generate(){
 
 signals=[];
-const output=document.getElementById("output");
-output.innerText="Analyzing OTCAPI Data...";
+let output=document.getElementById("output");
+output.innerText="Analyzing MRBEAXT Data...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+
 if(selected.length<2){
-output.innerText="Select minimum 2 pairs";
+output.innerText="Select at least 2 pairs";
 return;
 }
 
@@ -130,9 +116,10 @@ let end=toMin(document.getElementById("end").value);
 if(end<=start) end+=1440;
 
 let biasMap={};
-await Promise.all(selected.map(async p=>{
+
+for(let p of selected){
 biasMap[p]=await getBias(p);
-}));
+}
 
 let pointer=start;
 let index=0;
@@ -141,19 +128,14 @@ let lastPair=null;
 while(pointer<=end && signals.length<40){
 
 let pair=selected[index%selected.length];
-let clean=pair.replace("-otc","").toUpperCase();
 let data=biasMap[pair];
 
 if(data && pair!==lastPair){
 
-signals.push(`M1;${clean.padEnd(8)};${padTime(pointer)};${data.dir};${data.confidence}%`);
+signals.push(`M1;${pair.replace("_otc","").padEnd(8)};${padTime(pointer)};${data.dir};${data.confidence}%`);
 lastPair=pair;
 
-let gap;
-if(data.confidence>=75) gap=7;
-else if(data.confidence>=60) gap=9;
-else gap=11;
-
+let gap = data.confidence>=75 ? 7 : 9;
 pointer+=gap;
 }
 
@@ -162,18 +144,13 @@ if(index>300) break;
 }
 
 if(signals.length===0){
-output.innerText="No strong structure detected.";
+output.innerText="Structure weak.";
 return;
 }
 
 let text="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━━━━━━━━━\nRules:\n";
-text+="• Exact Time Entry\n";
-text+="• Max 1 Step MG\n";
-text+="• Stop After 2 Loss\n";
-text+="• Avoid High Impact News\n";
-text+="• Risk 2% Per Trade";
+text+="\n━━━━━━━━━━━━━━━━━━\n• Exact Entry\n• 1 Step MG Max\n• Stop After 2 Loss";
 
 output.innerText=text;
 }
@@ -181,21 +158,19 @@ output.innerText=text;
 async function sendToTelegram(){
 
 if(signals.length===0){
-alert("Generate signals first");
+alert("Generate first");
 return;
 }
 
-let message="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
-message+=signals.join("\n");
-message+="\n━━━━━━━━━━━━━━━━━━\nTrade Safe";
+let msg="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
 
 await fetch(TG,{
 method:"POST",
 headers:{ "Content-Type":"text/plain" },
-body: message
+body:msg
 });
 
-alert("Signals sent to Telegram");
+alert("Sent");
 }
 
 </script>
