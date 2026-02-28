@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
+/* Same premium style as before – no change needed */
 :root {
   --bg: #000814;
   --panel: linear-gradient(145deg, #0b132b, #1c2526);
@@ -127,7 +128,7 @@ button {
 
 <header>
   <div class="logo">✦ ADOX APE v4 PREMIUM APX ✦</div>
-  <div style="color:#00f0ff; margin-top:10px; font-size:18px;">UTC+6 | ADOX Premium Signals Engine</div>
+  <div style="color:#00f0ff; margin-top:10px; font-size:18px;">UTC+6 | ADOX Premium Engine Activated</div>
 </header>
 
 <div class="container">
@@ -160,7 +161,7 @@ button {
 </div>
 
 <div class="footer">
-  Powered by APX Premium Engine • M1 • MG1 Max • Avoid High Impact News • Stop After 2 Losses • Trade Safe 🔥
+  Powered by APX Premium Engine • M1 • MG1 Max • Avoid News • Stop After 2 Losses • Trade Safe 🔥
 </div>
 
 <script>
@@ -200,7 +201,16 @@ function setMarket(type, el) {
 }
 setMarket("OTC", document.querySelector(".tab.active"));
 
-function toMin(t) { let [h, m] = t.split(":").map(Number); return h * 60 + m; }
+function toMin(t) {
+  let [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function pad(min) {
+  let h = Math.floor(min / 60) % 24;
+  let m = min % 60;
+  return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+}
 
 async function generateFlow() {
   let selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
@@ -233,16 +243,21 @@ async function generateFlow() {
     try {
       let r = await fetch(API_BASE + pair);
       let j = await r.json();
-      if (j.status !== "success" || !j.signals) {
-        console.log(`Error for ${pair}: ${j.message || "No signals"}`);
-        continue;
-      }
+      if (j.status !== "success" || !j.signals) continue;
 
       let pairSignals = j.signals || [];
       pairSignals.forEach(s => {
-        let timeMin = toMin(s.time);
-        if (timeMin >= startMin && timeMin <= endMin) {
-          signals.push(`M1; ${pair.replace("_otc","")}  🌟  ${s.time}  →  ${s.direction}  🔥 Acc: ${s.accuracy}`);
+        let utcMin = toMin(s.time);
+        let localMin = (utcMin + 360) % 1440; // +6 hours = +360 minutes
+        let localTime = pad(localMin);
+
+        if (localMin >= startMin && localMin <= endMin) {
+          signals.push({
+            time: localTime,
+            pair: pair.replace("_otc", ""),
+            direction: s.direction,
+            acc: s.accuracy
+          });
         }
       });
     } catch (e) {
@@ -254,23 +269,34 @@ async function generateFlow() {
     await new Promise(r => setTimeout(r, 400));
   }
 
+  // Sort by local time
+  signals.sort((a, b) => toMin(a.time) - toMin(b.time));
+
   loader.style.display = "none";
 
   if (signals.length === 0) {
-    output.innerText = "🌑 No premium signals in time range or API issue.\nTry core pairs like USDINR_otc, AUDUSD_otc, FB_otc";
+    output.innerText = "🌑 No premium signals in selected time range.\nTry wider range or core pairs like USDINR_otc, USDBDT_otc.";
     return;
   }
 
-  let text = "✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine Activated 🌌\n\n";
-  text += signals.join("\n");
-  text += "\n\n━━━━━━━━━━━━━━━━━━━━━━\n• High Accuracy Signals\n• M1 • MG1 Max\n• EMA Ranked Structure\n• Avoid News • Stop @ 2 Losses\nTrade Safe 🔥 Mona ADOX";
+  let text = "✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine\n\n";
+  signals.forEach(s => {
+    text += `M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction.padEnd(5)} | Acc: ${s.acc}%\n`;
+  });
+  text += "\n━━━━━━━━━━━━━━━━━━━━━━\n• High Accuracy Signals • M1 • MG1 Max\n• Avoid News • Stop @ 2 Losses\nTrade Safe 🔥 Mona ADOX";
 
   output.innerText = text;
 }
 
 async function sendToTelegram() {
   if (signals.length === 0) { alert("Generate Premium Flow First! ⚡"); return; }
-  let msg = "✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6\n" + signals.join("\n") + "\n\n━━━━━━━━━━━━━━━━━━━━━━\nHigh Accuracy • M1 • MG1 Max • Avoid News • Stop @ 2 Losses\nTrade Safe 🔥 Mona";
+
+  let msg = "✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine\n\n";
+  signals.forEach(s => {
+    msg += `M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction.padEnd(5)} | Acc: ${s.acc}%\n`;
+  });
+  msg += "\n━━━━━━━━━━━━━━━━━━━━━━\nHigh Accuracy • M1 • MG1 Max • Avoid News • Stop @ 2 Losses\nTrade Safe 🔥 Mona";
+
   await fetch(TG, {method: "POST", headers: {"Content-Type": "text/plain"}, body: msg});
   alert("ADOX Premium Flow Sent to Telegram! 📤");
 }
