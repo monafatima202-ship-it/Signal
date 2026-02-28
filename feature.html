@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>✦ ADOX HIGH ACCURACY ENGINE ✦</title>
+<title>✦ ADOX DUAL ENGINE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -15,11 +15,14 @@
 body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani'}
 header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon)}
 .logo{font-family:'Orbitron';color:var(--neon);font-size:22px}
-.container{max-width:720px;margin:20px auto;padding:15px}
+.container{max-width:750px;margin:20px auto;padding:15px}
 .panel{background:var(--panel);padding:20px;border-radius:12px}
 .tabs{display:flex;gap:8px;margin-bottom:10px}
 .tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);cursor:pointer}
 .tab.active{background:var(--neon);color:black}
+.mode-switch{display:flex;gap:10px;margin:10px 0}
+.mode-btn{flex:1;padding:8px;border:2px solid var(--cyan);background:transparent;color:var(--cyan);cursor:pointer}
+.mode-btn.active{background:var(--cyan);color:black}
 select,input{width:100%;padding:10px;margin:8px 0;background:#06121f;color:white;border:1px solid #1a3a3a}
 button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-weight:bold;cursor:pointer}
 .generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black}
@@ -29,7 +32,7 @@ button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-w
 </head>
 <body>
 
-<header><div class="logo">✦ ADOX HIGH ACCURACY ENGINE ✦</div></header>
+<header><div class="logo">✦ ADOX DUAL ENGINE ✦</div></header>
 
 <div class="container">
 <div class="panel">
@@ -40,15 +43,20 @@ button{width:100%;padding:14px;margin:8px 0;border:none;border-radius:8px;font-w
 <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
 </div>
 
+<div class="mode-switch">
+<button class="mode-btn active" onclick="setMode('FLOW',this)">MILOGZAI FLOW</button>
+<button class="mode-btn" onclick="setMode('STRICT',this)">HIGH ACCURACY</button>
+</div>
+
 <select id="pairs" multiple size="6"></select>
 
 <input type="time" id="start" value="14:00">
 <input type="time" id="end" value="18:00">
 
-<button class="generate" onclick="generate()">GENERATE HIGH ACCURACY FLOW</button>
+<button class="generate" onclick="generate()">GENERATE SIGNALS</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div id="output">READY • SELECT PAIRS</div>
+<div id="output">READY • SELECT MODE + PAIRS</div>
 
 </div>
 </div>
@@ -64,14 +72,21 @@ CRYPTO:["BTCUSD_otc","ETHUSD_otc","XAUUSD_otc"],
 STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc"]
 };
 
-let signals=[];
 let currentMarket="OTC";
+let currentMode="FLOW";
+let signals=[];
 
 function setMarket(type,el){
 currentMarket=type;
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
 el.classList.add("active");
 loadPairs();
+}
+
+function setMode(mode,el){
+currentMode=mode;
+document.querySelectorAll(".mode-btn").forEach(t=>t.classList.remove("active"));
+el.classList.add("active");
 }
 
 function loadPairs(){
@@ -111,39 +126,49 @@ async function getBias(pair){
 let res=await fetch(API+pair);
 let json=await res.json();
 
-if(!json.success || !json.data || json.data.length<50)
+if(!json.success || !json.data || json.data.length<40)
 return null;
 
 let data=json.data.reverse();
-
 let closes=data.map(c=>parseFloat(c.close));
 let opens=data.map(c=>parseFloat(c.open));
 
-let ema9=EMA(closes.slice(-40),9);
-let ema21=EMA(closes.slice(-40),21);
+let ema9=EMA(closes.slice(-30),9);
+let ema21=EMA(closes.slice(-30),21);
 
-let separation=Math.abs(ema9-ema21);
+let sep=Math.abs(ema9-ema21);
 
-if(separation<0.002) return null;
+let bull=0,bear=0;
 
-let bullish=0,bearish=0,strongBody=0;
-
-for(let i=closes.length-6;i<closes.length;i++){
-let body=Math.abs(closes[i]-opens[i]);
-if(body>0.0015) strongBody++;
-if(closes[i]>opens[i]) bullish++;
-if(closes[i]<opens[i]) bearish++;
+for(let i=closes.length-5;i<closes.length;i++){
+if(closes[i]>opens[i]) bull++;
+if(closes[i]<opens[i]) bear++;
 }
 
-if(strongBody<3) return null;
+if(currentMode==="STRICT"){
 
-if(ema9>ema21 && bullish>=4)
-return {dir:"CALL",confidence:80+strongBody};
+if(sep<0.002) return null;
 
-if(ema9<ema21 && bearish>=4)
-return {dir:"PUT",confidence:80+strongBody};
+if(ema9>ema21 && bull>=4)
+return {dir:"CALL",confidence:85,gap:10};
+
+if(ema9<ema21 && bear>=4)
+return {dir:"PUT",confidence:85,gap:10};
 
 return null;
+
+}else{
+
+if(sep<0.0008) return null;
+
+if(ema9>ema21 && bull>=3)
+return {dir:"CALL",confidence:70+bull,gap:7};
+
+if(ema9<ema21 && bear>=3)
+return {dir:"PUT",confidence:70+bear,gap:7};
+
+return null;
+}
 }
 
 async function generate(){
@@ -153,9 +178,8 @@ let output=document.getElementById("output");
 output.innerText="Analyzing structure...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-
-if(selected.length<1){
-output.innerText="Select at least 1 pair";
+if(selected.length===0){
+output.innerText="Select pairs";
 return;
 }
 
@@ -165,11 +189,11 @@ if(end<=start) end+=1440;
 
 let pointer=start;
 
-while(pointer<=end && signals.length<20){
+while(pointer<=end && signals.length<30){
 
 let bestPair=null;
-let bestScore=0;
 let bestData=null;
+let bestScore=0;
 
 for(let p of selected){
 let data=await getBias(p);
@@ -186,7 +210,7 @@ signals.push(
 `M1;${bestPair.replace("_otc","").padEnd(8)};${padTime(pointer)};${bestData.dir};${bestData.confidence}%`
 );
 
-pointer+=10; // fixed logical spacing (structure mode)
+pointer+=bestData.gap;
 }
 
 if(signals.length===0){
@@ -194,9 +218,13 @@ output.innerText="No strong structure detected.";
 return;
 }
 
-let text="✦ PREMIUM HIGH ACCURACY FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
+let title=currentMode==="STRICT"?
+"✦ HIGH ACCURACY MODE ✦":
+"✦ MILOGZAI FLOW MODE ✦";
+
+let text=title+"\n━━━━━━━━━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━━━━━━━━━\n• Strict Trend Filter\n• 1 Step MG Max\n• Avoid News\n• Stop After 2 Loss";
+text+="\n━━━━━━━━━━━━━━━━━━\n• 1 Step MG Max\n• Avoid News\n• Stop After 2 Loss";
 
 output.innerText=text;
 }
@@ -208,7 +236,7 @@ alert("Generate first");
 return;
 }
 
-let msg="✦ PREMIUM HIGH ACCURACY FLOW ✦\n━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
+let msg=signals.join("\n");
 
 await fetch(TG,{
 method:"POST",
@@ -216,7 +244,7 @@ headers:{"Content-Type":"text/plain"},
 body:msg
 });
 
-alert("Sent to Telegram");
+alert("Sent");
 }
 
 </script>
