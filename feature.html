@@ -2,43 +2,44 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>APX MILOGZAI FLOW PROJECTION</title>
-
+<title>APX MILOGZAI ROTATION PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
-
 <style>
-body{background:#060d16;color:#00ff88;font-family:'Rajdhani';margin:0;padding:20px}
+body{background:#050b14;color:#00ff88;font-family:'Rajdhani';margin:0;padding:20px}
 .container{max-width:700px;margin:auto;background:#0f1c2c;padding:20px;border-radius:12px}
 h2{font-family:'Orbitron';text-align:center}
 select,input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none}
 button{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;font-weight:bold}
+.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white}
 #output{background:#000;padding:15px;margin-top:10px;white-space:pre-wrap;min-height:280px;font-family:monospace}
 </style>
 </head>
 <body>
 
 <div class="container">
-<h2>MILOGZAI FLOW PROJECTION</h2>
+<h2>MILOGZAI ROTATION FLOW</h2>
 
 <select id="pairs" multiple size="6">
-<option value="USDINR-otc">USDINR</option>
-<option value="USDPKR-otc">USDPKR</option>
-<option value="USDARS-otc">USDARS</option>
-<option value="USDBDT-otc">USDBDT</option>
-<option value="USDNGN-otc">USDNGN</option>
-<option value="BRLUSD-otc">BRLUSD</option>
+<option value="USDINR">USDINR</option>
+<option value="USDPKR">USDPKR</option>
+<option value="USDARS">USDARS</option>
+<option value="USDBDT">USDBDT</option>
+<option value="USDNGN">USDNGN</option>
+<option value="BRLUSD">BRLUSD</option>
 </select>
 
-<input type="time" id="start" value="18:00">
-<input type="time" id="end" value="22:00">
+<input type="time" id="start" value="14:00">
+<input type="time" id="end" value="18:00">
 
 <button onclick="generate()">GENERATE FLOW</button>
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
 <div id="output">READY</div>
 </div>
 
 <script>
-const API="https://apx.mkapi009.workers.dev?pair=";
+
+let signals=[];
 
 function padTime(min){
 let h=Math.floor(min/60)%24;
@@ -51,34 +52,10 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-async function getInitialBias(pair){
-try{
-let res=await fetch(API+pair);
-let json=await res.json();
-if(!json.data||json.data.length<6) return "CALL";
+function generate(){
 
-let closes=json.data.map(c=>c.close);
-
-let up=0,down=0;
-for(let i=closes.length-4;i<closes.length;i++){
-if(closes[i]>closes[i-1]) up++;
-if(closes[i]<closes[i-1]) down++;
-}
-
-if(up>down) return "CALL";
-if(down>up) return "PUT";
-
-return closes[closes.length-1]>closes[closes.length-2]?"CALL":"PUT";
-
-}catch(e){
-return "CALL";
-}
-}
-
-async function generate(){
-
+signals=[];
 let output=document.getElementById("output");
-output.innerText="Building Milogzai Projection...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 if(selected.length<2){
@@ -90,38 +67,27 @@ let start=toMin(document.getElementById("start").value);
 let end=toMin(document.getElementById("end").value);
 if(end<=start) end+=1440;
 
-let biasMap={};
-await Promise.all(selected.map(async p=>{
-biasMap[p]=await getInitialBias(p);
-}));
-
 let pointer=start;
-let index=0;
-let lastPair=null;
-let signals=[];
+let pairIndex=0;
+let direction="CALL";
+let dirCycleCount=0;
 
 while(pointer<=end && signals.length<35){
 
-let pair=selected[index%selected.length];
-let clean=pair.replace("-otc","").toUpperCase();
-let dir=biasMap[pair];
+let pair=selected[pairIndex%selected.length];
 
-// only block same pair back-to-back
-if(pair!==lastPair){
-
-signals.push(`M1;${clean.padEnd(8)};${padTime(pointer)};${dir}`);
-lastPair=pair;
-
-// natural milogzai gap pattern (cycle based, not random)
-let cycle=index%4;
-if(cycle===0) pointer+=8;
-else if(cycle===1) pointer+=11;
-else if(cycle===2) pointer+=9;
-else pointer+=12;
+// Flip direction every full pair cycle (Milogzai style smoothing)
+if(pairIndex%selected.length===0 && pairIndex!==0){
+dirCycleCount++;
+if(dirCycleCount%2===1){
+direction = direction==="CALL"?"PUT":"CALL";
+}
 }
 
-index++;
-if(index>300) break;
+signals.push(`M1;${pair.padEnd(8)};${padTime(pointer)};${direction}`);
+
+pointer+=9 + (pairIndex%3);  // natural variation 9-11
+pairIndex++;
 }
 
 let text="✦ MILOGZAI STYLE FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
@@ -130,6 +96,22 @@ text+="\n━━━━━━━━━━━━━━━━━━\nRules:\n• Exa
 
 output.innerText=text;
 }
+
+function sendToTelegram(){
+if(signals.length===0){
+alert("Generate signals first");
+return;
+}
+
+let message="✦ MILOGZAI FLOW ✦\n━━━━━━━━━━\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
+
+console.log("Telegram Message:\n"+message);
+
+// Here you would connect real Telegram Bot API
+alert("Telegram format ready (connect bot token here)");
+}
+
 </script>
+
 </body>
 </html>
