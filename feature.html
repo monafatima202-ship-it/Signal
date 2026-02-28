@@ -3,185 +3,191 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA PRO v8 STABLE</title>
+<title>APX ULTRA PRO v75 - REAL CANDLE LOGIC</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-body{
-background:#061018;
-color:#00ff88;
-font-family:Arial;
-margin:0;
-padding:20px;
+:root{
+ --bg:#01060b;
+ --panel:#0a111f;
+ --neon:#00ff88;
+ --cyan:#00ccff;
+ --glow:0 0 18px #00ff88;
 }
-.container{
-max-width:650px;
-margin:auto;
-background:#0c1b2a;
-padding:20px;
-border-radius:12px;
-}
-h2{
-text-align:center;
-margin-bottom:15px;
-}
-select,input,button{
-width:100%;
-margin:6px 0;
-padding:10px;
-border-radius:6px;
-border:none;
-}
-button{
-background:#00ff88;
-color:black;
-font-weight:bold;
-cursor:pointer;
-}
-#output{
-background:#000;
-padding:12px;
-margin-top:10px;
-white-space:pre-wrap;
-min-height:200px;
-border-radius:6px;
-}
-#status{
-margin-top:6px;
-color:yellow;
-font-weight:bold;
-text-align:center;
-}
+body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
+header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
+.container{max-width:520px;margin:15px auto;padding:10px;}
+.panel{background:var(--panel);border-radius:18px;padding:20px;}
+.tabs{display:flex;gap:6px;margin-bottom:12px;}
+.tab{flex:1;padding:8px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
+.tab.active{background:var(--neon);color:black;}
+select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
+button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;text-transform:uppercase;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
+.telegram{background:#0088cc;color:white;}
+#output{margin-top:12px;background:#000;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:240px;}
 </style>
 </head>
 <body>
 
+<header>
+<div class="logo">APX ULTRA PRO v75</div>
+</header>
+
 <div class="container">
-<h2>APX HYBRID MILOGZAI ULTRA PRO v8</h2>
+<div class="panel">
 
-<label>Select Pairs:</label>
-<select id="pairs" multiple>
-<option value="USDTRY-OTC">USDTRY</option>
-<option value="USDPKR-OTC">USDPKR</option>
-<option value="USDINR-OTC">USDINR</option>
-<option value="USDARS-OTC">USDARS</option>
-<option value="USDBDT-OTC">USDBDT</option>
-<option value="USDNGN-OTC">USDNGN</option>
-</select>
+<div class="tabs">
+ <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+ <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+ <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+</div>
 
-<label>Start Time:</label>
-<input type="time" id="start" value="18:00">
+<select id="pairs" multiple size="6"></select>
 
-<label>End Time:</label>
-<input type="time" id="end" value="23:00">
+<div style="display:flex;gap:10px;">
+ <input type="time" id="start" value="18:00">
+ <input type="time" id="end" value="20:30">
+</div>
 
-<button onclick="generateSignals()">GENERATE STABLE FLOW</button>
+<button class="generate" onclick="generate()">GENERATE SIGNALS</button>
+<button class="telegram" onclick="sendTG()">SEND TO TELEGRAM</button>
 
-<div id="status"></div>
 <div id="output">READY</div>
+
+</div>
 </div>
 
 <script>
+
 const API="https://apx.mkapi009.workers.dev?pair=";
-const MAX_SIGNALS=40;
+const TG ="https://signal.mkapi009.workers.dev/send";
 
-let cachedBias={};
-
-function padTime(min){
-let h=Math.floor(min/60)%24;
-let m=min%60;
-return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
-}
-
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-return h*60+m;
-}
-
-function timeoutFetch(url,ms=4000){
-return Promise.race([
-fetch(url),
-new Promise((_,rej)=>setTimeout(()=>rej("timeout"),ms))
-]);
-}
-
-async function getBiasOnce(pair){
-try{
-let res=await timeoutFetch(API+pair);
-if(!res.ok) throw "bad response";
-let json=await res.json();
-if(!json.data||json.data.length<5) throw "no data";
-
-let last=json.data[json.data.length-1];
-return last.direction || (Math.random()>0.5?"CALL":"PUT");
-}catch(e){
-return Math.random()>0.5?"CALL":"PUT";
-}
-}
-
-async function generateSignals(){
-
-let output=document.getElementById("output");
-let status=document.getElementById("status");
-
-output.innerText="Analyzing Market...";
-status.innerText="Fetching bias...";
-
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-
-if(selected.length===0){
-output.innerText="Please select at least one pair.";
-status.innerText="";
-return;
-}
-
-// 🔥 FETCH ONCE PER PAIR (NO LOOP FREEZE)
-cachedBias={};
-
-await Promise.all(selected.map(async pair=>{
-cachedBias[pair]=await getBiasOnce(pair);
-}));
-
-status.innerText="Generating signals...";
-
-let startMin=toMin(document.getElementById("start").value);
-let endMin=toMin(document.getElementById("end").value);
-
-if(endMin<=startMin) endMin+=1440;
-
-let pointer=startMin;
 let signals=[];
-let count=0;
 
-while(pointer<=endMin && count<MAX_SIGNALS){
+const PAIRS={
+ OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
+ CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+ STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
+};
 
-for(let pair of selected){
-
-if(count>=MAX_SIGNALS) break;
-
-let clean=pair.replace("-OTC","");
-let dir=cachedBias[pair];
-
-signals.push("M1;"+clean+";"+padTime(pointer)+";"+dir);
-
-pointer+=3;
-count++;
+function setMarket(type,el){
+ document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+ el.classList.add("active");
+ let select=document.getElementById("pairs");
+ select.innerHTML="";
+ PAIRS[type].forEach(p=>{
+  let o=document.createElement("option");
+  o.value=p;
+  o.textContent=p.replace("-otc","");
+  select.appendChild(o);
+ });
 }
 
-pointer+=1;
+function EMA(prices,period){
+ if (prices.length < period) return null;
+ let k = 2 / (period + 1);
+ let ema = prices[0];
+ for(let i = 1; i < prices.length; i++){
+  ema = prices[i] * k + ema * (1 - k);
+ }
+ return ema;
 }
 
-if(signals.length===0){
-output.innerText="No signals generated.";
-status.innerText="0 Signals";
-return;
+function rsi(candles) {
+  if (candles.length < 15) return 50;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= 14; i++) {
+    let diff = candles[candles.length - i].close - candles[candles.length - i - 1].close;
+    if (diff > 0) gains += diff; else losses -= diff;
+  }
+  let ag = gains / 14;
+  let al = losses / 14 || 0.0001;
+  return 100 - (100 / (1 + ag / al));
 }
 
-output.innerText=
-"HYBRID STABLE FLOW\n━━━━━━━━━━━━━━\n"+
-signals.join("\n")+
-"\n━━━━━━━━━━━━━━\nStable Engine Mode Active";
+async function generate(){
+  signals = [];
+  let out = document.getElementById("output");
+  out.innerText = "ANALYZING...";
 
-status.innerText="Generated "+signals.length+" Signals";
+  let selected = [...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+  if(selected.length === 0){
+    out.innerText = "SELECT PAIRS";
+    return;
+  }
+
+  let start = document.getElementById("start").value;
+  let end = document.getElementById("end").value;
+
+  let startMin = parseInt(start.split(":")[0])*60 + parseInt(start.split(":")[1]);
+  let endMin = parseInt(end.split(":")[0])*60 + parseInt(end.split(":")[1]);
+
+  let allSignals = [];
+
+  for(let pair of selected){
+    try{
+      let res = await fetch(API+pair);
+      let json = await res.json();
+      if(!json.data || json.data.length < 25) continue;
+
+      let candles = json.data;
+
+      for(let i = 15; i < candles.length; i++){
+        let c = candles[i];
+        let prev = candles[i-1];
+
+        let timeParts = c.time.split(" ");
+        let hm = timeParts[1] || c.time;
+        let [h,m,s] = hm.split(":").map(Number);
+        let totalMin = h*60 + m;
+
+        if(totalMin < startMin || totalMin > endMin) continue;
+
+        let closes = candles.slice(i-15, i+1).map(x => x.close);
+        let ema9 = EMA(closes, 9);
+        let ema21 = EMA(closes, 21);
+        let rsiVal = rsi(candles.slice(i-14, i+1));
+
+        let direction = null;
+
+        if(ema9 > ema21 && rsiVal < 55){
+          direction = "CALL";
+        } else if(ema9 < ema21 && rsiVal > 45){
+          direction = "PUT";
+        }
+
+        if(direction){
+          allSignals.push(`M1;\( {pair.replace("-otc","").padEnd(6)}; \){hm.split(":").slice(0,2).join(":")};${direction}`);
+        }
+      }
+
+    }catch(e){}
+  }
+
+  if(allSignals.length === 0){
+    out.innerText = "NO STRONG MOVE YET\nTRY DIFFERENT TIME OR PAIRS";
+    return;
+  }
+
+  allSignals.sort((a,b) => a.split(";")[2].localeCompare(b.split(";")[2]));
+
+  signals = allSignals;
+
+  out.innerText = "M1 SIGNALS\n━━━━━━━━━━━━━━\n" + signals.join("\n") + "\n━━━━━━━━━━━━━━\n• Exact time entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
+}
+
+async function sendTG(){
+  if(signals.length === 0){
+    alert("No signals");
+    return;
+  }
+
+  let msg = "APX SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n" + signals.join("\n") + "\n━━━━━━━━━━\nTrade safe";
+
+  await fetch(TG, {method:"POST", body: msg});
+  alert("Sent to Telegram");
 }
 </script>
 
