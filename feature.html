@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✦ ADOX PWME ENGINE ✦</title>
+<title>✦ ADOX APE v2 ENGINE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
@@ -14,121 +14,26 @@
 --cyan:#00ccff;
 --glow:0 0 20px #00ff88,0 0 30px #00ccff;
 }
-
-body{
-background:var(--bg);
-color:#e0fbee;
-font-family:'Rajdhani',sans-serif;
-padding:20px;
-}
-
-header{
-text-align:center;
-padding:25px;
-background:black;
-border-bottom:4px solid var(--neon);
-box-shadow:var(--glow);
-}
-
-.logo{
-font-family:'Orbitron';
-font-size:22px;
-color:var(--neon);
-text-shadow:0 0 15px var(--neon);
-}
-
-.container{
-max-width:520px;
-margin:20px auto;
-}
-
-.panel{
-background:var(--panel);
-padding:25px;
-border-radius:20px;
-box-shadow:0 0 25px rgba(0,255,136,.2);
-}
-
-.tabs{
-display:flex;
-gap:8px;
-margin-bottom:15px;
-}
-
-.tab{
-flex:1;
-padding:10px;
-border:2px solid var(--neon);
-background:transparent;
-color:var(--neon);
-cursor:pointer;
-border-radius:8px;
-font-weight:bold;
-}
-
-.tab.active{
-background:var(--neon);
-color:black;
-box-shadow:var(--glow);
-}
-
-select,input{
-width:100%;
-padding:12px;
-margin:10px 0;
-background:#050d1a;
-border:1px solid #1a3a3a;
-color:white;
-border-radius:10px;
-}
-
-button{
-width:100%;
-padding:16px;
-margin:10px 0;
-border:none;
-border-radius:12px;
-font-family:'Orbitron';
-font-weight:900;
-cursor:pointer;
-}
-
-.generate{
-background:linear-gradient(135deg,#00ff88,#00ccff);
-color:black;
-box-shadow:var(--glow);
-}
-
-.telegram{
-background:linear-gradient(135deg,#0088cc,#00aaff);
-color:white;
-}
-
-#output{
-margin-top:20px;
-background:#01040a;
-padding:15px;
-border-radius:12px;
-border:1px dashed var(--neon);
-white-space:pre-wrap;
-font-family:monospace;
-min-height:320px;
-}
-
-.loader{
-display:none;
-text-align:center;
-color:var(--neon);
-margin-top:10px;
-}
+body{background:var(--bg);color:#e0fbee;font-family:'Rajdhani';padding:20px;}
+header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
+.logo{font-family:'Orbitron';font-size:20px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
+.container{max-width:520px;margin:20px auto;}
+.panel{background:var(--panel);padding:25px;border-radius:20px;box-shadow:0 0 25px rgba(0,255,136,.2);}
+.tabs{display:flex;gap:8px;margin-bottom:15px;}
+.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);cursor:pointer;border-radius:8px;font-weight:bold;}
+.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
+select,input{width:100%;padding:12px;margin:10px 0;background:#050d1a;border:1px solid #1a3a3a;color:white;border-radius:10px;}
+button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
+.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
+.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;}
+#output{margin-top:20px;background:#01040a;padding:15px;border-radius:12px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;min-height:320px;}
+.loader{display:none;text-align:center;color:var(--neon);}
 </style>
 </head>
 
 <body>
 
-<header>
-<div class="logo">✦ ADOX PWME HIGH ACCURACY ✦</div>
-</header>
+<header><div class="logo">✦ ADOX APE v2 – High Accuracy ✦</div></header>
 
 <div class="container">
 <div class="panel">
@@ -141,15 +46,15 @@ margin-top:10px;
 
 <select id="pairs" multiple size="8"></select>
 
-<div style="display:flex; gap:10px;">
-<input type="time" id="start" value="14:00">
-<input type="time" id="end" value="18:00">
+<div style="display:flex;gap:10px;">
+<input type="time" id="start" value="20:00">
+<input type="time" id="end" value="23:00">
 </div>
 
-<button class="generate" onclick="generateFlow()">GENERATE FLOW</button>
+<button class="generate" onclick="generateFlow()">GENERATE APE v2 FLOW</button>
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<div class="loader" id="loader">Analyzing Structure...</div>
+<div class="loader" id="loader">Recalculating Structure...</div>
 
 <div id="output">READY • SELECT PAIRS</div>
 
@@ -194,24 +99,56 @@ ema=arr[i]*k+ema*(1-k);
 return ema;
 }
 
-function momentum(closes,opens){
+function toMin(t){let[h,m]=t.split(":").map(Number);return h*60+m;}
+function pad(min){let h=Math.floor(min/60)%24;let m=min%60;return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;}
+
+async function analyzePair(pair){
+
+let r=await fetch(API+pair);
+let j=await r.json();
+if(!j.success||j.data.length<60) return null;
+
+let data=j.data.reverse();
+let closes=data.map(c=>parseFloat(c.close));
+let opens=data.map(c=>parseFloat(c.open));
+let highs=data.map(c=>parseFloat(c.high));
+let lows=data.map(c=>parseFloat(c.low));
+
+let ema9=EMA(closes.slice(-40),9);
+let ema21=EMA(closes.slice(-40),21);
+
+let sep=Math.abs(ema9-ema21);
+if(sep<0.0005) return null;
+
 let bull=0,bear=0;
 for(let i=closes.length-6;i<closes.length;i++){
 if(closes[i]>opens[i]) bull++;
 if(closes[i]<opens[i]) bear++;
 }
-return {bull,bear};
-}
 
-function toMin(t){
-let [h,m]=t.split(":").map(Number);
-return h*60+m;
+let volatility=0;
+for(let i=highs.length-15;i<highs.length;i++){
+volatility+=Math.abs(highs[i]-lows[i]);
 }
+volatility/=15;
 
-function pad(min){
-let h=Math.floor(min/60)%24;
-let m=min%60;
-return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+let dir=ema9>ema21?"CALL":"PUT";
+
+let structureScore=sep*1000;
+let momentumScore=Math.max(bull,bear)*4;
+let volatilityScore=volatility*500;
+
+let totalScore=structureScore+momentumScore+volatilityScore;
+
+let confidence=Math.min(95,
+Math.floor(
+(structureScore*0.4+
+momentumScore*0.3+
+volatilityScore*0.3)/10
+)+60
+);
+
+return {pair,dir,totalScore,confidence};
 }
 
 async function generateFlow(){
@@ -219,7 +156,6 @@ async function generateFlow(){
 signals=[];
 let output=document.getElementById("output");
 let loader=document.getElementById("loader");
-
 loader.style.display="block";
 output.innerText="";
 
@@ -234,79 +170,56 @@ let start=toMin(document.getElementById("start").value);
 let end=toMin(document.getElementById("end").value);
 if(end<=start) end+=1440;
 
+let pointer=start;
+let lastPair=null;
+
+while(pointer<=end && signals.length<25){
+
 let structures=[];
-
-for(let pair of selected){
-
-try{
-let r=await fetch(API+pair);
-let j=await r.json();
-if(!j.success||j.data.length<50) continue;
-
-let data=j.data.reverse();
-let closes=data.map(c=>parseFloat(c.close));
-let opens=data.map(c=>parseFloat(c.open));
-
-let ema9=EMA(closes.slice(-40),9);
-let ema21=EMA(closes.slice(-40),21);
-
-let sep=Math.abs(ema9-ema21);
-if(sep<0.0005) continue;
-
-let m=momentum(closes,opens);
-let dir=ema9>ema21?"CALL":"PUT";
-let strength=sep*1000+Math.max(m.bull,m.bear)*2;
-
-structures.push({pair,dir,strength});
-}catch(e){}
+for(let p of selected){
+let result=await analyzePair(p);
+if(result) structures.push(result);
 }
 
-if(structures.length===0){
+if(structures.length===0) break;
+
+structures.sort((a,b)=>b.totalScore-a.totalScore);
+
+let chosen=structures[0];
+
+if(lastPair===chosen.pair && structures.length>1){
+if(structures[0].totalScore<structures[1].totalScore*1.1){
+chosen=structures[1];
+}
+}
+
+signals.push(
+`M1;${chosen.pair.replace("_otc","")};${pad(pointer)};${chosen.dir};${chosen.confidence}%`
+);
+
+let adaptiveGap=5+Math.floor(chosen.totalScore%7);
+pointer+=adaptiveGap;
+
+lastPair=chosen.pair;
+}
+
 loader.style.display="none";
-output.innerText="No strong structure detected.";
+
+if(signals.length===0){
+output.innerText="Market too flat or weak.";
 return;
 }
 
-structures.sort((a,b)=>b.strength-a.strength);
-
-let pointer=start;
-let index=0;
-let phase=0;
-
-while(pointer<=end && signals.length<30){
-
-let s=structures[index%structures.length];
-let direction=s.dir;
-
-if(phase===1) direction=direction==="CALL"?"PUT":"CALL";
-if(phase===2) direction=s.dir;
-
-signals.push(`M1;${s.pair.replace("_otc","")};${pad(pointer)};${direction}`);
-
-pointer+=6+(Math.floor(s.strength)%3);
-index++;
-
-if(index%structures.length===0){
-phase++;
-if(phase>2) phase=0;
-}
-}
-
-loader.style.display="none";
-
-let text="✦ ADOX PWME REAL FLOW ✦\n━━━━━━━━━━━━━━━━━━\nUTC+6 | Weighted Structure\n\n";
+let text="✦ ADOX APE v2 FLOW ✦\n━━━━━━━━━━━━━━━━━━\nUTC+6 | Adaptive Priority Engine\n\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━━━━━━━━━\n• EMA Ranked\n• Momentum Weighted\n• Pullback Phase Injected\n• 1 Step MG Max\n• Avoid News";
+text+="\n━━━━━━━━━━━━━━━━━━\n• EMA Structure Weighted\n• Momentum Dominance\n• Volatility Ranked\n• Live Recalculation\n• 1 Step MG Max\n• Avoid High Impact News";
 
 output.innerText=text;
 }
 
 async function sendToTelegram(){
-if(signals.length===0){
-alert("Generate flow first");
-return;
-}
-let msg="✦ ADOX PWME FLOW ✦\n━━━━━━━━━━\nUTC+6\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
+if(signals.length===0){alert("Generate flow first");return;}
+let msg="✦ ADOX APE v2 FLOW ✦\n━━━━━━━━━━\nUTC+6\n"+signals.join("\n")+"\n━━━━━━━━━━\nTrade Safe";
 await fetch(TG,{method:"POST",headers:{"Content-Type":"text/plain"},body:msg});
 alert("Sent to Telegram");
 }
