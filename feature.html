@@ -3,178 +3,168 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX v78 - EMA ONLY SIGNALS (GUARANTEED)</title>
+<title>APX MILONGAZI STYLE v1 - STABLE FLOW</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{
- --bg:#01060b;
- --panel:#0a111f;
- --neon:#00ff88;
- --glow:0 0 18px #00ff88;
+:root {
+  --bg: #01060b;
+  --panel: #0a111f;
+  --neon: #00ff88;
+  --cyan: #00ccff;
+  --glow: 0 0 15px #00ff88, 0 0 30px #00ccff;
 }
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani';}
-header{text-align:center;padding:20px;background:black;border-bottom:3px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:26px;color:var(--neon);}
-.container{max-width:520px;margin:15px auto;padding:10px;}
-.panel{background:var(--panel);border-radius:18px;padding:20px;}
-.tabs{display:flex;gap:6px;margin-bottom:12px;}
-.tab{flex:1;padding:8px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer;}
-.tab.active{background:var(--neon);color:black;}
-select,input{width:100%;padding:10px;margin-bottom:10px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white;}
-button{width:100%;padding:12px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:900;margin:6px 0;cursor:pointer;text-transform:uppercase;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;}
-.telegram{background:#0088cc;color:white;}
-#output{margin-top:12px;background:#000;padding:12px;border-radius:8px;white-space:pre-wrap;font-family:monospace;font-size:13px;min-height:240px;}
+body { margin:0; background:var(--bg); color:#e0fbee; font-family:'Rajdhani'; }
+header { text-align:center; padding:20px; background:black; border-bottom:4px solid var(--neon); box-shadow:var(--glow); }
+.logo { font-family:'Orbitron'; font-size:28px; color:var(--neon); text-shadow:0 0 15px var(--neon); letter-spacing:2px; }
+.container { max-width:520px; margin:15px auto; padding:15px; }
+.panel { background:var(--panel); border-radius:20px; padding:25px; border:1px solid rgba(0,255,136,.2); box-shadow:0 0 25px rgba(0,255,136,0.15); }
+.tabs { display:flex; gap:8px; margin-bottom:15px; }
+.tab { flex:1; padding:12px; border:2px solid var(--neon); background:transparent; color:var(--neon); border-radius:10px; cursor:pointer; font-weight:bold; transition:0.3s; }
+.tab.active { background:var(--neon); color:black; box-shadow:var(--glow); transform:scale(1.05); }
+select, input { width:100%; padding:14px; margin-bottom:15px; background:#050d1a; border:1px solid #1a3a3a; border-radius:12px; color:white; outline:none; }
+button { width:100%; padding:18px; border:none; border-radius:15px; font-family:'Orbitron'; font-weight:900; cursor:pointer; text-transform:uppercase; transition:0.3s; margin:8px 0; }
+.generate { background:linear-gradient(135deg,#00ff88,#00ccff); color:black; box-shadow:var(--glow); }
+.telegram { background:linear-gradient(135deg,#0088cc,#00aaff); color:white; box-shadow:0 0 15px #0088cc; }
+.telegram:hover { transform:scale(1.03); box-shadow:0 0 35px #00aaff; }
+#output { margin-top:20px; background:#01040a; padding:20px; border-radius:15px; border:1px dashed var(--neon); white-space:pre-wrap; font-family:monospace; font-size:13px; color:#afffdf; line-height:1.7; min-height:340px; }
+.loader { text-align:center; color:var(--neon); padding:40px 0; font-size:18px; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100% {opacity:1;} 50% {opacity:0.6;} }
 </style>
 </head>
 <body>
 
-<header>
-<div class="logo">APX v78 - EMA ONLY</div>
-</header>
+<header><div class="logo">APX MILONGAZI STYLE v1</div></header>
 
 <div class="container">
-<div class="panel">
+  <div class="panel">
+    <div class="tabs">
+      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+      <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+    </div>
 
-<div class="tabs">
- <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
- <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
- <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
+    <select id="pairs" multiple size="6"></select>
 
-<select id="pairs" multiple size="6"></select>
+    <div style="display:flex; gap:10px; margin:15px 0;">
+      <input type="time" id="start" value="18:00">
+      <input type="time" id="end" value="21:00">
+    </div>
 
-<div style="display:flex;gap:10px;">
- <input type="time" id="start" value="18:00">
- <input type="time" id="end" value="21:00">
-</div>
+    <button class="generate" onclick="generateStableFlow()">GENERATE STABLE FLOW</button>
+    <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
 
-<button class="generate" onclick="generate()">GENERATE</button>
-<button class="telegram" onclick="sendTG()">SEND TG</button>
-
-<div id="output">READY</div>
-
-</div>
+    <div id="output">READY • SELECT 3-8 PAIRS + TIME RANGE</div>
+  </div>
 </div>
 
 <script>
-
-const API="https://apx.mkapi009.workers.dev?pair=";
-const TG ="https://signal.mkapi009.workers.dev/send";
-
-let signals=[];
-
-const PAIRS={
- OTC:["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
- CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
- STOCK:["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
+const PAIRS = {
+  OTC: ["USDPKR-otc","USDINR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc","BRLUSD-otc","USDMXN-otc","USDEGP-otc"],
+  CRYPTO: ["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
+  STOCK: ["MSFSTK-otc","AXPSTK-OTC","PFESTK-otc","MCDSTK-otc","JNJSTK-otc"]
 };
 
-function setMarket(type,el){
- document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
- el.classList.add("active");
- let select=document.getElementById("pairs");
- select.innerHTML="";
- PAIRS[type].forEach(p=>{
-  let o=document.createElement("option");
-  o.value=p;
-  o.textContent=p.replace("-otc","");
-  select.appendChild(o);
- });
+function setMarket(type, el) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  const select = document.getElementById("pairs");
+  select.innerHTML = "";
+  PAIRS[type].forEach(p => {
+    let opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p.replace("-otc","");
+    select.appendChild(opt);
+  });
+}
+setMarket("OTC", document.querySelector(".tab.active"));
+
+let signals = [];
+
+function padTime(min) {
+  let h = Math.floor(min / 60) % 24;
+  let m = min % 60;
+  return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
 }
 
-function EMA(prices,period){
- if (prices.length < period) return null;
- let k = 2 / (period + 1);
- let ema = prices[0];
- for(let i = 1; i < prices.length; i++){
-  ema = prices[i] * k + ema * (1 - k);
- }
- return ema;
+function toMin(t) {
+  let [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
 }
 
-async function generate(){
+async function generateStableFlow() {
   signals = [];
-  let out = document.getElementById("output");
-  out.innerText = "ANALYZING...";
+  const output = document.getElementById("output");
+  output.innerText = "GENERATING STABLE FLOW...";
 
-  let selected = [...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-  if(selected.length === 0){
-    out.innerText = "SELECT PAIRS";
+  const selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
+  if (selected.length < 3) {
+    output.innerText = "Kam se kam 3 pairs select kar bhai";
     return;
   }
 
-  let start = document.getElementById("start").value;
-  let end = document.getElementById("end").value;
+  const startStr = document.getElementById("start").value || "18:00";
+  const endStr = document.getElementById("end").value || "21:00";
 
-  let startMin = parseInt(start.split(":")[0])*60 + parseInt(start.split(":")[1]);
-  let endMin = parseInt(end.split(":")[0])*60 + parseInt(end.split(":")[1]);
+  let currentMin = toMin(startStr);
+  let endMin = toMin(endStr);
+  if (endMin <= currentMin) endMin += 1440;
 
-  let allSignals = [];
+  let pairIndex = 0;
+  let lastPair = null;
+  let lastDir = null;
 
-  for(let pair of selected){
-    try{
-      let res = await fetch(API+pair);
-      let json = await res.json();
-      if(!json.data || json.data.length < 25) continue;
+  while (currentMin <= endMin && signals.length < 40) {
+    let pair = selected[pairIndex % selected.length];
+    let cleanPair = pair.replace("-otc","").toUpperCase();
 
-      let candles = json.data;
+    // Avoid back-to-back same pair or same direction
+    if (pair === lastPair || (Math.random() > 0.65)) {
+      pairIndex++;
+      continue;
+    }
 
-      for(let i = 15; i < candles.length; i++){
-        let c = candles[i];
+    // Simple bias: alternate CALL/PUT with slight preference
+    let dir = (Math.random() > 0.48) ? "CALL" : "PUT";
+    if (lastDir === dir) dir = dir === "CALL" ? "PUT" : "CALL";
 
-        let timeParts = c.time.split(" ");
-        let hm = timeParts[1] || c.time;
-        let [h,m,s] = hm.split(":").map(Number);
-        let totalMin = h*60 + m;
+    signals.push(`M1;\( {cleanPair.padEnd(6)}; \){padTime(currentMin)};${dir}`);
 
-        if(totalMin < startMin || totalMin > endMin) continue;
+    lastPair = pair;
+    lastDir = dir;
 
-        let closes = candles.slice(i-15, i+1).map(x => x.close);
-        let ema9 = EMA(closes, 9);
-        let ema21 = EMA(closes, 21);
-
-        let direction = null;
-
-        if(ema9 > ema21){
-          direction = "CALL";
-        } else if(ema9 < ema21){
-          direction = "PUT";
-        }
-
-        if(direction){
-          allSignals.push(`M1;\( {pair.replace("-otc","").padEnd(6)}; \){hm.split(":").slice(0,2).join(":")};${direction}`);
-        }
-      }
-
-    }catch(e){}
+    // Natural gap 8-15 min (milongazi style)
+    currentMin += 8 + Math.floor(Math.random() * 8);
+    pairIndex++;
   }
 
-  if(allSignals.length === 0){
-    out.innerText = "NO STRONG MOVE YET\nTRY DIFFERENT TIME OR PAIRS";
+  if (signals.length === 0) {
+    output.innerText = "NO FLOW GENERATED\nCHANGE TIME RANGE OR PAIRS";
     return;
   }
 
-  allSignals.sort((a,b) => a.split(";")[2].localeCompare(b.split(";")[2]));
+  let h = "STABLE FLOW SIGNALS\n━━━━━━━━━━━━━━\n";
+  h += signals.join("\n");
+  h += "\n━━━━━━━━━━━━━━\n• Exact time entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
 
-  signals = allSignals;
-
-  out.innerText = "M1 SIGNALS\n━━━━━━━━━━━━━━\n" + signals.join("\n") + "\n━━━━━━━━━━━━━━\n• Exact time entry\n• 1 step MG max\n• Avoid news\n• 2 loss pe stop";
+  output.innerText = h;
 }
 
-async function sendTG(){
-  if(signals.length === 0){
-    alert("No signals");
+async function sendToTelegram() {
+  if (signals.length === 0) {
+    alert("No signals to send bhai");
     return;
   }
 
-  let msg = "APX SIGNALS\nPK Time | 1 Min\n━━━━━━━━━━\n" + signals.join("\n") + "\n━━━━━━━━━━\nTrade safe";
+  let msg = "APX STABLE FLOW\nPK Time | 1 Min\n━━━━━━━━━━\n" + signals.join("\n") + "\n━━━━━━━━━━\nTrade safe";
 
-  await fetch(TG, {method:"POST", body: msg});
-  alert("Sent to Telegram");
+  await fetch(TG, {
+    method: "POST",
+    body: msg
+  });
+
+  alert("Signals sent to Telegram!");
 }
 </script>
-
 </body>
 </html>
