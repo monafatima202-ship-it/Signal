@@ -1,92 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX MILOGZAI NEON PRO v3</title>
+<title>APX MILOGZAI FLOW PROJECTION</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{
---bg:#050b14;
---panel:#0c1826;
---neon:#00ff88;
---cyan:#00ccff;
---glow:0 0 15px #00ff88,0 0 30px #00ccff;
-}
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani'}
-header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow)}
-.logo{font-family:'Orbitron';font-size:24px;color:var(--neon);letter-spacing:2px}
-.container{max-width:680px;margin:20px auto;padding:15px}
-.panel{background:var(--panel);padding:25px;border-radius:15px;box-shadow:0 0 25px rgba(0,255,136,0.1)}
-.tabs{display:flex;gap:8px;margin-bottom:15px}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);border-radius:10px;cursor:pointer;font-weight:bold}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow)}
-select,input{width:100%;padding:12px;margin:10px 0;background:#06121f;border:1px solid #1a3a3a;border-radius:10px;color:white}
-button{width:100%;padding:16px;margin:8px 0;border:none;border-radius:12px;font-family:'Orbitron';font-weight:bold;cursor:pointer}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow)}
-.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;box-shadow:0 0 20px #0088cc}
-#output{margin-top:15px;background:#000;padding:15px;border-radius:10px;white-space:pre-wrap;min-height:320px;font-family:monospace}
+body{background:#060d16;color:#00ff88;font-family:'Rajdhani';margin:0;padding:20px}
+.container{max-width:700px;margin:auto;background:#0f1c2c;padding:20px;border-radius:12px}
+h2{font-family:'Orbitron';text-align:center}
+select,input,button{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:none}
+button{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;font-weight:bold}
+#output{background:#000;padding:15px;margin-top:10px;white-space:pre-wrap;min-height:280px;font-family:monospace}
 </style>
 </head>
 <body>
 
-<header>
-<div class="logo">APX MILOGZAI NEON PRO v3</div>
-</header>
-
 <div class="container">
-<div class="panel">
+<h2>MILOGZAI FLOW PROJECTION</h2>
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
-
-<select id="pairs" multiple size="6"></select>
+<select id="pairs" multiple size="6">
+<option value="USDINR-otc">USDINR</option>
+<option value="USDPKR-otc">USDPKR</option>
+<option value="USDARS-otc">USDARS</option>
+<option value="USDBDT-otc">USDBDT</option>
+<option value="USDNGN-otc">USDNGN</option>
+<option value="BRLUSD-otc">BRLUSD</option>
+</select>
 
 <input type="time" id="start" value="18:00">
 <input type="time" id="end" value="22:00">
 
-<button class="generate" onclick="generateFlow()">GENERATE FLOW</button>
-<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+<button onclick="generate()">GENERATE FLOW</button>
 
-<div id="output">READY • SELECT PAIRS + TIME RANGE</div>
-
-</div>
+<div id="output">READY</div>
 </div>
 
 <script>
 const API="https://apx.mkapi009.workers.dev?pair=";
-let signals=[];
-let currentMarket="OTC";
-
-const PAIRS={
-OTC:["USDINR-otc","USDPKR-otc","USDARS-otc","USDBDT-otc","USDNGN-otc"],
-CRYPTO:["BTCUSD-otc","ETHUSD-otc","XAUUSD-otc"],
-STOCK:["MSFTSTK-otc","AXPSTK-otc","PFESTK-otc","MCDSTK-otc"]
-};
-
-function setMarket(type,el){
-currentMarket=type;
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-loadPairs();
-}
-
-function loadPairs(){
-const select=document.getElementById("pairs");
-select.innerHTML="";
-PAIRS[currentMarket].forEach(p=>{
-let opt=document.createElement("option");
-opt.value=p;
-opt.textContent=p.replace("-otc","");
-select.appendChild(opt);
-});
-}
-loadPairs();
 
 function padTime(min){
 let h=Math.floor(min/60)%24;
@@ -99,24 +51,13 @@ let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-function EMA(arr,p){
-let k=2/(p+1);
-let ema=arr[0];
-for(let i=1;i<arr.length;i++){
-ema=arr[i]*k+ema*(1-k);
-}
-return ema;
-}
-
-async function getBias(pair){
+async function getInitialBias(pair){
 try{
 let res=await fetch(API+pair);
 let json=await res.json();
-if(!json.data||json.data.length<20) return null;
+if(!json.data||json.data.length<6) return "CALL";
 
 let closes=json.data.map(c=>c.close);
-let ema9=EMA(closes.slice(-15),9);
-let ema21=EMA(closes.slice(-15),21);
 
 let up=0,down=0;
 for(let i=closes.length-4;i<closes.length;i++){
@@ -124,21 +65,20 @@ if(closes[i]>closes[i-1]) up++;
 if(closes[i]<closes[i-1]) down++;
 }
 
-let dir = ema9>ema21 ? "CALL":"PUT";
-let strength = Math.max(up,down);
+if(up>down) return "CALL";
+if(down>up) return "PUT";
 
-return {dir, strength};
+return closes[closes.length-1]>closes[closes.length-2]?"CALL":"PUT";
 
 }catch(e){
-return null;
+return "CALL";
 }
 }
 
-async function generateFlow(){
+async function generate(){
 
-signals=[];
-const output=document.getElementById("output");
-output.innerText="Analyzing Structure...";
+let output=document.getElementById("output");
+output.innerText="Building Milogzai Projection...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 if(selected.length<2){
@@ -152,55 +92,43 @@ if(end<=start) end+=1440;
 
 let biasMap={};
 await Promise.all(selected.map(async p=>{
-biasMap[p]=await getBias(p);
+biasMap[p]=await getInitialBias(p);
 }));
 
 let pointer=start;
 let index=0;
 let lastPair=null;
+let signals=[];
 
-while(pointer<=end && signals.length<30){
+while(pointer<=end && signals.length<35){
 
 let pair=selected[index%selected.length];
 let clean=pair.replace("-otc","").toUpperCase();
-let data=biasMap[pair];
+let dir=biasMap[pair];
 
-if(data && pair!==lastPair){
+// only block same pair back-to-back
+if(pair!==lastPair){
 
-signals.push(`M1;${clean.padEnd(8)};${padTime(pointer)};${data.dir}`);
+signals.push(`M1;${clean.padEnd(8)};${padTime(pointer)};${dir}`);
 lastPair=pair;
 
-// dynamic milogzai gap based on strength
-let gap;
-if(data.strength>=3) gap=8;
-else if(data.strength==2) gap=10;
-else gap=12;
-
-pointer+=gap;
+// natural milogzai gap pattern (cycle based, not random)
+let cycle=index%4;
+if(cycle===0) pointer+=8;
+else if(cycle===1) pointer+=11;
+else if(cycle===2) pointer+=9;
+else pointer+=12;
 }
 
 index++;
-if(index>200) break;
+if(index>300) break;
 }
 
-if(signals.length===0){
-output.innerText="Market weak. Try different time.";
-return;
-}
-
-let text="✦ MILOGZAI NEON FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
+let text="✦ MILOGZAI STYLE FLOW ✦\n━━━━━━━━━━━━━━━━━━\n";
 text+=signals.join("\n");
-text+="\n━━━━━━━━━━━━━━━━━━\nRules:\n• Exact time entry\n• 1 Step Martingale Max\n• Avoid High Impact News\n• Stop after 2 Loss\n• Risk 2-3% per trade";
+text+="\n━━━━━━━━━━━━━━━━━━\nRules:\n• Exact Time Entry\n• 1 Step Martingale Max\n• Avoid High Impact News\n• Stop After 2 Loss\n• Risk 2% Per Trade";
 
 output.innerText=text;
-}
-
-function sendToTelegram(){
-if(signals.length===0){
-alert("Generate signals first");
-return;
-}
-alert("Telegram API integrate karna hoga yahan.");
 }
 </script>
 </body>
