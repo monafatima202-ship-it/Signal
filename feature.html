@@ -1,216 +1,405 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>✦ ADOX APE v3 Premium ✦</title>
+<title>✦ ADOX APE v3 PREMIUM ELITE ✦</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-:root{
---bg:#02060c;
---panel:#0a111f;
---neon:#00ff88;
---cyan:#00ccff;
---glow:0 0 20px #00ff88,0 0 30px #00ccff;
+:root {
+  --bg: #02060c;
+  --panel: linear-gradient(135deg, #0a111f, #0f1a2e);
+  --neon: #00ff9d;
+  --cyan: #00d4ff;
+  --purple: #a020f0;
+  --glow: 0 0 25px #00ff9d, 0 0 40px #00d4ff, 0 0 60px #a020f0;
+  --shadow: 0 10px 30px rgba(0,255,157,0.15);
 }
-body{background:var(--bg);color:#e0fbee;font-family:'Rajdhani';padding:20px;}
-header{text-align:center;padding:25px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow);}
-.logo{font-family:'Orbitron';font-size:20px;color:var(--neon);text-shadow:0 0 15px var(--neon);}
-.container{max-width:520px;margin:20px auto;}
-.panel{background:var(--panel);padding:25px;border-radius:20px;box-shadow:0 0 25px rgba(0,255,136,.2);}
-.tabs{display:flex;gap:8px;margin-bottom:15px;}
-.tab{flex:1;padding:10px;border:2px solid var(--neon);background:transparent;color:var(--neon);cursor:pointer;border-radius:8px;font-weight:bold;}
-.tab.active{background:var(--neon);color:black;box-shadow:var(--glow);}
-select,input{width:100%;padding:12px;margin:10px 0;background:#050d1a;border:1px solid #1a3a3a;color:white;border-radius:10px;}
-button{width:100%;padding:16px;margin:10px 0;border:none;border-radius:12px;font-family:'Orbitron';font-weight:900;cursor:pointer;}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black;box-shadow:var(--glow);}
-.telegram{background:linear-gradient(135deg,#0088cc,#00aaff);color:white;}
-#output{margin-top:20px;background:#01040a;padding:15px;border-radius:12px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;min-height:320px;}
-.loader{display:none;text-align:center;color:var(--neon);}
-.footer{text-align:center;margin-top:20px;color:var(--cyan);}
+
+body {
+  background: var(--bg);
+  color: #e0ffee;
+  font-family: 'Rajdhani', sans-serif;
+  padding: 20px;
+  margin: 0;
+  background-image: radial-gradient(circle at 10% 20%, rgba(0,255,157,0.08) 0%, transparent 20%);
+}
+
+header {
+  text-align: center;
+  padding: 30px 20px;
+  background: linear-gradient(to bottom, #000, #0a0f1a);
+  border-bottom: 5px solid var(--neon);
+  box-shadow: var(--glow);
+  border-radius: 0 0 25px 25px;
+}
+
+.logo {
+  font-family: 'Orbitron';
+  font-size: 28px;
+  background: linear-gradient(90deg, var(--neon), var(--cyan), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 20px rgba(0,255,157,0.7);
+  letter-spacing: 3px;
+}
+
+.container {
+  max-width: 580px;
+  margin: 30px auto;
+}
+
+.panel {
+  background: var(--panel);
+  padding: 30px;
+  border-radius: 25px;
+  box-shadow: var(--shadow), inset 0 0 20px rgba(0,255,157,0.08);
+  border: 1px solid rgba(0,255,157,0.2);
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab {
+  flex: 1;
+  padding: 14px;
+  border: 2px solid var(--neon);
+  background: transparent;
+  color: var(--neon);
+  cursor: pointer;
+  border-radius: 12px;
+  font-weight: bold;
+  transition: all 0.3s;
+}
+
+.tab.active {
+  background: linear-gradient(135deg, var(--neon), var(--cyan));
+  color: #000;
+  box-shadow: var(--glow);
+  transform: translateY(-3px);
+}
+
+select, input {
+  width: 100%;
+  padding: 14px;
+  margin: 12px 0;
+  background: #050d1a;
+  border: 1px solid rgba(0,255,157,0.3);
+  color: #fff;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 18px;
+  margin: 12px 0;
+  border: none;
+  border-radius: 15px;
+  font-family: 'Orbitron';
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.4s;
+}
+
+.generate {
+  background: linear-gradient(135deg, #00ff9d, #00d4ff, #a020f0);
+  color: #000;
+  box-shadow: var(--glow);
+}
+
+.generate:hover { transform: scale(1.03); }
+
+.telegram {
+  background: linear-gradient(135deg, #0088cc, #00aaff, #7d2ae8);
+  color: white;
+}
+
+#output {
+  margin-top: 25px;
+  background: #01040a;
+  padding: 20px;
+  border-radius: 15px;
+  border: 2px dashed var(--neon);
+  white-space: pre-wrap;
+  font-family: monospace;
+  font-size: 15px;
+  min-height: 380px;
+  box-shadow: inset 0 0 15px rgba(0,255,157,0.1);
+}
+
+.loader {
+  display: none;
+  text-align: center;
+  color: var(--neon);
+  margin: 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #0a1a2f;
+  border-radius: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.progress {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--neon), var(--cyan));
+  animation: pulse 2s infinite;
+  transition: width 0.4s;
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+.footer {
+  text-align: center;
+  margin-top: 30px;
+  color: var(--cyan);
+  font-size: 14px;
+  text-shadow: 0 0 10px var(--cyan);
+}
 </style>
 </head>
 
 <body>
 
 <header>
-<div class="logo">✦ ADOX APE v3 PREMIUM FLOW ✦</div>
+  <div class="logo">✦ ADOX APE v3 ELITE PREMIUM ✦</div>
 </header>
 
 <div class="container">
-<div class="panel">
+  <div class="panel">
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
+    <div class="tabs">
+      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
+      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
+      <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
+    </div>
 
-<select id="pairs" multiple size="8"></select>
+    <select id="pairs" multiple size="10"></select>
 
-<div style="display:flex;gap:10px;">
-<input type="time" id="start" value="20:00">
-<input type="time" id="end" value="23:00">
-</div>
+    <div style="display:flex; gap:12px;">
+      <input type="time" id="start" value="20:00">
+      <input type="time" id="end" value="23:59">
+    </div>
 
-<button class="generate" onclick="generateFlow()">GENERATE PREMIUM FLOW</button>
-<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+    <button class="generate" onclick="generateFlow()">GENERATE ELITE FLOW ⚡</button>
+    <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM 📤</button>
 
-<div class="loader" id="loader">Analyzing Market Structure...</div>
-<div id="output">READY • SELECT PAIRS</div>
+    <div class="loader" id="loader">
+      Analyzing Elite Structure...
+      <div class="progress-bar"><div class="progress" id="progress"></div></div>
+    </div>
 
-</div>
+    <div id="output">READY • SELECT PAIRS & TIME RANGE 🌟</div>
+
+  </div>
 </div>
 
 <div class="footer">
-Powered by APX Premium<br>
-Rules: Exact Time Entry • 1 Step MG Max • Avoid High Impact News • Stop After 2 Loss
+  Powered by APX Elite Engine • Exact Entry • 1-Step MG Max • Avoid News • Stop @ 2 Losses 🔥<br>
+  Neon-Powered • Real Structure • High Accuracy Flow
 </div>
 
 <script>
+const API = "https://mrbeaxt.site/Qx/Qx.php?format=json&pair=";
+const TG = "https://signal.mkapi009.workers.dev/send";
 
-const API="https://mrbeaxt.site/Qx/Qx.php?format=json&pair=";
-const TG="https://signal.mkapi009.workers.dev/send";
-
-const PAIRS={
-OTC:["USDINR_otc","USDPKR_otc","USDBDT_otc","USDARS_otc","USDNGN_otc"],
-CRYPTO:["BTCUSD_otc","ETHUSD_otc","XAUUSD_otc"],
-STOCK:["MSFSTK_otc","AXPSTK_otc","PFESTK_otc"]
+// Expanded pairs list (added more realistic OTC + some crypto/stock – API limited hai to OTC best work karega)
+const PAIRS = {
+  OTC: [
+    "USDINR_otc", "USDPKR_otc", "USDBDT_otc", "USDARS_otc", "USDNGN_otc",
+    "EURUSD_otc", "GBPUSD_otc", "AUDUSD_otc", "USDJPY_otc", "USDCAD_otc",
+    "BRLUSD_otc", "NZDUSD_otc"  // Extra common OTC pairs
+  ],
+  CRYPTO: [
+    "BTCUSD_otc", "ETHUSD_otc", "XAUUSD_otc", "XRPUSD_otc", "LTCUSD_otc", "SOLUSD_otc"
+  ],
+  STOCK: [
+    "MSFSTK_otc", "AXPSTK_otc", "PFESTK_otc", "AAPLSTK_otc", "TSLASTK_otc", "GOOGLSTK_otc"
+  ]
 };
 
-let signals=[];
-let currentMarket="OTC";
+let currentMarket = "OTC";
+let signals = [];
+let cacheKey = "";  // For same input same output
 
-function setMarket(type,el){
-currentMarket=type;
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-let select=document.getElementById("pairs");
-select.innerHTML="";
-PAIRS[type].forEach(p=>{
-let o=document.createElement("option");
-o.value=p;
-o.textContent=p.replace("_otc","");
-select.appendChild(o);
-});
+function setMarket(type, el) {
+  currentMarket = type;
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  let select = document.getElementById("pairs");
+  select.innerHTML = "";
+  PAIRS[type].forEach(p => {
+    let o = document.createElement("option");
+    o.value = p;
+    o.textContent = p.replace("_otc", "");
+    select.appendChild(o);
+  });
 }
-setMarket("OTC",document.querySelector(".tab"));
+setMarket("OTC", document.querySelector(".tab.active"));
 
-function EMA(arr,p){let k=2/(p+1);let ema=arr[0];for(let i=1;i<arr.length;i++) ema=arr[i]*k+ema*(1-k);return ema;}
-function toMin(t){let[h,m]=t.split(":").map(Number);return h*60+m;}
-function pad(min){let h=Math.floor(min/60)%24;let m=min%60;return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;}
-
-async function analyzePair(pair){
-let r=await fetch(API+pair);
-let j=await r.json();
-if(!j.success||j.data.length<50) return null;
-
-let data=j.data.reverse();
-let closes=data.map(c=>parseFloat(c.close));
-let opens=data.map(c=>parseFloat(c.open));
-let highs=data.map(c=>parseFloat(c.high));
-let lows=data.map(c=>parseFloat(c.low));
-
-let ema9=EMA(closes.slice(-40),9);
-let ema21=EMA(closes.slice(-40),21);
-let sep=Math.abs(ema9-ema21);
-if(sep<0.0002) return null;
-
-let bull=0,bear=0;
-for(let i=closes.length-6;i<closes.length;i++){
-if(closes[i]>opens[i]) bull++;
-if(closes[i]<opens[i]) bear++;
+function EMA(arr, p) {
+  let k = 2 / (p + 1);
+  let ema = arr[0];
+  for (let i = 1; i < arr.length; i++) ema = arr[i] * k + ema * (1 - k);
+  return ema;
 }
 
-let vol=0;
-for(let i=highs.length-15;i<highs.length;i++)
-vol+=Math.abs(highs[i]-lows[i]);
-vol/=15;
-
-let dir=ema9>ema21?"CALL":"PUT";
-let score=sep*1000 + Math.max(bull,bear)*4 + vol*500;
-
-return {pair,dir,score,vol};
+function toMin(t) {
+  let [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
 }
 
-async function generateFlow(){
-
-signals=[];
-let output=document.getElementById("output");
-let loader=document.getElementById("loader");
-loader.style.display="block";
-output.innerText="";
-
-let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
-if(selected.length===0){loader.style.display="none";output.innerText="Select pairs.";return;}
-
-let start=toMin(document.getElementById("start").value);
-let end=toMin(document.getElementById("end").value);
-if(end<=start) end+=1440;
-
-let structures=[];
-for(let p of selected){
-let r=await analyzePair(p);
-if(r) structures.push(r);
+function pad(min) {
+  let h = Math.floor(min / 60) % 24;
+  let m = min % 60;
+  return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
 }
 
-if(structures.length===0){loader.style.display="none";output.innerText="Market flat or weak.";return;}
+async function analyzePair(pair) {
+  try {
+    let r = await fetch(API + pair);
+    let j = await r.json();
+    if (!j.success || !j.data || j.data.length < 50) return null;
 
-let pointer=start;
-let lastPair=null;
-let consecutive=0;
+    let data = j.data.reverse();
+    let closes = data.map(c => parseFloat(c.close));
+    let opens = data.map(c => parseFloat(c.open));
+    let highs = data.map(c => parseFloat(c.high));
+    let lows = data.map(c => parseFloat(c.low));
 
-// Guarantee every pair appears once
-for(let s of structures){
-signals.push(`M1;${s.pair.replace("_otc","")};${pad(pointer)};${s.dir}`);
-pointer+=6+Math.floor(s.vol*1000)%4;
+    let ema9 = EMA(closes.slice(-40), 9);
+    let ema21 = EMA(closes.slice(-40), 21);
+    let sep = Math.abs(ema9 - ema21);
+    if (sep < 0.0002) return null;
+
+    let bull = 0, bear = 0;
+    for (let i = closes.length - 6; i < closes.length; i++) {
+      if (closes[i] > opens[i]) bull++;
+      if (closes[i] < opens[i]) bear++;
+    }
+
+    let vol = 0;
+    for (let i = highs.length - 15; i < highs.length; i++)
+      vol += Math.abs(highs[i] - lows[i]);
+    vol /= 15;
+
+    let dir = ema9 > ema21 ? "CALL" : "PUT";
+    let score = sep * 1000 + Math.max(bull, bear) * 4 + vol * 600;  // Slightly boosted vol weight
+
+    return { pair, dir, score, vol };
+  } catch (e) { return null; }
 }
 
-// Now dynamic until 20-25
-while(pointer<=end && signals.length<20){
-structures.sort((a,b)=>b.score-a.score);
-let chosen=structures[0];
+async function generateFlow() {
+  let selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
+  if (selected.length === 0) {
+    document.getElementById("output").innerText = "⚠️ SELECT AT LEAST 1 PAIR";
+    return;
+  }
 
-if(lastPair===chosen.pair){consecutive++;}else{consecutive=1;}
+  let start = toMin(document.getElementById("start").value);
+  let end = toMin(document.getElementById("end").value);
+  if (end <= start) end += 1440;
 
-if(consecutive>=3 && structures.length>1){
-chosen=structures[1];
-consecutive=1;
+  // Cache check
+  let newCacheKey = currentMarket + "|" + selected.sort().join(",") + "|" + start + "|" + end;
+  if (newCacheKey === cacheKey && signals.length > 0) {
+    document.getElementById("output").innerText = "♻️ USING CACHED ELITE FLOW (same inputs)";
+    return;  // Same signals reuse
+  }
+  cacheKey = newCacheKey;
+
+  signals = [];
+  let output = document.getElementById("output");
+  let loader = document.getElementById("loader");
+  let progress = document.getElementById("progress");
+  loader.style.display = "block";
+  output.innerText = "";
+
+  let structures = [];
+  let total = selected.length;
+  let count = 0;
+
+  for (let p of selected) {
+    let r = await analyzePair(p);
+    if (r) structures.push(r);
+    count++;
+    progress.style.width = (count / total * 100) + "%";
+    await new Promise(r => setTimeout(r, 300));  // Fake delay for premium feel
+  }
+
+  if (structures.length === 0) {
+    loader.style.display = "none";
+    output.innerText = "🌑 Market flat or no strong structure detected.";
+    return;
+  }
+
+  let pointer = start;
+  let lastPair = null;
+  let consecutive = 0;
+
+  // Guarantee each pair once
+  for (let s of structures) {
+    signals.push(`M1; ${s.pair.replace("_otc","")}  🌟  ${pad(pointer)}  →  ${s.dir}  🔥`);
+    pointer += 6 + Math.floor(s.vol * 1000) % 5;
+  }
+
+  // Dynamic fill
+  while (pointer <= end && signals.length < 25) {
+    structures.sort((a,b) => b.score - a.score);
+    let chosen = structures[0];
+
+    if (lastPair === chosen.pair) consecutive++; else consecutive = 1;
+    if (consecutive >= 3 && structures.length > 1) {
+      chosen = structures[1];
+      consecutive = 1;
+    }
+
+    signals.push(`M1; ${chosen.pair.replace("_otc","")}  ⚡  ${pad(pointer)}  →  ${chosen.dir}  💥`);
+    pointer += 6 + Math.floor(chosen.vol * 1000) % 7;
+    chosen.score *= 0.82;  // Faster decay for variety
+    lastPair = chosen.pair;
+  }
+
+  // Extension if super strong
+  if (signals.length >= 20 && structures[0].score > 600) {
+    while (pointer <= end && signals.length < 30) {
+      let chosen = structures[0];
+      signals.push(`M1; ${chosen.pair.replace("_otc","")}  ✨  ${pad(pointer)}  →  ${chosen.dir}  🚀`);
+      pointer += 7;
+    }
+  }
+
+  loader.style.display = "none";
+
+  let text = "✦ ADOX APE v3 ELITE PREMIUM FLOW ✦\n━━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | Elite Neon Engine Activated 🌌\n\n";
+  text += signals.join("\n");
+  text += "\n\n━━━━━━━━━━━━━━━━━━━━━━━\n• EMA + Volatility Ranked\n• Momentum Boosted\n• Anti-Consecutive Logic\n• 1 Step MG Max • Avoid News\nTrade Safe 🔥 Mona Elite";
+
+  output.innerText = text;
 }
 
-signals.push(`M1;${chosen.pair.replace("_otc","")};${pad(pointer)};${chosen.dir}`);
-
-pointer+=6+Math.floor(chosen.vol*1000)%6;
-chosen.score*=0.85;
-lastPair=chosen.pair;
+async function sendToTelegram() {
+  if (signals.length === 0) { alert("Generate Elite Flow First! ⚡"); return; }
+  let msg = "✦ ADOX APE v3 ELITE FLOW ✦\n━━━━━━━━━━\nUTC+6\n" + signals.join("\n") + "\n━━━━━━━━━━\nPowered by APX Elite • Trade Safe 🔥";
+  await fetch(TG, {method: "POST", headers: {"Content-Type": "text/plain"}, body: msg});
+  alert("Elite Flow Sent to Telegram! 📤✨");
 }
-
-// Strong market extension
-if(signals.length>=20 && structures[0].score>500){
-while(pointer<=end && signals.length<25){
-let chosen=structures[0];
-signals.push(`M1;${chosen.pair.replace("_otc","")};${pad(pointer)};${chosen.dir}`);
-pointer+=7;
-}
-}
-
-loader.style.display="none";
-
-let text="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━━━━━━━━━\nUTC+6 | Real Structure Engine\n\n";
-text+=signals.join("\n");
-text+="\n━━━━━━━━━━━━━━━━━━\nTrade Safe";
-
-output.innerText=text;
-}
-
-async function sendToTelegram(){
-if(signals.length===0){alert("Generate flow first");return;}
-let msg="✦ ADOX PREMIUM FLOW ✦\n━━━━━━━━━━\nUTC+6\n"+signals.join("\n")+"\n━━━━━━━━━━\nPowered by APX Premium";
-await fetch(TG,{method:"POST",headers:{"Content-Type":"text/plain"},body:msg});
-alert("Sent to Telegram");
-}
-
 </script>
 </body>
 </html>
