@@ -2,10 +2,10 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>APX FEATURE SIGNAL ENGINE</title>
+<title>APX FEATURE ENGINE STABLE</title>
 <style>
-body{background:#0e1624;color:#00ff88;font-family:Arial;margin:0;padding:20px}
-.container{max-width:800px;margin:auto;background:#16273b;padding:20px;border-radius:12px}
+body{background:#0f1724;color:#00ff88;font-family:Arial;margin:0;padding:20px}
+.container{max-width:800px;margin:auto;background:#18293d;padding:20px;border-radius:12px}
 h2{text-align:center}
 select,input,button{width:100%;padding:10px;margin:6px 0;border-radius:6px;border:none}
 button{background:#00ff88;color:black;font-weight:bold;cursor:pointer}
@@ -16,12 +16,12 @@ button{background:#00ff88;color:black;font-weight:bold;cursor:pointer}
 <body>
 
 <div class="container">
-<h2>APX FEATURE SIGNAL ENGINE (Hack2 Style)</h2>
+<h2>APX FEATURE SIGNAL ENGINE (Stable)</h2>
 
 <select id="pair">
+<option value="USDINR-OTC" selected>USDINR</option>
 <option value="USDTRY-OTC">USDTRY</option>
 <option value="USDPKR-OTC">USDPKR</option>
-<option value="USDINR-OTC" selected>USDINR</option>
 <option value="USDARS-OTC">USDARS</option>
 <option value="USDBDT-OTC">USDBDT</option>
 <option value="USDNGN-OTC">USDNGN</option>
@@ -30,13 +30,10 @@ button{background:#00ff88;color:black;font-weight:bold;cursor:pointer}
 <label>Min Confidence (0.5 - 0.95)</label>
 <input type="number" id="confidence" step="0.05" value="0.80">
 
-<label>Min Hours (trend persistence)</label>
-<input type="number" id="hours" value="3">
-
 <label>Remove Back-to-Back (1 or 0)</label>
 <input type="number" id="remove" value="1">
 
-<button onclick="generateFeatureSignals()">GENERATE FEATURE SIGNALS</button>
+<button onclick="generate()">GENERATE FEATURE SIGNALS</button>
 
 <div id="status"></div>
 <div id="output">READY</div>
@@ -45,12 +42,6 @@ button{background:#00ff88;color:black;font-weight:bold;cursor:pointer}
 <script>
 
 const API="https://apx.mkapi009.workers.dev?pair=";
-
-function padTime(min){
-let h=Math.floor(min/60)%24;
-let m=min%60;
-return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
-}
 
 function EMA(prices,period){
 let k=2/(period+1);
@@ -61,71 +52,73 @@ ema=prices[i]*k+ema*(1-k);
 return ema;
 }
 
-async function generateFeatureSignals(){
+function sleep(){
+return new Promise(r=>setTimeout(r,0));
+}
+
+async function generate(){
 
 let pair=document.getElementById("pair").value;
 let minConf=parseFloat(document.getElementById("confidence").value);
-let minHours=parseInt(document.getElementById("hours").value);
 let remove=parseInt(document.getElementById("remove").value);
 
 let output=document.getElementById("output");
 let status=document.getElementById("status");
 
-output.innerText="Analyzing historical structure...";
-status.innerText="Fetching candles...";
+output.innerText="Fetching candle data...";
+status.innerText="Loading...";
 
 let res=await fetch(API+pair);
 let json=await res.json();
 
-if(!json.data || json.data.length<100){
-output.innerText="Not enough candle data.";
+if(!json.data || json.data.length<60){
+output.innerText="Not enough data.";
 return;
 }
 
 let closes=json.data.map(c=>c.close);
 
+// 🔥 LIMIT SCAN RANGE (no full history)
+let startIndex = closes.length - 60;
+
 let signals=[];
 let lastDir=null;
 
-for(let i=50;i<closes.length-5;i++){
+for(let i=startIndex; i<closes.length-10; i++){
 
-let slice=closes.slice(i-30,i);
+let slice=closes.slice(i-20,i);
+if(slice.length<20) continue;
 
 let ema9=EMA(slice,9);
 let ema21=EMA(slice,21);
 
-if(!ema9||!ema21) continue;
+if(!ema9 || !ema21) continue;
 
-let direction=ema9>ema21?"CALL":"PUT";
+let dir=ema9>ema21?"CALL":"PUT";
 
-// agreement check (last N candles consistency)
+// last 3 candle agreement
 let up=0,down=0;
-for(let j=i-5;j<i;j++){
+for(let j=i-3;j<i;j++){
 if(closes[j]>closes[j-1]) up++;
 if(closes[j]<closes[j-1]) down++;
 }
 
-let agreement = direction==="CALL" ? up/5 : down/5;
+let agreement = dir==="CALL" ? up/3 : down/3;
 
-let confidenceScore = agreement;
+if(agreement>=minConf){
 
-// convert candle index to time
-let candleTime=json.data[i].time || "00:00";
-
-if(confidenceScore>=minConf){
-
-if(remove===1 && direction===lastDir) continue;
+if(remove===1 && dir===lastDir) continue;
 
 signals.push({
-pair:pair,
-time:candleTime,
-direction:direction,
-confidence:Math.round(confidenceScore*100),
-agreement:Math.round(agreement*100)
+time: json.data[i].time || "00:00",
+direction: dir,
+confidence: Math.round(agreement*100)
 });
 
-lastDir=direction;
+lastDir=dir;
 }
+
+if(i%5===0) await sleep(); // 🔥 prevent freeze
 }
 
 if(signals.length===0){
@@ -134,19 +127,19 @@ status.innerText="0 Signals";
 return;
 }
 
-let formatted="TRADING SIGNALS\n━━━━━━━━━━━━━━\n";
+let text="TRADING SIGNALS\n━━━━━━━━━━━━━━\n";
 
 signals.forEach(s=>{
-formatted+=`${s.pair} => ${s.time} => ${s.direction} (${s.confidence}%)\n`;
+text+=pair+" => "+s.time+" => "+s.direction+
+" ("+s.confidence+"%)\n";
 });
 
-formatted+="\nJSON DATA:\n"+JSON.stringify(signals,null,2);
-
-output.innerText=formatted;
-status.innerText="Generated "+signals.length+" Feature Signals";
+output.innerText=text;
+status.innerText="Generated "+signals.length+" Signals";
 
 }
 
 </script>
+
 </body>
 </html>
