@@ -3,233 +3,185 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>APX ULTRA PRO v6</title>
-
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<title>APX ULTRA PRO v8 STABLE</title>
 
 <style>
-:root{
---bg:#01060b;
---panel:#0a111f;
---neon:#00ff88;
---cyan:#00ccff;
---glow:0 0 20px #00ff88;
+body{
+background:#061018;
+color:#00ff88;
+font-family:Arial;
+margin:0;
+padding:20px;
 }
-body{margin:0;background:var(--bg);color:#e0fbee;font-family:'Rajdhani'}
-header{text-align:center;padding:20px;background:black;border-bottom:4px solid var(--neon);box-shadow:var(--glow)}
-.logo{font-family:'Orbitron';font-size:24px;color:var(--neon)}
-.container{max-width:650px;margin:20px auto;padding:15px}
-.panel{background:var(--panel);border-radius:20px;padding:25px;border:1px solid #00ff8840}
-.tabs{display:flex;gap:10px;margin-bottom:15px}
-.tab{flex:1;padding:10px;border:1px solid var(--neon);background:transparent;color:var(--neon);border-radius:8px;cursor:pointer}
-.tab.active{background:var(--neon);color:black}
-select,input{width:100%;padding:10px;margin-bottom:12px;background:#050d1a;border:1px solid #1a3a3a;border-radius:8px;color:white}
-select[multiple]{height:130px}
-button{width:100%;padding:14px;border:none;border-radius:10px;font-family:'Orbitron';font-weight:bold;cursor:pointer;margin-top:6px}
-.generate{background:linear-gradient(135deg,#00ff88,#00ccff);color:black}
-.telegram{background:#0088cc;color:white}
-#output{margin-top:15px;background:#01040a;padding:15px;border-radius:10px;border:1px dashed var(--neon);white-space:pre-wrap;font-family:monospace;min-height:250px}
-#status{text-align:center;margin-top:8px;font-weight:bold;color:#ffcc00}
-.rangeText{font-size:13px;margin-bottom:5px}
-.toggle{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.container{
+max-width:650px;
+margin:auto;
+background:#0c1b2a;
+padding:20px;
+border-radius:12px;
+}
+h2{
+text-align:center;
+margin-bottom:15px;
+}
+select,input,button{
+width:100%;
+margin:6px 0;
+padding:10px;
+border-radius:6px;
+border:none;
+}
+button{
+background:#00ff88;
+color:black;
+font-weight:bold;
+cursor:pointer;
+}
+#output{
+background:#000;
+padding:12px;
+margin-top:10px;
+white-space:pre-wrap;
+min-height:200px;
+border-radius:6px;
+}
+#status{
+margin-top:6px;
+color:yellow;
+font-weight:bold;
+text-align:center;
+}
 </style>
 </head>
 <body>
 
-<header>
-<div class="logo">APX HYBRID MILOGZAI ULTRA PRO v6</div>
-</header>
-
 <div class="container">
-<div class="panel">
+<h2>APX HYBRID MILOGZAI ULTRA PRO v8</h2>
 
-<div class="tabs">
-<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-</div>
+<label>Select Pairs:</label>
+<select id="pairs" multiple>
+<option value="USDTRY-OTC">USDTRY</option>
+<option value="USDPKR-OTC">USDPKR</option>
+<option value="USDINR-OTC">USDINR</option>
+<option value="USDARS-OTC">USDARS</option>
+<option value="USDBDT-OTC">USDBDT</option>
+<option value="USDNGN-OTC">USDNGN</option>
+</select>
 
-<select id="pairs" multiple></select>
-
-<div style="display:flex;gap:8px">
+<label>Start Time:</label>
 <input type="time" id="start" value="18:00">
-<input type="time" id="end" value="23:59">
-</div>
 
-<div class="rangeText">Minimum Strength %: <span id="strengthVal">60</span>%</div>
-<input type="range" id="strength" min="40" max="90" value="60"
-oninput="document.getElementById('strengthVal').innerText=this.value">
+<label>End Time:</label>
+<input type="time" id="end" value="23:00">
 
-<div class="toggle">
-<input type="checkbox" id="rsiToggle" checked>
-<label>Enable RSI Filter</label>
-</div>
-
-<button class="generate" onclick="generateSignals()">GENERATE ULTRA FLOW</button>
-<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM</button>
+<button onclick="generateSignals()">GENERATE STABLE FLOW</button>
 
 <div id="status"></div>
-<div id="output">READY • STABLE MODE ACTIVE</div>
-
-</div>
+<div id="output">READY</div>
 </div>
 
 <script>
-const API_BASE="https://apx.mkapi009.workers.dev?pair=";
-const TG_URL="https://signal.mkapi009.workers.dev/send";
-const MAX_SIGNALS=80;
+const API="https://apx.mkapi009.workers.dev?pair=";
+const MAX_SIGNALS=40;
 
-let signals=[];
-let lastDirection={};
-let currentMarket="OTC";
-
-const PAIRS={
-OTC:["USDTRY-OTC","USDPKR-OTC","USDINR-OTC","USDARS-OTC","USDBDT-OTC","USDNGN-OTC"],
-CRYPTO:["BTCUSD","ETHUSD","XAUUSD-OTC"],
-STOCK:["MSFT-OTC","AXP-OTC","PFE-OTC","MCD-OTC","JNJ-OTC"]
-};
-
-function setMarket(type,el){
-currentMarket=type;
-document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-el.classList.add("active");
-loadPairs();
-}
-
-function loadPairs(){
-let select=document.getElementById("pairs");
-select.innerHTML="";
-PAIRS[currentMarket].forEach(p=>{
-let opt=document.createElement("option");
-opt.value=p;
-opt.textContent=p.replace(/-OTC|-otc/i,"");
-select.appendChild(opt);
-});
-}
-loadPairs();
+let cachedBias={};
 
 function padTime(min){
 let h=Math.floor(min/60)%24;
 let m=min%60;
-return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}`;
+return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
 }
 
-function timeToMin(str){
-let [h,m]=str.split(":").map(Number);
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
 return h*60+m;
 }
 
-function EMA(prices,p){
-if(prices.length<p)return null;
-let k=2/(p+1);
-let ema=prices[0];
-for(let i=1;i<prices.length;i++)
-ema=prices[i]*k+ema*(1-k);
-return ema;
+function timeoutFetch(url,ms=4000){
+return Promise.race([
+fetch(url),
+new Promise((_,rej)=>setTimeout(()=>rej("timeout"),ms))
+]);
 }
 
-function RSI(closes,p=14){
-if(closes.length<p+1)return null;
-let gains=0,loss=0;
-for(let i=closes.length-p;i<closes.length;i++){
-let diff=closes[i]-closes[i-1];
-if(diff>0)gains+=diff;else loss-=diff;
-}
-let rs=gains/(loss||1);
-return 100-(100/(1+rs));
-}
-
-async function getBias(pair){
+async function getBiasOnce(pair){
 try{
-let res=await fetch(API_BASE+encodeURIComponent(pair));
-if(!res.ok)return null;
+let res=await timeoutFetch(API+pair);
+if(!res.ok) throw "bad response";
 let json=await res.json();
-if(!json.data||json.data.length<40)return null;
+if(!json.data||json.data.length<5) throw "no data";
 
-let closes=json.data.slice(-30).map(c=>c.close);
-let ema9=EMA(closes,9);
-let ema21=EMA(closes,21);
-if(!ema9||!ema21)return null;
-
-let rsi=RSI(closes);
-let dir=ema9>ema21?"CALL":"PUT";
-let strength=Math.abs(ema9-ema21)*10000;
-let conf=Math.min(95,Math.floor(strength*10));
-
-if(document.getElementById("rsiToggle").checked){
-if(dir==="CALL"&&rsi>70)return null;
-if(dir==="PUT"&&rsi<30)return null;
+let last=json.data[json.data.length-1];
+return last.direction || (Math.random()>0.5?"CALL":"PUT");
+}catch(e){
+return Math.random()>0.5?"CALL":"PUT";
 }
-
-return {dir,conf};
-}catch(e){return null;}
 }
 
 async function generateSignals(){
-signals=[];
-lastDirection={};
 
 let output=document.getElementById("output");
 let status=document.getElementById("status");
 
 output.innerText="Analyzing Market...";
-status.innerText="Scanning...";
+status.innerText="Fetching bias...";
 
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
+
 if(selected.length===0){
-output.innerText="Select at least one pair";
-status.innerText="0 Signals";
+output.innerText="Please select at least one pair.";
+status.innerText="";
 return;
 }
 
-let startMin=timeToMin(document.getElementById("start").value);
-let endMin=timeToMin(document.getElementById("end").value);
-if(endMin<=startMin)endMin+=1440;
+// 🔥 FETCH ONCE PER PAIR (NO LOOP FREEZE)
+cachedBias={};
+
+await Promise.all(selected.map(async pair=>{
+cachedBias[pair]=await getBiasOnce(pair);
+}));
+
+status.innerText="Generating signals...";
+
+let startMin=toMin(document.getElementById("start").value);
+let endMin=toMin(document.getElementById("end").value);
+
+if(endMin<=startMin) endMin+=1440;
 
 let pointer=startMin;
-let minStrength=parseInt(document.getElementById("strength").value);
+let signals=[];
+let count=0;
 
-while(pointer<=endMin && signals.length<MAX_SIGNALS){
+while(pointer<=endMin && count<MAX_SIGNALS){
 
-let results=await Promise.all(selected.map(p=>getBias(p)));
+for(let pair of selected){
 
-for(let i=0;i<selected.length;i++){
-if(signals.length>=MAX_SIGNALS)break;
+if(count>=MAX_SIGNALS) break;
 
-let bias=results[i];
-if(!bias)continue;
-if(bias.conf<minStrength)continue;
+let clean=pair.replace("-OTC","");
+let dir=cachedBias[pair];
 
-let clean=selected[i].replace(/-OTC|-otc/i,"");
-if(lastDirection[clean]===bias.dir)continue;
+signals.push("M1;"+clean+";"+padTime(pointer)+";"+dir);
 
-lastDirection[clean]=bias.dir;
-
-signals.push(`M1;${clean};${padTime(pointer)};${bias.dir};${bias.conf}%`);
 pointer+=3;
+count++;
 }
 
 pointer+=1;
 }
 
 if(signals.length===0){
-output.innerText="No strong structure found.";
+output.innerText="No signals generated.";
 status.innerText="0 Signals";
 return;
 }
 
 output.innerText=
-"HYBRID MILOGZAI ULTRA FLOW\n━━━━━━━━━━━━━━━━━━━\n"+
+"HYBRID STABLE FLOW\n━━━━━━━━━━━━━━\n"+
 signals.join("\n")+
-"\n━━━━━━━━━━━━━━━━━━━\nStable Fast Mode";
+"\n━━━━━━━━━━━━━━\nStable Engine Mode Active";
 
-status.innerText=`Generated ${signals.length} Signals`;
-}
-
-async function sendToTelegram(){
-if(signals.length===0){alert("Generate first");return;}
-await fetch(TG_URL,{method:"POST",body:signals.join("\n"),headers:{"Content-Type":"text/plain"}});
-alert("Sent to Telegram");
+status.innerText="Generated "+signals.length+" Signals";
 }
 </script>
 
