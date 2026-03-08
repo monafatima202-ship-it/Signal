@@ -63,7 +63,7 @@ font-weight:bold;
 
 <div id="chart"></div>
 
-<div id="panel" class="panel">
+<div class="panel">
 
 <div id="pair">Pair: --</div>
 <div id="direction">Direction: --</div>
@@ -94,7 +94,6 @@ const PAIRS=[
 ]
 
 let engine=null
-
 let total=0
 let wins=0
 let losses=0
@@ -126,11 +125,11 @@ function convert(data){
 
 return data.map(c=>({
 
-time:Number(c.t||c.time),
-open:Number(c.o||c.open),
-high:Number(c.h||c.high),
-low:Number(c.l||c.low),
-close:Number(c.c||c.close)
+time: Math.floor(Number(c.t || c.time)),
+open: Number(c.o || c.open),
+high: Number(c.h || c.high),
+low: Number(c.l || c.low),
+close: Number(c.c || c.close)
 
 }))
 
@@ -168,6 +167,8 @@ try{
 
 let raw=await getCandles(pair)
 
+if(!raw || raw.length<10) continue
+
 let data=convert(raw.slice(-50))
 
 series.setData(data)
@@ -184,7 +185,7 @@ break
 
 }catch(e){
 
-console.log("error",pair)
+console.log(e)
 
 }
 
@@ -231,11 +232,6 @@ await checkResult(pair,dir,price)
 
 updateAccuracy()
 
-if(total>=10){
-sendSummary()
-resetStats()
-}
-
 }
 
 async function checkResult(pair,dir,entryPrice){
@@ -262,40 +258,6 @@ if(total>0) acc=Math.round((wins/total)*100)
 
 document.getElementById("accuracy").innerText=
 "Accuracy: "+acc+"%"
-
-}
-
-function sendSummary(){
-
-let msg=
-
-`📊 APX PREMIUM SUMMARY
-
-Signals: ${total}
-
-Wins: ${wins}
-Loss: ${losses}
-
-Accuracy: ${Math.round((wins/total)*100)}%
-
-Powered by 🌐 APX Premium`
-
-fetch(WORKER,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-pair:"SUMMARY",
-dir:msg
-})
-})
-
-}
-
-function resetStats(){
-
-total=0
-wins=0
-losses=0
 
 }
 
