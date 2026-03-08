@@ -18,22 +18,22 @@ text-align:center;
 .header{
 font-size:26px;
 color:#00ffc3;
-margin-top:10px;
 text-shadow:0 0 20px #00ffc3;
+margin-top:10px;
 }
 
 canvas{
 background:#020617;
-border-radius:10px;
+border-radius:12px;
 margin-top:20px;
-box-shadow:0 0 20px #00ffc3;
+box-shadow:0 0 25px #00ffc3;
 }
 
 button{
 padding:14px 25px;
 margin:10px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 background:#00ffc3;
 font-weight:bold;
 font-size:16px;
@@ -48,6 +48,10 @@ border-collapse:collapse;
 th,td{
 border:1px solid #333;
 padding:8px;
+}
+
+.box{
+margin-top:15px;
 }
 
 .footer{
@@ -74,16 +78,17 @@ color:#aaa;
 
 <h3>📊 Dashboard</h3>
 
-<div>
+<div class="box">
 
-Signals : <span id="signals">0</span> |
-WIN : <span id="win">0</span> |
-LOSS : <span id="loss">0</span> |
-ACC : <span id="acc">0%</span>
+Signals : <span id="signals">0</span><br>
+WIN : <span id="win">0</span><br>
+LOSS : <span id="loss">0</span><br>
+MTG1 : <span id="mtg">0</span><br>
+Accuracy : <span id="acc">0%</span>
 
 </div>
 
-<h3>📜 Signal History</h3>
+<h3>📜 History</h3>
 
 <table id="history">
 
@@ -95,6 +100,12 @@ ACC : <span id="acc">0%</span>
 </tr>
 
 </table>
+
+<h3>📊 Session Summary</h3>
+
+<div id="summary">
+Session not finished
+</div>
 
 <div class="footer">
 🌐 Powered by APX Premium
@@ -113,13 +124,14 @@ const pairs=[
 ]
 
 let engine=null
+
 let pairIndex=0
 
 let win=0
 let loss=0
-let total=0
-let signals=0
 let mtg1=0
+let signals=0
+let total=0
 
 let lastPair=""
 let lastSignal=""
@@ -127,6 +139,7 @@ let lastSignal=""
 function accuracy(){
 
 if(total==0) return 0
+
 return ((win/total)*100).toFixed(1)
 
 }
@@ -134,6 +147,7 @@ return ((win/total)*100).toFixed(1)
 function entryTime(){
 
 let d=new Date()
+
 d.setMinutes(d.getMinutes()+1)
 
 return d.toLocaleTimeString([],{
@@ -148,9 +162,11 @@ async function getCandles(){
 let pair=pairs[pairIndex]
 
 pairIndex++
+
 if(pairIndex>=pairs.length) pairIndex=0
 
 let r=await fetch(API+pair)
+
 let j=await r.json()
 
 return {pair,data:j.slice(-30)}
@@ -169,12 +185,15 @@ return last.close>prev.close?"BUY":"SELL"
 function drawChart(candles,pair,signal,entry){
 
 let canvas=document.getElementById("chart")
+
 let ctx=canvas.getContext("2d")
 
 ctx.fillStyle="#020617"
+
 ctx.fillRect(0,0,canvas.width,canvas.height)
 
 let max=Math.max(...candles.map(c=>c.high))
+
 let min=Math.min(...candles.map(c=>c.low))
 
 let w=8
@@ -218,6 +237,7 @@ function updateStats(){
 document.getElementById("signals").innerText=signals
 document.getElementById("win").innerText=win
 document.getElementById("loss").innerText=loss
+document.getElementById("mtg").innerText=mtg1
 document.getElementById("acc").innerText=accuracy()+"%"
 
 }
@@ -243,11 +263,27 @@ document.getElementById("history").innerHTML+=row
 
 async function sendMessage(text){
 
+let form=new FormData()
+
+form.append("text",text)
+
 await fetch(SEND,{
 method:"POST",
-headers:{'Content-Type':'application/json'},
-body:JSON.stringify({text:text})
+body:form
 })
+
+}
+
+function sessionSummary(){
+
+let text=
+"Signals : "+signals+
+"<br>Wins : "+win+
+"<br>Loss : "+loss+
+"<br>MTG1 : "+mtg1+
+"<br>Accuracy : "+accuracy()+"%"
+
+document.getElementById("summary").innerHTML=text
 
 }
 
@@ -267,46 +303,10 @@ sendMessage(text)
 
 }
 
-async function sendResult(result){
-
-let text=""
-
-if(result=="WIN"){
-
-text=
-"✅ TRADE RESULT\n\n"+
-"📊 Pair : "+lastPair+"\n"+
-"🎉 Result : WIN\n\n"+
-"🔥 Perfect entry"
-
-}
-
-if(result=="LOSS"){
-
-text=
-"❌ TRADE RESULT\n\n"+
-"📊 Pair : "+lastPair+"\n"+
-"⚠ Result : LOSS"
-
-}
-
-if(result=="MTG1"){
-
-text=
-"🟡 MARTINGALE RESULT\n\n"+
-"📊 Pair : "+lastPair+"\n"+
-"🎯 Result : MTG1 WIN\n\n"+
-"💰 Recovery successful"
-
-}
-
-sendMessage(text)
-
-}
-
 async function checkResult(){
 
 let r=await fetch(API+lastPair)
+
 let j=await r.json()
 
 let c=j.slice(-2)
@@ -322,34 +322,17 @@ result=last.close>prev.close?"WIN":"LOSS"
 result=last.close<prev.close?"WIN":"LOSS"
 }
 
+total++
+
 if(result=="WIN"){
 win++
 }else{
 loss++
 }
 
-total++
-
 updateStats()
 
-sendResult(result)
-
 addHistory(lastPair,lastSignal,result)
-
-}
-
-function sendSummary(){
-
-let text=
-"📊 APX SESSION SUMMARY\n\n"+
-"Signals : "+signals+"\n\n"+
-"✅ Wins : "+win+"\n"+
-"❌ Loss : "+loss+"\n"+
-"🟡 MTG1 : "+mtg1+"\n\n"+
-"🎯 Accuracy : "+accuracy()+"%\n\n"+
-"🌐 Powered by APX Premium"
-
-sendMessage(text)
 
 }
 
@@ -357,7 +340,7 @@ async function run(){
 
 if(signals>=10){
 
-sendSummary()
+sessionSummary()
 
 stop()
 
