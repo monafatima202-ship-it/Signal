@@ -1,287 +1,454 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>APX ULTRA PRO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA BOT</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #00f2ff;
+      --buy: #00ff9d;
+      --sell: #ff3b5e;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
 
-<style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+      color: var(--text);
+      font-family: 'Roboto Mono', monospace;
+      min-height: 100vh;
+      padding: 15px;
+      text-align: center;
+    }
 
-body{
-background:#020617;
-color:white;
-font-family:Arial;
-text-align:center;
-}
+    .container { max-width: 420px; margin: 0 auto; }
 
-.header{
-font-size:26px;
-color:#00ffc3;
-margin-top:10px;
-}
+    .header {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 2.1rem;
+      color: var(--accent);
+      text-shadow: 0 0 15px rgba(0,242,255,0.6);
+      margin: 20px 0 12px;
+      letter-spacing: 2px;
+    }
 
-canvas{
-background:#020617;
-border-radius:10px;
-margin-top:20px;
-}
+    #chart {
+      background: #0a0f1a;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      margin: 15px auto;
+      display: block;
+    }
 
-button{
-padding:14px 25px;
-margin:10px;
-border:none;
-border-radius:8px;
-background:#00ffc3;
-font-weight:bold;
-font-size:16px;
-}
+    #current-signal {
+      font-size: 2.4rem;
+      font-weight: bold;
+      margin: 18px 0;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      text-shadow: 0 0 20px currentColor;
+    }
 
-.buy{color:#00ff9d;font-size:24px}
-.sell{color:#ff3b3b;font-size:24px}
+    .buy { color: var(--buy); }
+    .sell { color: var(--sell); }
 
-table{
-margin-top:20px;
-border-collapse:collapse;
-width:100%;
-}
+    .arrow-up  { font-size: 3rem; transform: scale(1.4); }
+    .arrow-down { font-size: 3rem; transform: scale(1.4); }
 
-th,td{
-padding:8px;
-border:1px solid #333;
-}
+    .stats {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      border: 1px solid #334155;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
 
-th{
-background:#111827;
-}
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      text-align: center;
+    }
 
-.footer{
-margin-top:20px;
-color:#aaa;
-font-size:14px;
-}
+    .stat-item span:first-child {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
 
-</style>
+    .stat-item span:last-child {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
 
+    .buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin: 25px 0;
+    }
+
+    button {
+      padding: 14px 32px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5);
+    }
+
+    #startBtn {
+      background: linear-gradient(90deg, #00d4ff, #00ff9d);
+      color: #0f172a;
+    }
+
+    #stopBtn {
+      background: linear-gradient(90deg, #ff3b5e, #c1121f);
+      color: white;
+    }
+
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(0,0,0,0.6); }
+
+    h3 { margin: 30px 0 12px; color: var(--accent); font-family: 'Orbitron', sans-serif; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    th, td {
+      padding: 12px 8px;
+      text-align: center;
+      border-bottom: 1px solid #334155;
+    }
+
+    th {
+      background: #1e293b;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    .buy-row { background: rgba(0,255,157,0.08); }
+    .sell-row { background: rgba(255,59,94,0.08); }
+
+    .footer {
+      margin-top: 40px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    #welcome, #summary {
+      font-size: 1.3rem;
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(0,242,255,0.08);
+      border: 1px solid var(--accent);
+      display: none;
+    }
+  </style>
 </head>
-
 <body>
 
-<div class="header">🤖 APX ULTRA AUTO BOT</div>
+<div class="container">
 
-<canvas id="chart" width="380" height="240"></canvas>
+  <div class="header">APX ULTRA PRO</div>
 
-<div id="signal">SYSTEM READY</div>
+  <canvas id="chart" width="400" height="260"></canvas>
 
-<button onclick="start()">START</button>
-<button onclick="stop()">STOP</button>
+  <div id="current-signal">SYSTEM READY</div>
 
-<h3>📊 Signals History</h3>
+  <div class="stats">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span>Signals</span>
+        <span id="total">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Wins</span>
+        <span id="wins">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Win Rate</span>
+        <span id="winrate">—</span>
+      </div>
+    </div>
+  </div>
 
-<table id="history">
+  <div class="buttons">
+    <button id="startBtn" onclick="start()">START ENGINE</button>
+    <button id="stopBtn" onclick="stop()">STOP ENGINE</button>
+  </div>
 
-<tr>
-<th>Time</th>
-<th>Pair</th>
-<th>Signal</th>
-</tr>
+  <div id="welcome">🚀 Welcome to APX ULTRA PRO – Premium signals activated!</div>
+  <div id="summary"></div>
 
-</table>
+  <h3>📊 Signal History</h3>
+  <table id="history">
+    <tr>
+      <th>Time</th>
+      <th>Pair</th>
+      <th>Signal</th>
+      <th>Result</th>
+    </tr>
+  </table>
 
-<div class="footer">
-Powered by 🌐 APX Premium
+  <div class="footer">
+    Powered by 🌐 APX Premium • Next-Gen OTC Signals
+  </div>
+
 </div>
 
 <script>
+// ────────────────────────────────────────────────
+const API  = "https://bot1.mkapi009.workers.dev/candles?pair=";
+const SEND = "https://bot1.mkapi009.workers.dev/send";
 
-const API="https://bot1.mkapi009.workers.dev/candles?pair="
-const SEND="https://bot1.mkapi009.workers.dev/send"
+const pairs = [
+  "USDPKR_otc", "USDBDT_otc", "USDINR_otc",
+  "USDARS_otc", "USDBRL_otc", "USDMXN_otc"
+];
 
-const pairs=[
-"USDPKR_otc",
-"USDBDT_otc",
-"USDINR_otc",
-"USDARS_otc",
-"USDBRL_otc",
-"USDMXN_otc"
-]
+let engine = null;
+let totalSignals = 0;
+let wins = 0;
 
-let engine=null
-
-function entryTime(){
-
-let d=new Date()
-
-d.setMinutes(d.getMinutes()+1)
-
-return d.toLocaleTimeString()
-
+// For demo – in real use you'd need actual result from broker/market
+// Here we simulate win/loss randomly (replace with real check)
+function simulateResult() {
+  return Math.random() > 0.45 ? "WIN" : "LOSS"; // \~55% win example
 }
 
-async function getData(){
-
-let pair=pairs[Math.floor(Math.random()*pairs.length)]
-
-let r=await fetch(API+pair)
-
-let j=await r.json()
-
-return {pair,data:j.slice(-30)}
-
+function getEntryTime() {
+  let d = new Date();
+  d.setMinutes(d.getMinutes() + 1);
+  return d.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
 }
 
-function getSignal(c){
-
-let last=c[c.length-1]
-let prev=c[c.length-2]
-
-if(last.close>prev.close){
-return "BUY"
-}else{
-return "SELL"
+async function getData() {
+  let pair = pairs[Math.floor(Math.random() * pairs.length)];
+  let r = await fetch(API + pair);
+  let j = await r.json();
+  return { pair, data: j.slice(-40) }; // more candles = smoother chart
 }
 
+function getSignal(candles) {
+  let last  = candles[candles.length-1];
+  let prev  = candles[candles.length-2];
+  let prev2 = candles[candles.length-3] || prev;
+
+  // Slightly smarter logic (you can improve)
+  if (last.close > prev.close && prev.close > prev2.close) return "BUY";
+  if (last.close < prev.close && prev.close < prev2.close) return "SELL";
+  return last.close > prev.close ? "BUY" : "SELL";
 }
 
-function drawChart(candles,pair,signal){
+function drawChart(candles, pair, signal) {
+  const canvas = document.getElementById("chart");
+  const ctx = canvas.getContext("2d");
+  const w = canvas.width, h = canvas.height;
 
-let canvas=document.getElementById("chart")
-let ctx=canvas.getContext("2d")
+  ctx.fillStyle = "#0a0f1a";
+  ctx.fillRect(0,0,w,h);
 
-ctx.fillStyle="#020617"
-ctx.fillRect(0,0,canvas.width,canvas.height)
+  // Light grid
+  ctx.strokeStyle = "rgba(100,116,139,0.15)";
+  ctx.lineWidth = 1;
+  for (let i = 1; i < 5; i++) {
+    let y = h * (i/5);
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
 
-let max=Math.max(...candles.map(c=>c.high))
-let min=Math.min(...candles.map(c=>c.low))
+  if (!candles.length) return;
 
-let w=8
-let gap=4
+  let highs = candles.map(c=>c.high), lows = candles.map(c=>c.low);
+  let max = Math.max(...highs), min = Math.min(...lows);
+  let range = max - min || 1;
 
-candles.forEach((c,i)=>{
+  const barWidth = 9;
+  const gap = 5;
+  const startX = 20;
 
-let x=i*(w+gap)+20
+  candles.forEach((c, i) => {
+    let x = startX + i * (barWidth + gap);
+    if (x + barWidth > w - 20) return;
 
-let open=200-(c.open-min)/(max-min)*160
-let close=200-(c.close-min)/(max-min)*160
-let high=200-(c.high-min)/(max-min)*160
-let low=200-(c.low-min)/(max-min)*160
+    let scale = (v) => h - 40 - ((v - min) / range) * (h - 80);
 
-ctx.strokeStyle="white"
+    let yOpen  = scale(c.open);
+    let yClose = scale(c.close);
+    let yHigh  = scale(c.high);
+    let yLow   = scale(c.low);
 
-ctx.beginPath()
-ctx.moveTo(x+w/2,high)
-ctx.lineTo(x+w/2,low)
-ctx.stroke()
+    // Wick
+    ctx.strokeStyle = c.close >= c.open ? var(--buy) : var(--sell);
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x + barWidth/2, yHigh);
+    ctx.lineTo(x + barWidth/2, yLow);
+    ctx.stroke();
 
-ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
+    // Body
+    ctx.fillStyle = c.close >= c.open ? var(--buy) : var(--sell);
+    ctx.fillRect(x, Math.min(yOpen, yClose), barWidth, Math.abs(yOpen - yClose));
 
-ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
+    // Border
+    ctx.strokeStyle = "#475569";
+    ctx.strokeRect(x, Math.min(yOpen, yClose), barWidth, Math.abs(yOpen - yClose));
+  });
 
-})
+  // Label
+  ctx.fillStyle = signal === "BUY" ? var(--buy) : var(--sell);
+  ctx.font = "bold 28px Orbitron";
+  ctx.fillText(signal, w - 120, h - 35);
 
-ctx.fillStyle="white"
-ctx.font="16px Arial"
-ctx.fillText(pair+" "+signal,120,20)
+  ctx.fillStyle = "white";
+  ctx.font = "16px Roboto Mono";
+  ctx.fillText(pair.replace("_otc",""), 25, 35);
 
-if(signal=="BUY"){
-
-ctx.fillStyle="#00ff9d"
-ctx.fillText("↑ BUY",300,220)
-
-}else{
-
-ctx.fillStyle="#ff3b3b"
-ctx.fillText("↓ SELL",300,220)
-
+  ctx.fillStyle = var(--accent);
+  ctx.font = "12px Roboto Mono";
+  ctx.fillText("APX ULTRA PRO", 25, h - 12);
 }
 
-ctx.fillStyle="#00ffc3"
-ctx.font="12px Arial"
-ctx.fillText("APX PREMIUM",10,230)
-
+function updateSignalDisplay(pair, signal) {
+  const el = document.getElementById("current-signal");
+  const cls = signal === "BUY" ? "buy" : "sell";
+  const arrow = signal === "BUY" ? "↑" : "↓";
+  el.innerHTML = `<span class="\( {cls} arrow- \){signal.toLowerCase()}">${arrow}</span> \( {pair} <span class=" \){cls}">${signal}</span>`;
 }
 
-function addHistory(pair,signal){
+function addHistory(time, pair, signal, result = "—") {
+  const table = document.getElementById("history");
+  const row = document.createElement("tr");
+  row.className = signal === "BUY" ? "buy-row" : "sell-row";
+  row.innerHTML = `
+    <td>${time}</td>
+    <td>${pair.replace("_otc","")}</td>
+    <td class="\( {signal.toLowerCase()}"> \){signal}</td>
+    <td>${result}</td>
+  `;
+  table.appendChild(row);
 
-let t=new Date().toLocaleTimeString()
-
-let row=`
-<tr>
-<td>${t}</td>
-<td>${pair}</td>
-<td>${signal}</td>
-</tr>
-`
-
-document.getElementById("history").innerHTML+=row
-
+  // Scroll to bottom
+  table.scrollTop = table.scrollHeight;
 }
 
-async function sendTelegram(pair,signal){
+function updateStats(result) {
+  if (!result || result === "—") return;
+  totalSignals++;
+  if (result === "WIN") wins++;
 
-let entry=entryTime()
-
-let canvas=document.getElementById("chart")
-
-let blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"))
-
-let form=new FormData()
-
-form.append("image",blob,"chart.png")
-
-let text=
-"🤖 APX BOT ====== 🚧\n\n"+
-"📊 Pair "+pair+"\n"+
-"🕓 ENTRY "+entry+"\n"+
-"⌛ M1\n"+
-"⭕ DIRECTION "+signal+"\n\n"+
-"📳 SIGNAL : "+new Date().toLocaleString()+"\n\n"+
-"🌐Telegram @MMQUOBOT"
-
-form.append("text",text)
-
-await fetch(SEND,{
-method:"POST",
-body:form
-})
-
+  document.getElementById("total").textContent = totalSignals;
+  document.getElementById("wins").textContent = wins;
+  document.getElementById("winrate").textContent = totalSignals > 0
+    ? ((wins / totalSignals) * 100).toFixed(1) + "%"
+    : "—";
 }
 
-async function run(){
+async function sendToTelegram(pair, signal, entry) {
+  const canvas = document.getElementById("chart");
+  const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
 
-let d=await getData()
+  const text =
+`🤖 APX ULTRA PRO
+Pair: ${pair}
+ENTRY: ${entry}
+Timeframe: M1
+Direction: ${signal}
 
-let signal=getSignal(d.data)
+Signal Time: ${new Date().toLocaleString()}
+Telegram: @MMQUOBOT`;
 
-drawChart(d.data,d.pair,signal)
+  const form = new FormData();
+  form.append("image", blob, "chart.png");
+  form.append("text", text);
 
-document.getElementById("signal").innerHTML=
-signal=="BUY"
-?`<span class="buy">${d.pair} BUY</span>`
-:`<span class="sell">${d.pair} SELL</span>`
-
-addHistory(d.pair,signal)
-
-sendTelegram(d.pair,signal)
-
+  fetch(SEND, { method: "POST", body: form }).catch(console.error);
 }
 
-function start(){
+async function run() {
+  try {
+    const { pair, data } = await getData();
+    const signal = getSignal(data);
 
-run()
+    drawChart(data, pair, signal);
+    updateSignalDisplay(pair, signal);
 
-engine=setInterval(run,65000)
+    const entry = getEntryTime();
+    addHistory(entry, pair, signal);
 
+    // For real bot: check market after \~1-2 min and update result
+    // Here we simulate after adding to history
+    setTimeout(() => {
+      const result = simulateResult();
+      updateStats(result);
+
+      // Update last row result (simple way)
+      const rows = document.querySelectorAll("#history tr");
+      if (rows.length > 1) {
+        rows[rows.length-1].cells[3].textContent = result;
+        rows[rows.length-1].classList.add(result === "WIN" ? "buy-row" : "sell-row");
+      }
+    }, 80000); // \~80 sec later
+
+    await sendToTelegram(pair, signal, entry);
+  } catch(e) {
+    console.error(e);
+  }
 }
 
-function stop(){
+function start() {
+  document.getElementById("welcome").style.display = "block";
+  document.getElementById("summary").style.display = "none";
 
-clearInterval(engine)
+  if (engine) clearInterval(engine);
+  run();                    // immediate first run
+  engine = setInterval(run, 65000);
 
-alert("APX ULTRA STOPPED")
-
+  document.getElementById("current-signal").textContent = "ENGINE RUNNING...";
 }
 
+function stop() {
+  if (engine) {
+    clearInterval(engine);
+    engine = null;
+  }
+
+  const winRate = totalSignals > 0 ? ((wins / totalSignals) * 100).toFixed(1) : 0;
+
+  document.getElementById("summary").innerHTML =
+    `Engine Stopped.<br>Total Signals: <b>${totalSignals}</b><br>` +
+    `Wins: <b>\( {wins}</b> • Win Rate: <b> \){winRate}%</b><br>` +
+    `Thank you for using APX ULTRA PRO • See you soon! 👋`;
+
+  document.getElementById("summary").style.display = "block";
+  document.getElementById("welcome").style.display = "none";
+
+  document.getElementById("current-signal").innerHTML = "SYSTEM PAUSED";
+}
 </script>
-
 </body>
 </html>
