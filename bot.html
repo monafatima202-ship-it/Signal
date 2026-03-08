@@ -6,120 +6,128 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        body { background:#020617; color:white; font-family:sans-serif; text-align:center; padding:10px; }
-        .header { color:#00ffc3; font-size:22px; font-weight:bold; margin-bottom:10px; }
+        body { background:#020617; color:white; font-family:sans-serif; text-align:center; padding:10px; margin:0; }
+        .header { color:#00ffc3; font-size:20px; font-weight:bold; padding:15px 0; display:flex; align-items:center; justify-content:center; gap:10px; }
         
-        /* Chart & Control Box */
-        #chart-container { background:#111; padding:15px; border-radius:15px; width:330px; margin:auto; border:1px solid #1e293b; }
-        #tv-chart { height: 180px; width: 100%; }
+        /* Chart Container */
+        #chart-container { background:#0a0a0a; padding:10px; border-radius:15px; width:92%; margin:auto; border:1px solid #1e293b; overflow:hidden; }
+        #tv-chart { height: 200px; width: 100%; }
         
-        .controls { display:grid; grid-template-columns: 1fr 1fr; gap:10px; width:330px; margin:15px auto; }
-        button { padding:12px; border-radius:8px; border:none; font-weight:bold; cursor:pointer; }
-        .btn-start { background:#22c55e; color:white; }
-        .btn-stop { background:#ef4444; color:white; }
+        .signal-display { padding:15px 0; border-top:1px solid #1e293b; margin-top:10px; }
+        #v-pair { font-size:18px; margin:0; }
+        #v-dir { font-size:28px; font-weight:900; margin:5px 0; }
+        
+        /* Controls */
+        .controls { display:flex; gap:10px; width:92%; margin:15px auto; }
+        button { flex:1; padding:15px; border-radius:10px; border:none; font-weight:bold; font-size:16px; display:flex; align-items:center; justify-content:center; gap:8px; color:white; }
+        .btn-start { background:#22c55e; }
+        .btn-stop { background:#ef4444; }
+        button:disabled { opacity: 0.5; }
         
         /* Summary Table */
-        .summary { width:330px; margin:20px auto; background:#1e293b; border-radius:10px; padding:10px; font-size:12px; }
-        table { width:100%; border-collapse:collapse; }
-        th { border-bottom:1px solid #444; padding:5px; }
+        .summary-box { width:92%; margin:20px auto; background:#0f172a; border-radius:12px; padding:10px; }
+        table { width:100%; border-collapse:collapse; font-size:13px; margin-top:10px; }
+        th { color:#94a3b8; border-bottom:1px solid #1e293b; padding:10px 5px; }
+        td { padding:10px 5px; border-bottom:1px solid #0f172a; }
         .buy { color:#00ff00; } .sell { color:#ff3d00; }
     </style>
 </head>
 <body>
 
 <div class="header">🤖 APX AUTO-SIGNAL SYSTEM</div>
-<div id="clock" style="color:#94a3b8; margin-bottom:10px;"></div>
 
 <div id="chart-container">
     <div id="tv-chart"></div>
-    <div id="signal-info">
-        <h3 id="v-pair" style="margin:5px;">USDBDT_otc</h3>
-        <div id="v-dir" style="font-size:24px; font-weight:bold;">WAITING</div>
+    <div class="signal-display">
+        <p id="v-pair">USDBDT_otc</p>
+        <div id="v-dir">WAITING</div>
     </div>
 </div>
 
 <div class="controls">
-    <button class="btn-start" id="startBtn" onclick="startAuto()">▶️ START AUTO</button>
-    <button class="btn-stop" id="stopBtn" onclick="stopAuto()" disabled>⏹️ STOP</button>
+    <button class="btn-start" id="startBtn" onclick="startEngine()">▶ START AUTO</button>
+    <button class="btn-stop" id="stopBtn" onclick="stopEngine()" disabled>■ STOP</button>
 </div>
 
-<div class="summary">
-    <b>📊 SIGNAL SUMMARY</b>
+<div class="summary-box">
+    <div style="font-size:14px; font-weight:bold; color:#94a3b8;">📊 SIGNAL SUMMARY</div>
     <table id="summaryTable">
-        <tr><th>Time</th><th>Pair</th><th>Signal</th></tr>
+        <thead><tr><th>Time</th><th>Pair</th><th>Signal</th></tr></thead>
+        <tbody id="summaryBody"></tbody>
     </table>
 </div>
 
 <script>
 const WORKER = "https://signal.mkapi009.workers.dev/send";
-let autoInterval = null;
-let signalCount = 0;
+let engine = null;
 
-// 1. Chart Setup
+// 1. Chart Initialization
 const chart = LightweightCharts.createChart(document.getElementById('tv-chart'), {
-    layout: { backgroundColor: '#111', textColor: '#d1d4dc' },
-    grid: { vertLines: { color: '#1e222d' }, horzLines: { color: '#1e222d' } },
+    layout: { background: { color: '#0a0a0a' }, textColor: '#94a3b8' },
+    grid: { vertLines: { visible: false }, horzLines: { color: '#1e293b' } },
+    timeScale: { visible: false }
 });
-const candleSeries = chart.addCandlestickSeries();
+const candleSeries = chart.addCandlestickSeries({
+    upColor: '#22c55e', downColor: '#ef4444', borderVisible: false, wickVisible: true
+});
 
-// 2. Market Data & Logic
-async function processSignal() {
-    let pair = "USDBDT_otc"; // Aap isay dropdown se bhi connect kar sakte hain
+// 2. Market Engine
+async function analyzeAndSend() {
+    const pair = "USDBDT_otc";
     try {
-        let res = await fetch(`https://radit.top/otc.php?asset=${pair}`);
-        let json = await res.json();
-        let candles = json.data;
-        candleSeries.setData(candles); // Update live chart
+        const res = await fetch(`https://radit.top/otc.php?asset=${pair}`);
+        const data = await res.json();
+        const candles = data.data;
+        
+        // Update Chart
+        candleSeries.setData(candles.slice(-50));
+        chart.timeScale().fitContent();
 
-        let last = candles[candles.length - 1];
-        let dir = (last.close > last.open) ? "BUY 🟢" : "SELL 🔴";
+        // Logic: Compare last candle
+        const last = candles[candles.length - 1];
+        const dir = (last.close > last.open) ? "BUY 🟢" : "SELL 🔴";
         
         document.getElementById("v-dir").innerText = dir;
         document.getElementById("v-dir").className = dir.includes("BUY") ? "buy" : "sell";
 
-        // Auto Send to Telegram
-        await sendToTelegram(pair, dir);
-        updateSummary(pair, dir);
-    } catch(e) { console.log("Error fetching data"); }
+        // Capture & Send
+        await sendSignal(pair, dir);
+        addSummary(pair, dir);
+        
+    } catch(e) { console.error("Engine Error"); }
 }
 
-// 3. Start/Stop Controls
-function startAuto() {
+// 3. Automation Controls
+function startEngine() {
     document.getElementById("startBtn").disabled = true;
     document.getElementById("stopBtn").disabled = false;
-    processSignal(); // Pehla signal foran
-    autoInterval = setInterval(processSignal, 60000); // Har 1 min baad
-    alert("Auto Signals Started!");
+    analyzeAndSend(); 
+    engine = setInterval(analyzeAndSend, 60000); // Har 1 minute baad
 }
 
-function stopAuto() {
-    clearInterval(autoInterval);
+function stopEngine() {
+    clearInterval(engine);
     document.getElementById("startBtn").disabled = false;
     document.getElementById("stopBtn").disabled = true;
-    alert("Auto Signals Stopped.");
+    document.getElementById("v-dir").innerText = "STOPPED";
 }
 
-// 4. Summary Table Logic
-function updateSummary(pair, dir) {
-    let table = document.getElementById("summaryTable");
-    let row = table.insertRow(1);
-    row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${pair}</td><td class="${dir.includes('BUY')?'buy':'sell'}">${dir}</td>`;
+// 4. Utils
+function addSummary(pair, dir) {
+    const body = document.getElementById("summaryBody");
+    const row = body.insertRow(0);
+    row.innerHTML = `<td>${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td><td>${pair}</td><td class="${dir.includes('BUY')?'buy':'sell'}">${dir}</td>`;
 }
 
-async function sendToTelegram(pair, dir) {
+async function sendSignal(pair, dir) {
     const canvas = await html2canvas(document.querySelector("#chart-container"), { scale: 1 });
     const image = canvas.toDataURL("image/jpeg", 0.7);
     await fetch(WORKER, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pair, dir, image })
     });
 }
-
-// Clock UTC+6
-setInterval(() => {
-    let n = new Date(); n.setHours(n.getUTCHours() + 6);
-    document.getElementById('clock').innerText = "UTC+6: " + n.toLocaleTimeString();
-}, 1000);
 </script>
 </body>
 </html>
