@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -20,75 +21,84 @@
 
 body{
 background:var(--bg);
-color:white;
+color:#f0fff0;
 font-family:'Rajdhani',sans-serif;
+margin:0;
 padding:20px;
 }
 
 header{
 text-align:center;
-padding:25px;
-border-bottom:4px solid var(--neon);
+padding:30px;
+border-bottom:5px solid var(--neon);
 box-shadow:var(--glow);
 }
 
 .logo{
 font-family:'Orbitron';
-font-size:28px;
-color:#39ff14;
+font-size:30px;
+background:linear-gradient(90deg,#39ff14,#00f0ff,#ff00aa);
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
 }
 
 .container{
-max-width:600px;
-margin:auto;
+max-width:620px;
+margin:40px auto;
 }
 
 .panel{
 background:var(--glass);
-padding:25px;
-border-radius:20px;
+padding:30px;
+border-radius:25px;
+box-shadow:var(--glow);
 }
 
 .tabs{
 display:flex;
-gap:10px;
-margin-bottom:15px;
+gap:12px;
+margin-bottom:20px;
 }
 
 .tab{
 flex:1;
-padding:12px;
+padding:14px;
 border:2px solid var(--neon);
-background:none;
+background:transparent;
 color:var(--neon);
-border-radius:10px;
+border-radius:12px;
+font-weight:bold;
 }
 
 .tab.active{
-background:#39ff14;
+background:linear-gradient(135deg,#39ff14,#00f0ff);
 color:black;
 }
 
 select,input{
 width:100%;
-padding:10px;
-margin:10px 0;
-border-radius:10px;
-background:#0a1a2a;
+padding:12px;
+margin:12px 0;
+background:#071421;
+border:1px solid rgba(57,255,20,0.4);
 color:white;
+border-radius:12px;
 }
 
 button{
 width:100%;
-padding:15px;
-margin-top:10px;
+padding:16px;
+margin:12px 0;
 border:none;
-border-radius:12px;
+border-radius:15px;
 font-family:'Orbitron';
+font-weight:900;
+cursor:pointer;
 }
 
 .generate{
-background:linear-gradient(135deg,#39ff14,#00f0ff);
+background:linear-gradient(135deg,#39ff14,#00f0ff,#ff00aa);
+color:black;
 }
 
 .telegram{
@@ -97,12 +107,23 @@ color:white;
 }
 
 #output{
-margin-top:20px;
-background:black;
-padding:15px;
-border-radius:10px;
+margin-top:25px;
+background:rgba(0,0,0,0.6);
+padding:20px;
+border-radius:15px;
+border:2px dashed #39ff14;
 white-space:pre;
+font-family:monospace;
+font-size:15px;
+line-height:1.6;
 min-height:300px;
+}
+
+.footer{
+text-align:center;
+margin-top:40px;
+color:#00f0ff;
+font-size:14px;
 }
 
 </style>
@@ -113,7 +134,6 @@ min-height:300px;
 <header>
 
 <div class="logo">✦ ADOX APE v4 PREMIUM APX ✦</div>
-
 <div>UTC+6 | ADOX Premium Engine Activated</div>
 
 </header>
@@ -125,19 +145,16 @@ min-height:300px;
 <div class="tabs">
 
 <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-
 <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-
 <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
 
 </div>
 
-<select id="pairs" multiple size="10"></select>
+<select id="pairs" multiple size="12"></select>
 
-<div style="display:flex;gap:10px">
+<div style="display:flex;gap:15px">
 
 <input type="time" id="start" value="00:00">
-
 <input type="time" id="end" value="23:59">
 
 </div>
@@ -146,33 +163,25 @@ min-height:300px;
 
 <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM 📲</button>
 
-<div id="output">READY • SELECT PAIRS</div>
+<div id="output">READY • SELECT PAIRS FOR ADOX PREMIUM FLOW 🌌</div>
 
 </div>
 
+</div>
+
+<div class="footer">
+Powered by 🌐 APX Premium • M1 • MG1 Max • Avoid News • Stop After 2 Losses • Trade Safe 🔥 Mona
 </div>
 
 <script>
 
 const API_BASE="https://quotexotc-futureapi.poghen-dx.workers.dev/pairs=";
-
 const TG="https://signal.mkapi009.workers.dev/send";
 
 const PAIRS={
-
-OTC:[
-"AUDUSD_otc","EURUSD_otc","GBPUSD_otc","NZDUSD_otc","USDCAD_otc","USDCHF_otc","USDJPY_otc",
-"USDINR_otc","USDBDT_otc","USDPKR_otc","USDNGN_otc","USDARS_otc"
-],
-
-CRYPTO:[
-"BTCUSD_otc","ETHUSD_otc","XRPUSD_otc"
-],
-
-STOCK:[
-"FB_otc","AXP_otc","PFE_otc"
-]
-
+OTC:["AUDUSD_otc","EURUSD_otc","GBPUSD_otc","NZDUSD_otc","USDCAD_otc","USDCHF_otc","USDJPY_otc","USDINR_otc","USDBDT_otc","USDPKR_otc","USDNGN_otc","USDARS_otc"],
+CRYPTO:["BTCUSD_otc","ETHUSD_otc","XRPUSD_otc"],
+STOCK:["FB_otc","AXP_otc","PFE_otc","JNJ_otc","MCD_otc","BA_otc"]
 };
 
 let signals=[];
@@ -183,43 +192,29 @@ function setMarket(type,el){
 currentMarket=type;
 
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-
 el.classList.add("active");
 
 let select=document.getElementById("pairs");
-
 select.innerHTML="";
 
 PAIRS[type].forEach(p=>{
-
 let o=document.createElement("option");
-
 o.value=p;
-
 o.textContent=p.replace("_otc","");
-
 select.appendChild(o);
-
 });
 
 }
 
 function toMin(t){
-
 let[h,m]=t.split(":").map(Number);
-
 return h*60+m;
-
 }
 
 function pad(min){
-
 let h=Math.floor(min/60)%24;
-
 let m=min%60;
-
 return(h<10?"0":"")+h+":"+(m<10?"0":"")+m;
-
 }
 
 async function generateFlow(){
@@ -227,51 +222,41 @@ async function generateFlow(){
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 
 if(selected.length===0){
-
-document.getElementById("output").innerText="SELECT PAIRS";
-
+document.getElementById("output").innerText="⚠️ SELECT AT LEAST 1 PAIR";
 return;
-
 }
 
 signals=[];
 
 for(let pair of selected){
 
-try{
-
 let r=await fetch(API_BASE+pair);
-
 let j=await r.json();
 
 let list=j.signals||[];
 
 list.forEach(s=>{
 
+let utcMin=toMin(s.time);
+let localMin=(utcMin+360)%1440;
+let localTime=pad(localMin);
+
 signals.push({
-
 pair:pair.replace("_otc",""),
-
 direction:s.direction,
-
-time:s.time
-
+time:localTime
 });
 
 });
-
-}catch(e){}
 
 }
 
 signals.sort((a,b)=>toMin(a.time)-toMin(b.time));
 
-let text="ADOX PREMIUM FLOW\n\n";
+let text="✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
 signals.forEach(s=>{
-
-text+=`M1 | ${s.pair} | ${s.time} | ${s.direction}\n`;
-
+text+=`M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction}\n`;
 });
 
 document.getElementById("output").innerText=text;
@@ -281,49 +266,34 @@ document.getElementById("output").innerText=text;
 async function sendToTelegram(){
 
 if(signals.length===0){
-
-alert("Generate signals first");
-
+alert("Generate Premium Flow First!");
 return;
-
 }
 
-for(let s of signals){
+let msg="✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-await fetch(TG,{
-
-method:"POST",
-
-headers:{
-
-"Content-Type":"application/json"
-
-},
-
-body:JSON.stringify({
-
-pair:s.pair,
-
-dir:s.direction,
-
-time:s.time
-
-})
-
+signals.forEach(s=>{
+msg+=`M1 | ${s.pair} | ${s.time} | ${s.direction}\n`;
 });
 
-await new Promise(r=>setTimeout(r,700));
+await fetch(TG,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+pair:"FLOW",
+dir:msg,
+time:""
+})
+});
 
-}
-
-alert("Signals Sent To Telegram");
+alert("Flow Sent To Telegram 📤");
 
 }
 
 document.addEventListener("DOMContentLoaded",()=>{
-
 setMarket("OTC",document.querySelector(".tab"));
-
 });
 
 </script>
