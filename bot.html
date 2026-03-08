@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX AUTO SYSTEM</title>
+<title>APX Premium Auto</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -17,28 +17,37 @@ text-align:center;
 }
 
 .header{
-font-size:28px;
+font-size:26px;
 color:#00ffc3;
-margin-top:15px;
+margin-top:10px;
 }
 
 canvas{
 background:#0b1220;
-border-radius:12px;
+border-radius:10px;
 margin-top:15px;
 }
 
 button{
-padding:14px 30px;
+padding:14px 25px;
 margin:10px;
 border:none;
-border-radius:10px;
+border-radius:8px;
 background:#00ffc3;
-font-size:16px;
+font-weight:bold;
 }
 
-.buy{color:#00ff9d;font-size:28px}
-.sell{color:#ff3b3b;font-size:28px}
+.buy{color:#00ff9d;font-size:24px}
+.sell{color:#ff3b3b;font-size:24px}
+
+.stats{
+margin-top:10px;
+}
+
+.footer{
+margin-top:20px;
+color:#888;
+}
 
 </style>
 
@@ -46,162 +55,181 @@ font-size:16px;
 
 <body>
 
-<div class="header">🤖 APX AUTO SYSTEM</div>
+<div class="header">🤖 APX PREMIUM AUTO BOT</div>
 
-<select id="pair">
+<canvas id="chart" width="380" height="240"></canvas>
 
-<option>USDPKR_otc</option>
-<option selected>USDBDT_otc</option>
-<option>USDINR_otc</option>
-<option>USDARS_otc</option>
-<option>USDBRL_otc</option>
-<option>USDMXN_otc</option>
+<div id="signal">SYSTEM READY</div>
 
-</select>
+<div class="stats">
 
-<br>
+Win : <span id="win">0</span> |
+Loss : <span id="loss">0</span> |
+MTG1 : <span id="mtg">0</span> |
+Accuracy : <span id="acc">0</span>%
 
-<canvas id="chart" width="380" height="250"></canvas>
-
-<div id="signal">READY</div>
+</div>
 
 <br>
 
 <button onclick="start()">START</button>
 <button onclick="stop()">STOP</button>
 
+<div class="footer">
+Powered by 🌐 APX Premium
+</div>
+
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
 const TG="https://bot1.mkapi009.workers.dev/send"
 
-let canvas=document.getElementById("chart")
-let ctx=canvas.getContext("2d")
+const pairs=[
+"USDPKR_otc",
+"USDBDT_otc",
+"USDINR_otc",
+"USDARS_otc",
+"USDBRL_otc",
+"USDMXN_otc"
+]
 
 let engine=null
 
-async function getData(){
+let win=0
+let loss=0
+let mtg=0
+let total=0
 
-let pair=document.getElementById("pair").value
+function entryTime(){
+
+let d=new Date()
+
+d.setMinutes(d.getMinutes()+1)
+
+return d.toLocaleTimeString()
+
+}
+
+async function getPairData(){
+
+let pair=pairs[Math.floor(Math.random()*pairs.length)]
 
 let r=await fetch(API+pair)
 
 let j=await r.json()
 
-return j.slice(-30)
-
-}
-
-function drawChart(candles,signal){
-
-ctx.clearRect(0,0,400,300)
-
-let max=Math.max(...candles.map(c=>c.high))
-let min=Math.min(...candles.map(c=>c.low))
-
-let w=10
-let gap=3
-
-candles.forEach((c,i)=>{
-
-let x=i*(w+gap)+20
-
-let openY=200-(c.open-min)/(max-min)*180
-let closeY=200-(c.close-min)/(max-min)*180
-let highY=200-(c.high-min)/(max-min)*180
-let lowY=200-(c.low-min)/(max-min)*180
-
-ctx.strokeStyle="white"
-
-ctx.beginPath()
-ctx.moveTo(x+5,highY)
-ctx.lineTo(x+5,lowY)
-ctx.stroke()
-
-ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
-
-ctx.fillRect(x,Math.min(openY,closeY),w,Math.abs(openY-closeY))
-
-})
-
-let last=candles[candles.length-1]
-
-let x=(candles.length-1)*(w+gap)+20
-let y=200-(last.close-min)/(max-min)*180
-
-ctx.strokeStyle=signal=="BUY"?"#00ff9d":"#ff3b3b"
-
-ctx.lineWidth=3
-
-ctx.beginPath()
-
-ctx.moveTo(x-40,y+20)
-ctx.lineTo(x,y)
-
-ctx.stroke()
-
-ctx.fillStyle="white"
-
-ctx.font="16px Arial"
-
-ctx.fillText(document.getElementById("pair").value+" (OTC) - "+signal,100,20)
-
-ctx.fillStyle=signal=="BUY"?"#00ff9d":"#ff3b3b"
-
-ctx.fillText(signal,x-10,y+35)
+return {pair,data:j.slice(-30)}
 
 }
 
 function getSignal(c){
 
-let last=c[c.length-1]
-let prev=c[c.length-2]
+let a=c[c.length-1]
+let b=c[c.length-2]
 
-return last.close>prev.close?"BUY":"SELL"
+if(a.close>b.close) return "BUY"
+else return "SELL"
 
 }
 
-async function sendTG(pair,signal){
+function drawChart(candles,signal,pair){
 
-let img=canvas.toDataURL()
+let canvas=document.getElementById("chart")
+let ctx=canvas.getContext("2d")
+
+ctx.clearRect(0,0,400,250)
+
+let max=Math.max(...candles.map(c=>c.high))
+let min=Math.min(...candles.map(c=>c.low))
+
+let w=8
+let gap=4
+
+candles.forEach((c,i)=>{
+
+let x=i*(w+gap)+20
+
+let open=(200-(c.open-min)/(max-min)*160)
+let close=(200-(c.close-min)/(max-min)*160)
+let high=(200-(c.high-min)/(max-min)*160)
+let low=(200-(c.low-min)/(max-min)*160)
+
+ctx.strokeStyle="white"
+
+ctx.beginPath()
+ctx.moveTo(x+w/2,high)
+ctx.lineTo(x+w/2,low)
+ctx.stroke()
+
+ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
+
+ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
+
+})
+
+ctx.fillStyle="white"
+ctx.font="14px Arial"
+
+ctx.fillText(pair+" "+signal,120,20)
+
+}
+
+async function sendSignal(pair,signal){
+
+let entry=entryTime()
+
+let canvas=document.getElementById("chart")
+
+let img=canvas.toDataURL("image/jpeg")
+
+let text=
+"📊 APX PREMIUM SIGNAL\n\n"+
+"Pair : "+pair+"\n"+
+"Direction : "+signal+"\n"+
+"Entry : "+entry+"\n\n"+
+"Powered by APX Premium"
 
 await fetch(TG,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
-pair:pair,
-dir:signal,
+text:text,
 image:img
 })
 })
 
 }
 
+function updateStats(){
+
+document.getElementById("win").innerText=win
+document.getElementById("loss").innerText=loss
+document.getElementById("mtg").innerText=mtg
+
+let acc=Math.round((win/(win+loss||1))*100)
+
+document.getElementById("acc").innerText=acc
+
+}
+
 async function run(){
 
-let pair=document.getElementById("pair").value
+let d=await getPairData()
 
-let candles=await getData()
+let signal=getSignal(d.data)
 
-let sig=getSignal(candles)
+drawChart(d.data,signal,d.pair)
 
-drawChart(candles,sig)
+document.getElementById("signal").innerHTML=
+signal=="BUY"
+?`<span class=buy>${d.pair} BUY</span>`
+:`<span class=sell>${d.pair} SELL</span>`
 
-let el=document.getElementById("signal")
-
-el.innerText=sig
-
-el.className=sig=="BUY"?"buy":"sell"
-
-sendTG(pair,sig)
+sendSignal(d.pair,signal)
 
 }
 
 function start(){
-
-if(engine) return
-
-alert("🚀 APX AUTO ENGINE STARTED")
 
 run()
 
@@ -213,9 +241,7 @@ function stop(){
 
 clearInterval(engine)
 
-engine=null
-
-alert("🛑 APX SYSTEM STOPPED")
+alert("APX System Stopped")
 
 }
 
