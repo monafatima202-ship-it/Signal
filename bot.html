@@ -1,79 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>APX MASTER PANEL</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <style>
-        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; padding: 10px; }
-        #chart-container { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid #333; width: 330px; margin: 20px auto; }
-        .logo { color: #ffca28; font-weight: bold; }
-        .buy { color: #00ff00; font-size: 35px; font-weight: 900; text-shadow: 0 0 10px rgba(0,255,0,0.3); }
-        .sell { color: #ff3d00; font-size: 35px; font-weight: 900; text-shadow: 0 0 10px rgba(255,61,0,0.3); }
-        input, select, button { padding: 12px; margin: 5px; width: 90%; border-radius: 8px; border: none; font-size: 16px; }
-        button { background: #ffca28; font-weight: bold; cursor: pointer; }
-        #status { font-weight: bold; margin-top: 10px; }
-    </style>
+
+<title>APX MASTER PANEL</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<style>
+
+body{
+background:#0f0f0f;
+color:white;
+font-family:sans-serif;
+text-align:center;
+}
+
+#chart{
+background:#1a1a1a;
+padding:25px;
+border-radius:15px;
+border:2px solid #333;
+width:320px;
+margin:auto;
+}
+
+.buy{
+color:#00ff00;
+font-size:36px;
+font-weight:900;
+}
+
+.sell{
+color:#ff3d00;
+font-size:36px;
+font-weight:900;
+}
+
+button{
+padding:12px;
+width:90%;
+margin:5px;
+border:none;
+border-radius:8px;
+background:#ffca28;
+font-weight:bold;
+}
+
+</style>
 </head>
+
 <body>
-    <div id="login-box">
-        <h2>🤖 APX LOGIN</h2>
-        <input type="text" id="user" placeholder="Username">
-        <input type="password" id="pass" placeholder="Password">
-        <button onclick="doLogin()">LOGIN</button>
-    </div>
 
-    <div id="main-panel" style="display:none;">
-        <div id="chart-container">
-            <div class="logo">📊 APX PREMIUM</div>
-            <h2 id="d-pair">USDBDT_otc</h2>
-            <div id="d-dir">---</div>
-            <div id="d-time" style="color:#666; font-size: 12px;">Ready</div>
-        </div>
-        <input type="text" id="p-in" value="USDBDT_otc">
-        <select id="d-in"><option value="BUY 🟢">BUY</option><option value="SELL 🔴">SELL</option></select>
-        <button onclick="send()" id="btn">🚀 SEND FEATURE SIGNAL</button>
-    </div>
-    <p id="status"></p>
+<h2>🚀 APX MASTER PANEL</h2>
 
-    <script>
-        const WORKER = "https://signal.mkapi009.workers.dev";
-        async function doLogin() {
-            const res = await fetch(`${WORKER}/login`, { method:"POST", body: JSON.stringify({user: document.getElementById('user').value, pass: document.getElementById('pass').value}) });
-            if(res.ok) { document.getElementById('login-box').style.display='none'; document.getElementById('main-panel').style.display='block'; document.getElementById('status').innerText="Logged In"; }
-            else alert("Invalid Credentials!");
-        }
+<div id="chart">
 
-        async function send() {
-            const pair = document.getElementById('p-in').value;
-            const dir = document.getElementById('d-in').value;
-            const btn = document.getElementById('btn');
-            const status = document.getElementById('status');
+<div>📊 APX PREMIUM</div>
 
-            document.getElementById('d-pair').innerText = pair;
-            document.getElementById('d-dir').innerText = dir;
-            document.getElementById('d-dir').className = dir.includes("BUY") ? "buy" : "sell";
-            document.getElementById('d-time').innerText = "Time: " + new Date().toLocaleTimeString();
+<h2 id="pair">USDBDT_otc</h2>
 
-            btn.disabled = true;
-            status.innerText = "📸 Capturing...";
-            
-            try {
-                // Wait for UI update
-                await new Promise(r => setTimeout(r, 300));
+<div id="dir">---</div>
 
-                // Lower scale and JPEG format for smaller size
-                const canvas = await html2canvas(document.querySelector("#chart-container"), { scale: 0.8 });
-                const imgData = canvas.toDataURL("image/jpeg", 0.7);
+<div id="time"></div>
 
-                status.innerText = "📤 Sending...";
-                const resp = await fetch(`${WORKER}/send`, { method:"POST", body: JSON.stringify({ pair, dir, image: imgData }) });
-                const result = await resp.json();
-                
-                if(result.ok) { status.innerText = "✅ Success!"; status.style.color="#00ff00"; }
-                else { status.innerText = "❌ Error: " + (result.description || "API Reject"); status.style.color="#ff3d00"; }
-            } catch(e) { status.innerText = "❌ Failed: " + e.message; }
-            btn.disabled = false;
-        }
-    </script>
+</div>
+
+<br>
+
+<input id="pairInput" value="USDBDT_otc">
+
+<select id="dirInput">
+<option value="BUY">BUY 🟢</option>
+<option value="SELL">SELL 🔴</option>
+</select>
+
+<button onclick="send()">SEND FEATURE SIGNAL</button>
+
+<p id="status"></p>
+
+<script>
+
+const API="https://signal.mkapi009.workers.dev/send";
+
+async function send(){
+
+const pair=document.getElementById("pairInput").value;
+const dir=document.getElementById("dirInput").value;
+
+document.getElementById("pair").innerText=pair;
+document.getElementById("dir").innerText=dir;
+
+document.getElementById("dir").className=
+dir==="BUY"?"buy":"sell";
+
+document.getElementById("time").innerText=
+new Date().toLocaleTimeString();
+
+document.getElementById("status").innerText="Capturing...";
+
+await new Promise(r=>setTimeout(r,300));
+
+const canvas=await html2canvas(document.querySelector("#chart"),{scale:1});
+
+const image=canvas.toDataURL("image/jpeg",0.9);
+
+document.getElementById("status").innerText="Sending...";
+
+const res=await fetch(API,{
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+body:JSON.stringify({ pair, dir, image })
+});
+
+const text=await res.text();
+
+document.getElementById("status").innerText=text;
+
+}
+
+</script>
+
 </body>
 </html>
