@@ -13,8 +13,8 @@
 
 body{
 background:#020617;
-color:white;
 font-family:Arial;
+color:white;
 text-align:center;
 }
 
@@ -32,9 +32,8 @@ margin-top:15px;
 }
 
 .signal{
-font-size:30px;
-margin-top:15px;
-color:#00ffc3;
+font-size:28px;
+margin-top:10px;
 }
 
 button{
@@ -56,7 +55,6 @@ table{
 width:100%;
 margin-top:15px;
 border-collapse:collapse;
-font-size:14px;
 }
 
 th,td{
@@ -65,7 +63,7 @@ border-bottom:1px solid #1e293b;
 }
 
 footer{
-margin-top:30px;
+margin-top:25px;
 color:#94a3b8;
 }
 
@@ -86,23 +84,21 @@ color:#94a3b8;
 
 <div class="dashboard">
 
-WIN : <span id="win">0</span> |
-LOSS : <span id="loss">0</span> |
-MTG1 : <span id="mtg">0</span>
+WIN <span id="win">0</span> |
+LOSS <span id="loss">0</span> |
+ACCURACY <span id="acc">0</span>%
 
 </div>
 
 <table>
 
 <thead>
-
 <tr>
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
 <th>Result</th>
 </tr>
-
 </thead>
 
 <tbody id="table"></tbody>
@@ -126,19 +122,16 @@ let pairs=[
 "USDMXN_otc"
 ]
 
-let running=false
 let pairIndex=0
+let running=false
 
 let win=0
 let loss=0
-let mtg=0
-
-let lastSignal=null
 
 function accuracy(){
 
 let total=win+loss
-if(total==0) return 0
+if(total==0)return 0
 
 return Math.round((win/total)*100)
 
@@ -166,7 +159,7 @@ let min=Math.min(...data.map(x=>x.low))
 let w=10
 let gap=2
 
-data.slice(-25).forEach((c,i)=>{
+data.slice(-20).forEach((c,i)=>{
 
 let x=i*(w+gap)+10
 
@@ -194,11 +187,8 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 })
 
 ctx.fillStyle="#fff"
-ctx.font="16px Arial"
-ctx.fillText(pair+" - "+signal,120,18)
-
-ctx.fillStyle="#334155"
-ctx.fillText("APX Premium",260,210)
+ctx.font="15px Arial"
+ctx.fillText(pair+" "+signal,120,18)
 
 if(signal=="BUY"){
 
@@ -206,11 +196,9 @@ ctx.strokeStyle="#00ff9c"
 ctx.lineWidth=3
 
 ctx.beginPath()
-ctx.moveTo(290,160)
-ctx.lineTo(320,130)
+ctx.moveTo(300,160)
+ctx.lineTo(330,130)
 ctx.stroke()
-
-ctx.fillText("BUY ↑",285,185)
 
 }
 
@@ -219,13 +207,14 @@ if(signal=="SELL"){
 ctx.strokeStyle="#ff3b3b"
 
 ctx.beginPath()
-ctx.moveTo(290,130)
-ctx.lineTo(320,160)
+ctx.moveTo(300,130)
+ctx.lineTo(330,160)
 ctx.stroke()
 
-ctx.fillText("SELL ↓",285,185)
-
 }
+
+ctx.fillStyle="#334155"
+ctx.fillText("APX Premium",260,210)
 
 }
 
@@ -240,7 +229,7 @@ minute:'2-digit'
 })+"</td>"+
 "<td>"+pair+"</td>"+
 "<td>"+signal+"</td>"+
-"<td id='res'>WAIT</td>"
+"<td>WAIT</td>"
 
 document.getElementById("table").prepend(row)
 
@@ -290,12 +279,12 @@ image:base64
 
 async function engine(){
 
-if(!running) return
+if(!running)return
 
 let pair=pairs[pairIndex]
 
 pairIndex++
-if(pairIndex>=pairs.length) pairIndex=0
+if(pairIndex>=pairs.length)pairIndex=0
 
 let data=await candles(pair)
 
@@ -315,12 +304,12 @@ setTimeout(async()=>{
 
 let newData=await candles(pair)
 
-let newLast=newData[newData.length-1]
+let last=newData[newData.length-1]
 
 let result="LOSS"
 
-if(signal=="BUY" && newLast.close>newLast.open) result="WIN"
-if(signal=="SELL" && newLast.close<newLast.open) result="WIN"
+if(signal=="BUY" && last.close>last.open) result="WIN"
+if(signal=="SELL" && last.close<last.open) result="WIN"
 
 if(result=="WIN"){
 win++
@@ -329,6 +318,8 @@ document.getElementById("win").innerText=win
 loss++
 document.getElementById("loss").innerText=loss
 }
+
+document.getElementById("acc").innerText=accuracy()
 
 row.children[3].innerText=result
 
@@ -352,19 +343,12 @@ function stop(){
 
 running=false
 
-alert(
-
-"📊 FINAL SUMMARY\n\n"+
-"WIN "+win+"\n"+
-"LOSS "+loss+"\n"+
-"MTG1 "+mtg+"\n\n"+
-"🎯 Accuracy "+accuracy()+"%"
-
-)
+alert("🛑 BOT STOPPED\n\nAccuracy "+accuracy()+"%")
 
 }
 
 </script>
 
 </body>
+
 </html>
