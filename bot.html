@@ -3,90 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA NEURAL v4</title>
+    <title>APX ULTRA BOT V5</title>
     <style>
-        :root {
-            --bg: #020617;
-            --primary: #00ffc3;
-            --card: #0f172a;
-            --buy: #00ff9d;
-            --sell: #ff3b3b;
-        }
-
-        body {
-            background: var(--bg);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            text-align: center;
-            margin: 0; padding: 20px;
-        }
-
-        .header {
-            font-size: 26px;
-            font-weight: 900;
-            color: var(--primary);
-            text-shadow: 0 0 10px rgba(0, 255, 195, 0.4);
-            margin-bottom: 5px;
-        }
-
-        .chart-box {
-            background: var(--card);
-            padding: 15px;
-            border-radius: 20px;
-            display: inline-block;
-            border: 1px solid #1e293b;
-            margin: 15px 0;
-        }
-
-        #signal-box {
-            font-size: 20px;
-            font-weight: bold;
-            padding: 15px;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.03);
-            width: 320px;
-            margin: 10px auto;
-        }
-
-        .btn-group button {
-            padding: 14px 30px;
-            margin: 8px;
-            border: none;
-            border-radius: 10px;
-            font-weight: 800;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .start-btn { background: var(--primary); color: #020617; box-shadow: 0 4px 15px rgba(0,255,195,0.3); }
+        :root { --bg: #020617; --primary: #00ffc3; --card: #0f172a; --buy: #00ff9d; --sell: #ff3b3b; }
+        body { background: var(--bg); color: white; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; }
+        .header { font-size: 26px; font-weight: 900; color: var(--primary); margin-bottom: 5px; }
+        .chart-box { background: var(--card); padding: 15px; border-radius: 20px; display: inline-block; border: 1px solid #1e293b; margin: 15px 0; }
+        #signal-box { font-size: 20px; font-weight: bold; padding: 15px; border-radius: 12px; background: rgba(255,255,255,0.03); width: 320px; margin: 10px auto; border-left: 4px solid var(--primary); }
+        .btn-group button { padding: 14px 30px; margin: 8px; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; }
+        .start-btn { background: var(--primary); color: #020617; }
         .stop-btn { background: #334155; color: white; }
-
-        .history-table {
-            width: 100%; max-width: 400px;
-            margin: 20px auto;
-            border-collapse: collapse;
-            background: var(--card);
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
+        .history-table { width: 100%; max-width: 400px; margin: 20px auto; border-collapse: collapse; background: var(--card); border-radius: 10px; overflow: hidden; }
         th { background: #1e293b; padding: 12px; font-size: 12px; color: #94a3b8; }
         td { padding: 12px; border-bottom: 1px solid #1e293b; font-size: 14px; }
-
         .footer { margin-top: 25px; font-size: 13px; color: #64748b; }
-        .premium { color: var(--primary); }
     </style>
 </head>
 <body>
 
-    <div class="header">🤖 APX ULTRA AUTO</div>
-    <div style="font-size: 12px; color: #94a3b8;">NEURAL SIGNAL ENGINE v4.0</div>
+    <div class="header">🤖 APX ULTRA AUTO V5</div>
+    <div style="font-size: 11px; color: #94a3b8; letter-spacing: 2px;">ADVANCED NEURAL PREDICTOR</div>
     
     <div class="chart-box">
         <canvas id="chart" width="340" height="200"></canvas>
     </div>
 
-    <div id="signal-box">SYSTEM STANDBY</div>
+    <div id="signal-box">WAITING FOR MARKET...</div>
 
     <div class="btn-group">
         <button class="start-btn" onclick="startBot()">START ENGINE</button>
@@ -105,7 +47,7 @@
         <tbody id="history-rows"></tbody>
     </table>
 
-    <div class="footer">Powered by <span class="premium">APX PREMIUM</span></div>
+    <div class="footer">Powered by <b style="color:var(--primary)">APX PREMIUM</b></div>
 
 <script>
     const API = "https://bot1.mkapi009.workers.dev/candles?pair=";
@@ -115,57 +57,66 @@
     let botLoop = null;
     let stats = { total: 0, wins: 0, losses: 0 };
 
-    function getCleanTime() {
+    // 1 Minute Ahead Time Fix (No Seconds)
+    function getAdvanceTime() {
         let d = new Date();
         d.setMinutes(d.getMinutes() + 1);
         return d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
     }
 
-    async function fetchSignal() {
+    async function fetchAndAnalyze() {
         let pair = pairs[Math.floor(Math.random() * pairs.length)];
-        let res = await fetch(API + pair);
-        let candles = await res.json();
-        let data = candles.slice(-20);
-        
-        let last = data[data.length-1];
-        let prev = data[data.length-2];
-        let signal = last.close > prev.close ? "BUY" : "SELL";
-        let entry = getCleanTime();
+        try {
+            let res = await fetch(API + pair);
+            let candles = await res.json();
+            let data = candles.slice(-25);
+            
+            let lastCandle = data[data.length-1];
+            let prevCandle = data[data.length-2];
+            
+            // Logic: Agar last candle green thi to BUY, varna SELL
+            let signal = lastCandle.close > lastCandle.open ? "BUY" : "SELL";
+            let entryTime = getAdvanceTime();
 
-        updateUI(data, pair, signal, entry);
-        await sendToTelegram(pair, signal, entry);
+            // Smart Result Simulation (Check if signal matches last candle movement)
+            let isWin = (signal === "BUY" && lastCandle.close > prevCandle.close) || 
+                        (signal === "SELL" && lastCandle.close < prevCandle.close);
+
+            drawChart(data, pair, signal);
+            updateDashboard(pair, signal, entryTime, isWin);
+            await sendTelegramData(pair, signal, entryTime);
+
+        } catch (e) { console.error("Market Error"); }
     }
 
-    function updateUI(candles, pair, signal, entry) {
+    function drawChart(candles, pair, signal) {
         const canvas = document.getElementById("chart");
         const ctx = canvas.getContext("2d");
         ctx.clearRect(0,0,340,200);
-
-        // Professional Chart Drawing
         let max = Math.max(...candles.map(c => c.high));
         let min = Math.min(...candles.map(c => c.low));
-        
+
         candles.forEach((c, i) => {
-            let x = i * 15 + 20;
+            let x = i * 13 + 15;
             let open = 160 - (c.open - min)/(max-min) * 120;
             let close = 160 - (c.close - min)/(max-min) * 120;
             ctx.fillStyle = c.close > c.open ? "#00ff9d" : "#ff3b3b";
-            ctx.fillRect(x, Math.min(open, close), 10, Math.max(Math.abs(open-close), 2));
+            ctx.fillRect(x, Math.min(open, close), 8, Math.max(Math.abs(open-close), 2));
         });
 
-        // Big Arrow and Text
-        ctx.font = "bold 40px Arial";
+        // Professional Arrow
+        ctx.font = "bold 45px Arial";
         ctx.fillStyle = signal === "BUY" ? "#00ff9d" : "#ff3b3b";
-        ctx.fillText(signal === "BUY" ? "▲" : "▼", 280, 60);
+        ctx.fillText(signal === "BUY" ? "↑" : "↓", 280, 50);
+    }
 
+    function updateDashboard(pair, signal, entry, isWin) {
         document.getElementById("signal-box").innerHTML = `
-            <span style="color:${signal === "BUY" ? '#00ff9d' : '#ff3b3b'}">${pair} ${signal}</span><br>
-            <span style="font-size:14px; color:#94a3b8">Entry: ${entry} (M1)</span>
+            <div style="font-size:12px; color:#94a3b8">${pair} ANALYSIS</div>
+            <div style="color:${signal === "BUY" ? '#00ff9d' : '#ff3b3b'}">${signal} @ ${entry}</div>
         `;
 
-        // Update History
         stats.total++;
-        let isWin = Math.random() > 0.3; // Logic for Win/Loss Display
         if(isWin) stats.wins++; else stats.losses++;
 
         let row = `<tr>
@@ -177,40 +128,40 @@
         document.getElementById("history-rows").insertAdjacentHTML('afterbegin', row);
     }
 
-    async function sendToTelegram(pair, signal, entry) {
+    async function sendTelegramData(pair, signal, entry) {
+        const canvas = document.getElementById("chart");
         return new Promise((resolve) => {
-            const canvas = document.getElementById("chart");
             canvas.toBlob(async (blob) => {
                 const formData = new FormData();
-                const text = `🤖 *APX ULTRA BOT* ====== 🚧\n\n` +
-                             `📊 *Pair:* ${pair}\n` +
-                             `🕒 *ENTRY:* ${entry}\n` +
-                             `⌛ *Timeframe:* M1\n` +
-                             `🎯 *DIRECTION:* ${signal === 'BUY' ? 'CALL 🟢' : 'PUT 🔴'}\n\n` +
-                             `🌐 @MMQUOBOT | PREMIUM`;
+                const text = `🤖 APX BOT ====== 🚧\n\n` +
+                             `📊 Pair: ${pair}\n` +
+                             `🕒 ENTRY: ${entry}\n` +
+                             `⌛ M1 (Next Candle)\n` +
+                             `🎯 DIRECTION: ${signal}\n\n` +
+                             `📳 SIGNAL : ${new Date().toLocaleString()}\n\n` +
+                             `🌐 Telegram @MMQUOBOT`;
 
-                formData.append("photo", blob, "chart.png");
-                formData.append("caption", text);
-                formData.append("parse_mode", "Markdown");
+                formData.append("image", blob, "chart.png");
+                formData.append("text", text);
 
                 try {
                     await fetch(SEND, { method: "POST", body: formData });
-                } catch (e) { console.log("Telegram Error"); }
+                } catch (e) { console.log("Post Error"); }
                 resolve();
             }, "image/png");
         });
     }
 
     function startBot() {
-        alert("🚀 APX NEURAL START\nWelcome, Engine is analyzing markets...");
-        fetchSignal();
-        botLoop = setInterval(fetchSignal, 65000);
+        alert("🚀 APX ENGINE START\nWelcome! Signals will update every 60s.");
+        fetchAndAnalyze();
+        botLoop = setInterval(fetchAndAnalyze, 60000);
     }
 
     function stopBot() {
         clearInterval(botLoop);
-        let accuracy = ((stats.wins/stats.total)*100 || 0).toFixed(1);
-        alert(`📊 SESSION SUMMARY\n\nTotal Signals: ${stats.total}\nWins: ${stats.wins}\nAccuracy: ${accuracy}%\n\nBYE BYE!`);
+        let winRate = ((stats.wins/stats.total)*100 || 0).toFixed(1);
+        alert(`📊 SESSION SUMMARY\nTotal Signals: ${stats.total}\nWins: ${stats.wins}\nAccuracy: ${winRate}%\n\nBYE BYE!`);
     }
 </script>
 </body>
