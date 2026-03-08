@@ -3,145 +3,223 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>✦ ADOX APE v4 PREMIUM APX ✦</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
 
 <style>
-/* Same premium style */
-:root {
-  --bg: #000814;
-  --panel: linear-gradient(145deg, #0b132b, #1c2526);
-  --neon: #39ff14;
-  --cyan: #00f0ff;
-  --glow: 0 0 30px #39ff14, 0 0 50px #00f0ff;
-  --glass: rgba(10, 20, 40, 0.4);
+
+:root{
+--bg:#000814;
+--neon:#39ff14;
+--cyan:#00f0ff;
+--glass:rgba(10,20,40,0.4);
+--glow:0 0 30px #39ff14,0 0 50px #00f0ff;
 }
 
-body { background: var(--bg); color: #f0fff0; font-family: 'Rajdhani', sans-serif; margin: 0; padding: 20px; background-image: radial-gradient(circle at 15% 15%, rgba(57,255,20,0.06) 0%, transparent 40%); }
+body{
+background:var(--bg);
+color:white;
+font-family:'Rajdhani',sans-serif;
+padding:20px;
+}
 
-header { text-align: center; padding: 35px 20px; background: var(--glass); backdrop-filter: blur(10px); border-bottom: 6px solid var(--neon); box-shadow: var(--glow); border-radius: 0 0 30px 30px; }
+header{
+text-align:center;
+padding:25px;
+border-bottom:4px solid var(--neon);
+box-shadow:var(--glow);
+}
 
-.logo { font-family: 'Orbitron'; font-size: 32px; background: linear-gradient(90deg, #39ff14, #00f0ff, #ff00aa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 25px #39ff14; }
+.logo{
+font-family:'Orbitron';
+font-size:28px;
+color:#39ff14;
+}
 
-.container { max-width: 620px; margin: 40px auto; }
+.container{
+max-width:600px;
+margin:auto;
+}
 
-.panel { background: var(--glass); backdrop-filter: blur(12px); padding: 35px; border-radius: 30px; border: 1px solid rgba(57,255,20,0.3); box-shadow: var(--glow), inset 0 0 25px rgba(57,255,20,0.1); }
+.panel{
+background:var(--glass);
+padding:25px;
+border-radius:20px;
+}
 
-.tabs { display: flex; gap: 12px; margin-bottom: 25px; }
+.tabs{
+display:flex;
+gap:10px;
+margin-bottom:15px;
+}
 
-.tab { flex: 1; padding: 16px; border: 3px solid var(--neon); background: transparent; color: var(--neon); border-radius: 15px; font-weight: bold; transition: all 0.4s; }
+.tab{
+flex:1;
+padding:12px;
+border:2px solid var(--neon);
+background:none;
+color:var(--neon);
+border-radius:10px;
+}
 
-.tab.active { background: linear-gradient(135deg, #39ff14, #00f0ff); color: #000; box-shadow: var(--glow); transform: scale(1.05); }
+.tab.active{
+background:#39ff14;
+color:black;
+}
 
-select, input { width: 100%; padding: 15px; margin: 15px 0; background: rgba(5,15,30,0.7); border: 1px solid rgba(57,255,20,0.4); color: #fff; border-radius: 15px; }
+select,input{
+width:100%;
+padding:10px;
+margin:10px 0;
+border-radius:10px;
+background:#0a1a2a;
+color:white;
+}
 
-button { width: 100%; padding: 20px; margin: 15px 0; border: none; border-radius: 18px; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; transition: all 0.4s; }
+button{
+width:100%;
+padding:15px;
+margin-top:10px;
+border:none;
+border-radius:12px;
+font-family:'Orbitron';
+}
 
-.generate { background: linear-gradient(135deg, #39ff14, #00f0ff, #ff00aa); color: #000; box-shadow: var(--glow); }
-.telegram { background: linear-gradient(135deg, #00bfff, #8a2be2); color: white; }
+.generate{
+background:linear-gradient(135deg,#39ff14,#00f0ff);
+}
 
-#output { margin-top: 30px; background: rgba(0,0,0,0.6); padding: 25px; border-radius: 20px; border: 2px dashed #39ff14; white-space: pre; font-family: monospace; font-size: 15px; min-height: 420px; line-height: 1.6; }
+.telegram{
+background:linear-gradient(135deg,#00bfff,#8a2be2);
+color:white;
+}
 
-.loader { display: none; text-align: center; color: #39ff14; margin: 25px 0; font-size: 20px; font-weight: bold; }
+#output{
+margin-top:20px;
+background:black;
+padding:15px;
+border-radius:10px;
+white-space:pre;
+min-height:300px;
+}
 
-.progress-bar { width: 100%; height: 10px; background: rgba(0,20,40,0.6); border-radius: 5px; margin: 12px 0; overflow: hidden; }
-.progress { width: 0%; height: 100%; background: linear-gradient(90deg, #39ff14, #00f0ff); animation: pulse 1.8s infinite; transition: width 0.5s ease; }
-@keyframes pulse { 0%,100% {opacity:0.7;} 50% {opacity:1;} }
-
-.footer { text-align: center; margin-top: 40px; color: #00f0ff; font-size: 15px; text-shadow: 0 0 12px #00f0ff; }
 </style>
 </head>
 
 <body>
 
 <header>
-  <div class="logo">✦ ADOX APE v4 PREMIUM APX ✦</div>
-  <div style="color:#00f0ff; margin-top:10px; font-size:18px;">UTC+6 | ADOX Premium Engine Activated</div>
+
+<div class="logo">✦ ADOX APE v4 PREMIUM APX ✦</div>
+
+<div>UTC+6 | ADOX Premium Engine Activated</div>
+
 </header>
 
 <div class="container">
-  <div class="panel">
 
-    <div class="tabs">
-      <button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
-      <button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
-      <button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
-    </div>
+<div class="panel">
 
-    <select id="pairs" multiple size="12"></select>
+<div class="tabs">
 
-    <div style="display:flex; gap:15px;">
-      <input type="time" id="start" value="00:00">
-      <input type="time" id="end" value="23:59">
-    </div>
+<button class="tab active" onclick="setMarket('OTC',this)">OTC</button>
 
-    <button class="generate" onclick="generateFlow()">GENERATE PREMIUM FLOW ⚡</button>
-    <button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM 📲</button>
+<button class="tab" onclick="setMarket('CRYPTO',this)">CRYPTO</button>
 
-    <div class="loader" id="loader">
-      Fetching ADOX Premium Signals... 
-      <div class="progress-bar"><div class="progress" id="progress"></div></div>
-    </div>
+<button class="tab" onclick="setMarket('STOCK',this)">STOCK</button>
 
-    <div id="output">READY • SELECT PAIRS FOR ADOX PREMIUM FLOW 🌌</div>
-
-  </div>
 </div>
 
-<div class="footer">
-  Powered by 🌐 APX Premium • M1 • MG1 Max • Avoid News • Stop After 2 Losses • Trade Safe 🔥 Mona
+<select id="pairs" multiple size="10"></select>
+
+<div style="display:flex;gap:10px">
+
+<input type="time" id="start" value="00:00">
+
+<input type="time" id="end" value="23:59">
+
+</div>
+
+<button class="generate" onclick="generateFlow()">GENERATE PREMIUM FLOW ⚡</button>
+
+<button class="telegram" onclick="sendToTelegram()">SEND TO TELEGRAM 📲</button>
+
+<div id="output">READY • SELECT PAIRS</div>
+
+</div>
+
 </div>
 
 <script>
-    const API_BASE = "https://quotexotc-futureapi.poghen-dx.workers.dev/pairs=";
-const TG = "https://signal.mkapi009.workers.dev/send";
 
-const PAIRS = {
+const API_BASE="https://quotexotc-futureapi.poghen-dx.workers.dev/pairs=";
+
+const TG="https://signal.mkapi009.workers.dev/send";
+
+const PAIRS={
+
 OTC:[
 "AUDUSD_otc","EURUSD_otc","GBPUSD_otc","NZDUSD_otc","USDCAD_otc","USDCHF_otc","USDJPY_otc",
-"USDINR_otc","USDBDT_otc","USDPKR_otc","USDNGN_otc","USDARS_otc","USDMXN_otc","USDTRY_otc",
-"EURGBP_otc","EURJPY_otc","GBPJPY_otc","XAUUSD_otc"
+"USDINR_otc","USDBDT_otc","USDPKR_otc","USDNGN_otc","USDARS_otc"
 ],
+
 CRYPTO:[
 "BTCUSD_otc","ETHUSD_otc","XRPUSD_otc"
 ],
+
 STOCK:[
-"FB_otc","AXP_otc","PFE_otc","JNJ_otc","MCD_otc","BA_otc"
+"FB_otc","AXP_otc","PFE_otc"
 ]
+
 };
 
-let currentMarket="OTC";
 let signals=[];
-let cacheKey="";
+let currentMarket="OTC";
 
 function setMarket(type,el){
 
 currentMarket=type;
 
 document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+
 el.classList.add("active");
 
 let select=document.getElementById("pairs");
+
 select.innerHTML="";
 
 PAIRS[type].forEach(p=>{
+
 let o=document.createElement("option");
+
 o.value=p;
+
 o.textContent=p.replace("_otc","");
+
 select.appendChild(o);
+
 });
 
 }
 
 function toMin(t){
-let [h,m]=t.split(":").map(Number);
+
+let[h,m]=t.split(":").map(Number);
+
 return h*60+m;
+
 }
 
 function pad(min){
+
 let h=Math.floor(min/60)%24;
+
 let m=min%60;
-return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+
+return(h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+
 }
 
 async function generateFlow(){
@@ -149,127 +227,106 @@ async function generateFlow(){
 let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 
 if(selected.length===0){
-document.getElementById("output").innerText="⚠️ SELECT AT LEAST 1 PAIR";
+
+document.getElementById("output").innerText="SELECT PAIRS";
+
 return;
+
 }
-
-let startMin=toMin(document.getElementById("start").value||"00:00");
-let endMin=toMin(document.getElementById("end").value||"23:59");
-
-let newCacheKey=currentMarket+"|"+selected.sort().join(",")+"|"+startMin+"|"+endMin;
-
-if(newCacheKey===cacheKey && signals.length>0){
-document.getElementById("output").innerText="♻️ USING CACHED ADOX PREMIUM FLOW";
-return;
-}
-
-cacheKey=newCacheKey;
 
 signals=[];
-
-let output=document.getElementById("output");
-let loader=document.getElementById("loader");
-let progress=document.getElementById("progress");
-
-loader.style.display="block";
-output.innerText="";
-
-let total=selected.length;
-let count=0;
 
 for(let pair of selected){
 
 try{
 
 let r=await fetch(API_BASE+pair);
+
 let j=await r.json();
 
-if(j.status!=="success"||!j.signals)continue;
+let list=j.signals||[];
 
-let pairSignals=j.signals||[];
-
-pairSignals.forEach(s=>{
-
-let utcMin=toMin(s.time);
-let localMin=(utcMin+360)%1440;
-let localTime=pad(localMin);
-
-if(localMin>=startMin && localMin<=endMin){
+list.forEach(s=>{
 
 signals.push({
-time:localTime,
+
 pair:pair.replace("_otc",""),
-direction:s.direction
+
+direction:s.direction,
+
+time:s.time
+
 });
 
-}
-
 });
 
-}catch(e){console.log(e)}
-
-count++;
-progress.style.width=(count/total*100)+"%";
-
-await new Promise(r=>setTimeout(r,400));
+}catch(e){}
 
 }
 
 signals.sort((a,b)=>toMin(a.time)-toMin(b.time));
 
-loader.style.display="none";
-
-if(signals.length===0){
-output.innerText="🌑 No premium signals in range";
-return;
-}
-
-let text="🔏 ADOX premium\n⌚ UTC+6 timezone\n💹 Time 1 minute\n\n";
-text+="✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine Activated\n\n";
+let text="ADOX PREMIUM FLOW\n\n";
 
 signals.forEach(s=>{
-text+=`M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction.padEnd(6)}\n`;
+
+text+=`M1 | ${s.pair} | ${s.time} | ${s.direction}\n`;
+
 });
 
-text+="\n━━━━━━━━━━━━━━━━━━━━━━\n• M1 Signals • MG1 Max\n• Avoid High Impact News\n• Stop After 2 Losses\nTrade Safe 🔥 Mona\n\nPowered by 🌐 APX Premium";
-
-output.innerText=text;
+document.getElementById("output").innerText=text;
 
 }
 
 async function sendToTelegram(){
 
 if(signals.length===0){
-alert("Generate Premium Flow First! ⚡");
+
+alert("Generate signals first");
+
 return;
+
 }
 
 for(let s of signals){
 
 await fetch(TG,{
+
 method:"POST",
+
 headers:{
+
 "Content-Type":"application/json"
+
 },
+
 body:JSON.stringify({
+
 pair:s.pair,
+
 dir:s.direction,
+
 time:s.time
+
 })
+
 });
 
-await new Promise(r=>setTimeout(r,800));
+await new Promise(r=>setTimeout(r,700));
 
 }
 
-alert("ADOX Premium Flow Sent to Telegram! 📤");
+alert("Signals Sent To Telegram");
 
 }
 
-/* PAGE LOAD FIX */
-
-document.addEventListener("DOMContentLoaded",function(){
+document.addEventListener("DOMContentLoaded",()=>{
 
 setMarket("OTC",document.querySelector(".tab"));
 
 });
+
+</script>
+
+</body>
+</html>
