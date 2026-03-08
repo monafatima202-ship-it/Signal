@@ -3,9 +3,8 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX Premium Auto</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<title>APX ULTRA</title>
 
 <style>
 
@@ -37,12 +36,8 @@ background:#00ffc3;
 font-weight:bold;
 }
 
-.buy{color:#00ff9d;font-size:24px}
-.sell{color:#ff3b3b;font-size:24px}
-
-.stats{
-margin-top:10px;
-}
+.buy{color:#00ff9d;font-size:26px}
+.sell{color:#ff3b3b;font-size:26px}
 
 .footer{
 margin-top:20px;
@@ -55,20 +50,11 @@ color:#888;
 
 <body>
 
-<div class="header">🤖 APX PREMIUM AUTO BOT</div>
+<div class="header">🤖 APX ULTRA AUTO BOT</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
 <div id="signal">SYSTEM READY</div>
-
-<div class="stats">
-
-Win : <span id="win">0</span> |
-Loss : <span id="loss">0</span> |
-MTG1 : <span id="mtg">0</span> |
-Accuracy : <span id="acc">0</span>%
-
-</div>
 
 <br>
 
@@ -82,7 +68,7 @@ Powered by 🌐 APX Premium
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
-const TG="https://bot1.mkapi009.workers.dev/send"
+const SEND="https://bot1.mkapi009.workers.dev/send"
 
 const pairs=[
 "USDPKR_otc",
@@ -95,12 +81,7 @@ const pairs=[
 
 let engine=null
 
-let win=0
-let loss=0
-let mtg=0
-let total=0
-
-function entryTime(){
+function nextEntry(){
 
 let d=new Date()
 
@@ -110,7 +91,7 @@ return d.toLocaleTimeString()
 
 }
 
-async function getPairData(){
+async function getData(){
 
 let pair=pairs[Math.floor(Math.random()*pairs.length)]
 
@@ -122,7 +103,7 @@ return {pair,data:j.slice(-30)}
 
 }
 
-function getSignal(c){
+function signal(c){
 
 let a=c[c.length-1]
 let b=c[c.length-2]
@@ -132,100 +113,91 @@ else return "SELL"
 
 }
 
-function drawChart(candles,signal,pair){
+function draw(c,pair,sig){
 
 let canvas=document.getElementById("chart")
+
 let ctx=canvas.getContext("2d")
 
 ctx.clearRect(0,0,400,250)
 
-let max=Math.max(...candles.map(c=>c.high))
-let min=Math.min(...candles.map(c=>c.low))
+let max=Math.max(...c.map(x=>x.high))
+let min=Math.min(...c.map(x=>x.low))
 
 let w=8
 let gap=4
 
-candles.forEach((c,i)=>{
+c.forEach((x,i)=>{
 
-let x=i*(w+gap)+20
+let xPos=i*(w+gap)+20
 
-let open=(200-(c.open-min)/(max-min)*160)
-let close=(200-(c.close-min)/(max-min)*160)
-let high=(200-(c.high-min)/(max-min)*160)
-let low=(200-(c.low-min)/(max-min)*160)
+let open=200-(x.open-min)/(max-min)*160
+let close=200-(x.close-min)/(max-min)*160
+let high=200-(x.high-min)/(max-min)*160
+let low=200-(x.low-min)/(max-min)*160
 
 ctx.strokeStyle="white"
 
 ctx.beginPath()
-ctx.moveTo(x+w/2,high)
-ctx.lineTo(x+w/2,low)
+ctx.moveTo(xPos+w/2,high)
+ctx.lineTo(xPos+w/2,low)
 ctx.stroke()
 
-ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
+ctx.fillStyle=x.close>x.open?"#00ff9d":"#ff3b3b"
 
-ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
+ctx.fillRect(xPos,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
 ctx.fillStyle="white"
 ctx.font="14px Arial"
 
-ctx.fillText(pair+" "+signal,120,20)
+ctx.fillText(pair+" "+sig,130,20)
 
 }
 
-async function sendSignal(pair,signal){
+async function telegram(pair,sig){
 
-let entry=entryTime()
+let entry=nextEntry()
 
 let canvas=document.getElementById("chart")
 
-let img=canvas.toDataURL("image/jpeg")
+let blob=await new Promise(r=>canvas.toBlob(r,"image/png"))
+
+let form=new FormData()
+
+form.append("image",blob,"chart.png")
 
 let text=
-"📊 APX PREMIUM SIGNAL\n\n"+
+"📊 APX ULTRA SIGNAL\n\n"+
 "Pair : "+pair+"\n"+
-"Direction : "+signal+"\n"+
+"Direction : "+sig+"\n"+
 "Entry : "+entry+"\n\n"+
 "Powered by APX Premium"
 
-await fetch(TG,{
+form.append("text",text)
+
+await fetch(SEND,{
 method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-text:text,
-image:img
+body:form
 })
-})
-
-}
-
-function updateStats(){
-
-document.getElementById("win").innerText=win
-document.getElementById("loss").innerText=loss
-document.getElementById("mtg").innerText=mtg
-
-let acc=Math.round((win/(win+loss||1))*100)
-
-document.getElementById("acc").innerText=acc
 
 }
 
 async function run(){
 
-let d=await getPairData()
+let d=await getData()
 
-let signal=getSignal(d.data)
+let sig=signal(d.data)
 
-drawChart(d.data,signal,d.pair)
+draw(d.data,d.pair,sig)
 
 document.getElementById("signal").innerHTML=
-signal=="BUY"
+sig=="BUY"
 ?`<span class=buy>${d.pair} BUY</span>`
 :`<span class=sell>${d.pair} SELL</span>`
 
-sendSignal(d.pair,signal)
+telegram(d.pair,sig)
 
 }
 
@@ -241,7 +213,7 @@ function stop(){
 
 clearInterval(engine)
 
-alert("APX System Stopped")
+alert("APX ULTRA STOPPED")
 
 }
 
