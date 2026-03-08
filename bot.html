@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX AUTO-FIXED PANEL - With Buy Arrow</title>
+    <title>APX AUTO-FIXED PANEL - Fixed Retry</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
@@ -21,11 +21,12 @@
         table { width:100%; border-collapse:collapse; font-size:14px; }
         th { background:#1e293b; padding:10px; color:#94a3b8; }
         td { padding:10px; border-top:1px solid #1e293b; }
+        #loading { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); color:#00ffc3; font-size:20px; display:none; }
     </style>
 </head>
 <body>
 
-<div class="header">🤖 APX AUTO-SIGNAL SYSTEM - Arrow Style</div>
+<div class="header">🤖 APX AUTO-SIGNAL SYSTEM - Arrow Style (Fixed)</div>
 
 <select id="pairSelect">
     <option value="USDBDT_otc">USDBDT_otc</option>
@@ -35,6 +36,7 @@
 </select>
 
 <div id="chart-container">
+    <div id="loading">Loading Chart...</div>
     <div id="tv-chart"></div>
     <div id="signalBox" class="signal-box">SYSTEM READY</div>
 </div>
@@ -60,112 +62,95 @@ let currentPair = "USDBDT_otc";
 
 function initChart() {
     chart = LightweightCharts.createChart(document.getElementById('tv-chart'), {
-        layout: { 
-            background: { color: '#000' }, 
-            textColor: '#94a3b8' 
-        },
-        grid: { 
-            vertLines: { visible: false }, 
-            horzLines: { color: '#1e293b', visible: true } 
-        },
-        timeScale: { 
-            visible: true, 
-            borderVisible: false,
-            timeVisible: true,
-            secondsVisible: false
-        },
-        rightPriceScale: { 
-            borderVisible: false 
-        },
+        layout: { background: { color: '#000' }, textColor: '#94a3b8' },
+        grid: { vertLines: { visible: false }, horzLines: { color: '#1e293b' } },
+        timeScale: { visible: true, borderVisible: false, timeVisible: true, secondsVisible: false },
+        rightPriceScale: { borderVisible: false },
         handleScale: false,
-        handleScroll: false,
-        crosshair: {
-            mode: LightweightCharts.CrosshairMode.Normal
-        }
+        handleScroll: false
     });
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#22c55e',
-        downColor: '#ef4444',
-        borderVisible: false,
-        wickUpColor: '#22c55e',
-        wickDownColor: '#ef4444'
+        upColor: '#22c55e', downColor: '#ef4444', borderVisible: false,
+        wickUpColor: '#22c55e', wickDownColor: '#ef4444'
     });
 }
 initChart();
 
+async function fetchWithRetry(url, retries = 3, delay = 5000) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            console.log("Data fetched successfully:", json.data?.length || 0, "candles");
+            return json;
+        } catch (err) {
+            console.error(`Fetch attempt ${i+1} failed:`, err);
+            if (i < retries - 1) await new Promise(r => setTimeout(r, delay));
+        }
+    }
+    throw new Error("All retries failed");
+}
+
 async function fetchAndUpdate() {
     currentPair = document.getElementById('pairSelect').value;
-    document.getElementById('signalBox').innerText = "RETRIEVING...";
+    const status = document.getElementById('signalBox');
+    status.innerText = "RETRIEVING...";
+    document.getElementById('loading').style.display = 'block';
 
     try {
-        const res = await fetch(`https://radit.top/otc.php?asset=${currentPair}`);
-        const json = await res.json();
-        if (!json.data || json.data.length === 0) throw new Error("No data");
+        const json = await fetchWithRetry(`https://radit.top/otc.php?asset=${currentPair}`);
+        if (!json.data || json.data.length < 10) throw new Error("Insufficient data");
 
-        const candles = json.data.slice(-40); // Last 40 for view
+        const candles = json.data.slice(-40);
         candleSeries.setData(candles);
         chart.timeScale().fitContent();
+        document.getElementById('loading').style.display = 'none';
 
-        const lastCandle = candles[candles.length - 1];
-        const isBuy = lastCandle.close > lastCandle.open;
+        const last = candles[candles.length - 1];
+        const isBuy = last.close > last.open;
         const direction = isBuy ? "BUY" : "SELL";
-        const signalText = `${direction} ↑`; // Arrow style text
+        const signalText = `${direction} ↑`;
 
-        document.getElementById('signalBox').innerText = `${currentPair.toUpperCase()} - ${signalText}`;
-        document.getElementById('signalBox').className = 'signal-box ' + (isBuy ? 'buy' : 'sell');
+        status.innerText = `${currentPair.toUpperCase()} - ${signalText}`;
+        status.className = 'signal-box ' + (isBuy ? 'buy' : 'sell');
 
-        // Add arrow marker on last candle (like your screenshot)
         const markers = [{
-            time: lastCandle.time,
+            time: last.time,
             position: isBuy ? 'aboveBar' : 'belowBar',
             color: isBuy ? '#22c55e' : '#ef4444',
             shape: isBuy ? 'arrowUp' : 'arrowDown',
-            text: isBuy ? 'BUY ↑' : 'SELL ↓'
+            text: signalText
         }];
         candleSeries.setMarkers(markers);
 
-        // Summary
         const timeStr = new Date().toLocaleTimeString();
         const row = document.getElementById('summaryBody').insertRow(0);
         row.innerHTML = `<td>\( {timeStr}</td><td> \){currentPair}</td><td class="\( {isBuy ? 'buy' : 'sell'}"> \){signalText}</td>`;
 
-        // Send to worker with chart screenshot
         await sendSignalWithImage(currentPair, signalText);
     } catch (err) {
-        console.error(err);
-        document.getElementById('signalBox').innerText = "ERROR / RETRYING...";
+        console.error("Update failed:", err);
+        status.innerText = "ERROR / RETRYING... (Check console)";
+        document.getElementById('loading').style.display = 'none';
     }
 }
 
 async function sendSignalWithImage(pair, direction) {
     try {
-        await new Promise(resolve => setTimeout(resolve, 1200)); // Render hone do (markers ke saath)
-
-        const canvas = await html2canvas(document.getElementById('chart-container'), {
-            scale: 1.5,
-            backgroundColor: null
-        });
+        await new Promise(r => setTimeout(r, 1500)); // Render wait
+        const canvas = await html2canvas(document.getElementById('chart-container'), { scale: 1.5, backgroundColor: null });
         const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
 
-        const payload = {
-            pair: pair,
-            dir: direction,
-            image: imageBase64
-        };
-
-        const response = await fetch(WORKER_URL, {
+        const payload = { pair, dir: direction, image: imageBase64 };
+        const res = await fetch(WORKER_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-
-        if (response.ok) {
-            console.log("Sent to worker → Telegram (with arrow chart)");
-        } else {
-            console.log("Worker status:", response.status);
-        }
+        console.log("Worker send status:", res.status, res.ok ? "OK" : "Failed");
     } catch (e) {
-        console.error("Send failed:", e);
+        console.error("Telegram send failed:", e);
     }
 }
 
@@ -181,13 +166,13 @@ function stopEngine() {
     document.getElementById('startBtn').disabled = false;
     document.getElementById('stopBtn').disabled = true;
     document.getElementById('signalBox').innerText = "STOPPED";
-    candleSeries.setMarkers([]); // Clear markers
+    candleSeries.setMarkers([]);
+    document.getElementById('loading').style.display = 'none';
 }
 
 document.getElementById('pairSelect').addEventListener('change', () => {
     if (!document.getElementById('stopBtn').disabled) fetchAndUpdate();
 });
 </script>
-
 </body>
 </html>
