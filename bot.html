@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <title>APX ULTRA BOT</title>
 
@@ -12,8 +13,8 @@
 
 body{
 background:#020617;
-font-family:Arial;
 color:white;
+font-family:Arial;
 text-align:center;
 }
 
@@ -26,8 +27,8 @@ margin-top:10px;
 canvas{
 background:#020617;
 border-radius:12px;
-margin-top:15px;
 box-shadow:0 0 30px #00ffc3;
+margin-top:15px;
 }
 
 .signal{
@@ -48,7 +49,7 @@ font-size:18px;
 }
 
 .dashboard{
-margin-top:15px;
+margin-top:10px;
 }
 
 table{
@@ -76,7 +77,7 @@ color:#94a3b8;
 
 <div class="header">🤖 APX ULTRA BOT</div>
 
-<canvas id="chart" width="350" height="220"></canvas>
+<canvas id="chart" width="360" height="220"></canvas>
 
 <div id="signal" class="signal">READY</div>
 
@@ -94,12 +95,14 @@ MTG1 : <span id="mtg">0</span>
 <table>
 
 <thead>
+
 <tr>
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
 <th>Result</th>
 </tr>
+
 </thead>
 
 <tbody id="table"></tbody>
@@ -123,17 +126,19 @@ let pairs=[
 "USDMXN_otc"
 ]
 
-let pairIndex=0
 let running=false
+let pairIndex=0
 
 let win=0
 let loss=0
 let mtg=0
 
+let lastSignal=null
+
 function accuracy(){
 
 let total=win+loss
-if(total==0)return 0
+if(total==0) return 0
 
 return Math.round((win/total)*100)
 
@@ -142,17 +147,18 @@ return Math.round((win/total)*100)
 async function candles(pair){
 
 let r=await fetch(worker+"/candles?pair="+pair)
+
 return await r.json()
 
 }
 
-function draw(data,pair,signal){
+function drawChart(data,pair,signal){
 
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
 
 ctx.fillStyle="#020617"
-ctx.fillRect(0,0,350,220)
+ctx.fillRect(0,0,360,220)
 
 let max=Math.max(...data.map(x=>x.high))
 let min=Math.min(...data.map(x=>x.low))
@@ -160,7 +166,7 @@ let min=Math.min(...data.map(x=>x.low))
 let w=10
 let gap=2
 
-data.slice(-20).forEach((c,i)=>{
+data.slice(-25).forEach((c,i)=>{
 
 let x=i*(w+gap)+10
 
@@ -174,7 +180,7 @@ close=200-(close*180)
 high=200-(high*180)
 low=200-(low*180)
 
-ctx.strokeStyle="white"
+ctx.strokeStyle="#aaa"
 
 ctx.beginPath()
 ctx.moveTo(x+w/2,high)
@@ -187,12 +193,58 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
-ctx.fillStyle="#00ffc3"
+ctx.fillStyle="#fff"
 ctx.font="16px Arial"
-ctx.fillText(pair+" "+signal,90,20)
+ctx.fillText(pair+" - "+signal,120,18)
 
 ctx.fillStyle="#334155"
-ctx.fillText("APX Premium",250,210)
+ctx.fillText("APX Premium",260,210)
+
+if(signal=="BUY"){
+
+ctx.strokeStyle="#00ff9c"
+ctx.lineWidth=3
+
+ctx.beginPath()
+ctx.moveTo(290,160)
+ctx.lineTo(320,130)
+ctx.stroke()
+
+ctx.fillText("BUY ↑",285,185)
+
+}
+
+if(signal=="SELL"){
+
+ctx.strokeStyle="#ff3b3b"
+
+ctx.beginPath()
+ctx.moveTo(290,130)
+ctx.lineTo(320,160)
+ctx.stroke()
+
+ctx.fillText("SELL ↓",285,185)
+
+}
+
+}
+
+function addRow(pair,signal){
+
+let row=document.createElement("tr")
+
+row.innerHTML=
+"<td>"+new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})+"</td>"+
+"<td>"+pair+"</td>"+
+"<td>"+signal+"</td>"+
+"<td id='res'>WAIT</td>"
+
+document.getElementById("table").prepend(row)
+
+return row
 
 }
 
@@ -200,16 +252,20 @@ async function telegram(pair,signal){
 
 let canvas=document.getElementById("chart")
 
-let image=await html2canvas(canvas)
+let img=await html2canvas(canvas)
 
-let base64=image.toDataURL("image/png")
+let base64=img.toDataURL("image/png")
 
-let entry=new Date(Date.now()+60000)
+let entry=new Date()
+entry.setMinutes(entry.getMinutes()+1)
 
 let text=
 "🤖 APX BOT PREMIUM\n\n"+
 "📊 Pair "+pair+"\n"+
-"🕓 ENTRY "+entry.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+"\n"+
+"🕓 ENTRY "+entry.toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})+"\n"+
 "⌛ M1\n"+
 "⭕ DIRECTION "+signal+"\n"+
 "🎯 Accuracy "+accuracy()+"%\n\n"+
@@ -224,38 +280,22 @@ headers:{
 },
 
 body:JSON.stringify({
-
 text:text,
 image:base64
-
 })
 
 })
-
-}
-
-function addRow(pair,signal,res){
-
-let row=document.createElement("tr")
-
-row.innerHTML=
-"<td>"+new Date().toLocaleTimeString()+"</td>"+
-"<td>"+pair+"</td>"+
-"<td>"+signal+"</td>"+
-"<td>"+res+"</td>"
-
-document.getElementById("table").prepend(row)
 
 }
 
 async function engine(){
 
-if(!running)return
+if(!running) return
 
 let pair=pairs[pairIndex]
 
 pairIndex++
-if(pairIndex>=pairs.length)pairIndex=0
+if(pairIndex>=pairs.length) pairIndex=0
 
 let data=await candles(pair)
 
@@ -263,15 +303,38 @@ let last=data[data.length-1]
 
 let signal=last.close>last.open?"BUY":"SELL"
 
-draw(data,pair,signal)
+drawChart(data,pair,signal)
 
 document.getElementById("signal").innerText=pair+" "+signal
 
-await telegram(pair,signal)
+let row=addRow(pair,signal)
 
-addRow(pair,signal,"WAIT")
+telegram(pair,signal)
 
-setTimeout(engine,60000)
+setTimeout(async()=>{
+
+let newData=await candles(pair)
+
+let newLast=newData[newData.length-1]
+
+let result="LOSS"
+
+if(signal=="BUY" && newLast.close>newLast.open) result="WIN"
+if(signal=="SELL" && newLast.close<newLast.open) result="WIN"
+
+if(result=="WIN"){
+win++
+document.getElementById("win").innerText=win
+}else{
+loss++
+document.getElementById("loss").innerText=loss
+}
+
+row.children[3].innerText=result
+
+},60000)
+
+setTimeout(engine,65000)
 
 }
 
@@ -279,9 +342,9 @@ function start(){
 
 running=true
 
-alert("🚀 APX ULTRA STARTED")
-
 engine()
+
+alert("🚀 APX ULTRA STARTED")
 
 }
 
