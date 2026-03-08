@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX Panel</title>
+<title>APX AUTO SYSTEM</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
 <style>
+
 body{
 background:#020617;
 color:white;
@@ -12,90 +16,100 @@ font-family:Arial;
 text-align:center;
 }
 
+.header{
+font-size:28px;
+color:#00ffc3;
+margin-top:15px;
+}
+
 canvas{
 background:#0b1220;
-border-radius:10px;
-margin-top:20px;
+border-radius:12px;
+margin-top:15px;
 }
 
 button{
-padding:10px 20px;
+padding:14px 30px;
 margin:10px;
 border:none;
-border-radius:6px;
+border-radius:10px;
 background:#00ffc3;
-font-weight:bold;
-cursor:pointer;
+font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:26px}
-.sell{color:#ff3b3b;font-size:26px}
+.buy{color:#00ff9d;font-size:28px}
+.sell{color:#ff3b3b;font-size:28px}
+
 </style>
+
 </head>
 
 <body>
 
-<h2>🤖 APX SIGNAL PANEL</h2>
+<div class="header">🤖 APX AUTO SYSTEM</div>
 
 <select id="pair">
-<option>USDBDT_otc</option>
+
 <option>USDPKR_otc</option>
+<option selected>USDBDT_otc</option>
 <option>USDINR_otc</option>
 <option>USDARS_otc</option>
 <option>USDBRL_otc</option>
 <option>USDMXN_otc</option>
+
 </select>
 
 <br>
 
-<canvas id="chart" width="350" height="200"></canvas>
+<canvas id="chart" width="380" height="250"></canvas>
 
 <div id="signal">READY</div>
 
 <br>
 
-<button onclick="startEngine()">START</button>
-<button onclick="stopEngine()">STOP</button>
+<button onclick="start()">START</button>
+<button onclick="stop()">STOP</button>
 
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
+const TG="https://bot1.mkapi009.workers.dev/send"
 
-const canvas=document.getElementById("chart")
-const ctx=canvas.getContext("2d")
+let canvas=document.getElementById("chart")
+let ctx=canvas.getContext("2d")
 
 let engine=null
 
-async function loadCandles(){
+async function getData(){
 
 let pair=document.getElementById("pair").value
 
 let r=await fetch(API+pair)
 
-let data=await r.json()
+let j=await r.json()
 
-return data.slice(-20)
+return j.slice(-30)
 
 }
 
-function drawChart(candles){
+function drawChart(candles,signal){
 
-ctx.clearRect(0,0,canvas.width,canvas.height)
+ctx.clearRect(0,0,400,300)
 
 let max=Math.max(...candles.map(c=>c.high))
 let min=Math.min(...candles.map(c=>c.low))
 
-let width=10
-let gap=4
+let w=10
+let gap=3
 
 candles.forEach((c,i)=>{
 
-let x=i*(width+gap)+10
+let x=i*(w+gap)+20
 
-let openY=180-(c.open-min)/(max-min)*150
-let closeY=180-(c.close-min)/(max-min)*150
-let highY=180-(c.high-min)/(max-min)*150
-let lowY=180-(c.low-min)/(max-min)*150
+let openY=200-(c.open-min)/(max-min)*180
+let closeY=200-(c.close-min)/(max-min)*180
+let highY=200-(c.high-min)/(max-min)*180
+let lowY=200-(c.low-min)/(max-min)*180
 
 ctx.strokeStyle="white"
 
@@ -106,9 +120,35 @@ ctx.stroke()
 
 ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
 
-ctx.fillRect(x,Math.min(openY,closeY),width,Math.abs(openY-closeY))
+ctx.fillRect(x,Math.min(openY,closeY),w,Math.abs(openY-closeY))
 
 })
+
+let last=candles[candles.length-1]
+
+let x=(candles.length-1)*(w+gap)+20
+let y=200-(last.close-min)/(max-min)*180
+
+ctx.strokeStyle=signal=="BUY"?"#00ff9d":"#ff3b3b"
+
+ctx.lineWidth=3
+
+ctx.beginPath()
+
+ctx.moveTo(x-40,y+20)
+ctx.lineTo(x,y)
+
+ctx.stroke()
+
+ctx.fillStyle="white"
+
+ctx.font="16px Arial"
+
+ctx.fillText(document.getElementById("pair").value+" (OTC) - "+signal,100,20)
+
+ctx.fillStyle=signal=="BUY"?"#00ff9d":"#ff3b3b"
+
+ctx.fillText(signal,x-10,y+35)
 
 }
 
@@ -121,40 +161,61 @@ return last.close>prev.close?"BUY":"SELL"
 
 }
 
-async function run(){
+async function sendTG(pair,signal){
 
-let candles=await loadCandles()
+let img=canvas.toDataURL()
 
-drawChart(candles)
-
-let signal=getSignal(candles)
-
-let el=document.getElementById("signal")
-
-el.innerText=signal
-el.className=signal=="BUY"?"buy":"sell"
+await fetch(TG,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+pair:pair,
+dir:signal,
+image:img
+})
+})
 
 }
 
-function startEngine(){
+async function run(){
+
+let pair=document.getElementById("pair").value
+
+let candles=await getData()
+
+let sig=getSignal(candles)
+
+drawChart(candles,sig)
+
+let el=document.getElementById("signal")
+
+el.innerText=sig
+
+el.className=sig=="BUY"?"buy":"sell"
+
+sendTG(pair,sig)
+
+}
+
+function start(){
 
 if(engine) return
+
+alert("🚀 APX AUTO ENGINE STARTED")
 
 run()
 
 engine=setInterval(run,60000)
 
-alert("Engine Started")
-
 }
 
-function stopEngine(){
+function stop(){
 
 clearInterval(engine)
 
 engine=null
 
-alert("Engine Stopped")
+alert("🛑 APX SYSTEM STOPPED")
 
 }
 
