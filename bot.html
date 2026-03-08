@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA BOT</title>
+<title>APX ULTRA DASHBOARD</title>
 
 <style>
 
@@ -25,7 +25,7 @@ canvas{
 background:#020617;
 border-radius:12px;
 margin-top:20px;
-box-shadow:0 0 25px #00ffc3;
+box-shadow:0 0 30px #00ffc3;
 }
 
 button{
@@ -38,8 +38,8 @@ font-weight:bold;
 font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:24px}
-.sell{color:#ff3b3b;font-size:24px}
+.buy{color:#00ff9d;font-size:22px}
+.sell{color:#ff3b3b;font-size:22px}
 
 table{
 margin-top:20px;
@@ -63,7 +63,7 @@ color:#aaa;
 
 <body>
 
-<div class="header">🤖 APX ULTRA AUTO BOT</div>
+<div class="header">🤖 APX ULTRA DASHBOARD</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
@@ -104,7 +104,6 @@ color:#aaa;
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
-const SEND="https://bot1.mkapi009.workers.dev/send"
 
 const pairs=[
 "USDPKR_otc",
@@ -130,19 +129,6 @@ function accuracy(){
 if(total==0) return 0
 
 return ((win/total)*100).toFixed(1)
-
-}
-
-function entryTime(){
-
-let d=new Date()
-
-d.setMinutes(d.getMinutes()+1)
-
-return d.toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
-})
 
 }
 
@@ -267,39 +253,6 @@ document.getElementById("acc").innerText=accuracy()+"%"
 
 }
 
-async function sendTelegram(pair,signal){
-
-let entry=entryTime()
-
-let canvas=document.getElementById("chart")
-
-let blob=await new Promise(r=>canvas.toBlob(r,"image/png"))
-
-let form=new FormData()
-
-form.append("image",blob,"chart.png")
-
-let text=
-"🚀 APX PREMIUM SIGNAL\n\n"+
-"📊 Pair : "+pair+"\n"+
-"🕓 Entry : "+entry+"\n"+
-"⏱ TF : M1\n"+
-"⭕ Direction : "+signal+"\n\n"+
-"📊 Stats\n"+
-"✅ Win : "+win+"\n"+
-"❌ Loss : "+loss+"\n"+
-"🎯 Accuracy : "+accuracy()+"%\n\n"+
-"🌐 Powered by APX Premium"
-
-form.append("text",text)
-
-await fetch(SEND,{
-method:"POST",
-body:form
-})
-
-}
-
 async function checkResult(){
 
 let r=await fetch(API+lastPair)
@@ -314,13 +267,9 @@ let last=c[1]
 let result
 
 if(lastSignal=="BUY"){
-
 result=last.close>prev.close?"WIN":"LOSS"
-
 }else{
-
 result=last.close<prev.close?"WIN":"LOSS"
-
 }
 
 total++
@@ -349,8 +298,6 @@ document.getElementById("signal").innerHTML=
 signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
 :`<span class="sell">${d.pair} SELL</span>`
-
-await sendTelegram(d.pair,signal)
 
 setTimeout(checkResult,60000)
 
