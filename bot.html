@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA AUTO BOT</title>
+<title>APX ULTRA BOT</title>
 
 <style>
 
@@ -15,10 +15,10 @@ text-align:center;
 }
 
 .header{
-font-size:26px;
+font-size:28px;
 color:#00ffc3;
 margin-top:10px;
-text-shadow:0 0 10px #00ffc3;
+text-shadow:0 0 20px #00ffc3;
 }
 
 canvas{
@@ -32,7 +32,7 @@ button{
 padding:14px 26px;
 margin:10px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 background:#00ffc3;
 font-weight:bold;
 font-size:16px;
@@ -69,21 +69,22 @@ color:#aaa;
 
 <div id="signal">SYSTEM READY</div>
 
-<button onclick="start()">START</button>
-<button onclick="stop()">STOP</button>
+<br>
+
+<button onclick="start()">🚀 START</button>
+<button onclick="stop()">🛑 STOP</button>
 
 <h3>📊 Dashboard</h3>
 
 <div>
 
-WIN : <span id="win">0</span> |
-LOSS : <span id="loss">0</span> |
-MTG1 : <span id="mtg">0</span> |
-ACC : <span id="acc">0%</span>
+✅ WIN : <span id="win">0</span> |
+❌ LOSS : <span id="loss">0</span> |
+🎯 ACC : <span id="acc">0%</span>
 
 </div>
 
-<h3>📊 Signal History</h3>
+<h3>📜 Signal History</h3>
 
 <table id="history">
 
@@ -97,7 +98,7 @@ ACC : <span id="acc">0%</span>
 </table>
 
 <div class="footer">
-Powered by 🌐 APX Premium
+🌐 Powered by APX Premium
 </div>
 
 <script>
@@ -119,10 +120,10 @@ let engine=null
 
 let win=0
 let loss=0
-let mtg=0
 let total=0
 
 let lastSignal=null
+let lastPair=null
 
 function accuracy(){
 
@@ -213,24 +214,26 @@ ctx.fillText(pair,10,20)
 if(signal=="BUY"){
 
 ctx.strokeStyle="#00ff9d"
+
 ctx.beginPath()
-ctx.moveTo(300,200)
-ctx.lineTo(340,170)
+ctx.moveTo(310,200)
+ctx.lineTo(350,170)
 ctx.stroke()
 
 ctx.fillStyle="#00ff9d"
-ctx.fillText("BUY",300,220)
+ctx.fillText("BUY ↑",300,220)
 
 }else{
 
 ctx.strokeStyle="#ff3b3b"
+
 ctx.beginPath()
-ctx.moveTo(300,170)
-ctx.lineTo(340,200)
+ctx.moveTo(310,170)
+ctx.lineTo(350,200)
 ctx.stroke()
 
 ctx.fillStyle="#ff3b3b"
-ctx.fillText("SELL",300,220)
+ctx.fillText("SELL ↓",290,220)
 
 }
 
@@ -260,7 +263,6 @@ function updateStats(){
 
 document.getElementById("win").innerText=win
 document.getElementById("loss").innerText=loss
-document.getElementById("mtg").innerText=mtg
 document.getElementById("acc").innerText=accuracy()+"%"
 
 }
@@ -283,7 +285,7 @@ let text=
 "🕓 Entry : "+entry+"\n"+
 "⏱ TF : M1\n"+
 "⭕ Direction : "+signal+"\n\n"+
-"📈 Stats\n"+
+"📊 Stats\n"+
 "✅ Win : "+win+"\n"+
 "❌ Loss : "+loss+"\n"+
 "🎯 Accuracy : "+accuracy()+"%\n\n"+
@@ -298,11 +300,48 @@ body:form
 
 }
 
+async function checkResult(){
+
+let r=await fetch(API+lastPair)
+
+let j=await r.json()
+
+let c=j.slice(-2)
+
+let prev=c[0]
+let last=c[1]
+
+let result
+
+if(lastSignal=="BUY"){
+
+result=last.close>prev.close?"WIN":"LOSS"
+
+}else{
+
+result=last.close<prev.close?"WIN":"LOSS"
+
+}
+
+total++
+
+if(result=="WIN") win++
+else loss++
+
+updateStats()
+
+addHistory(lastPair,lastSignal,result)
+
+}
+
 async function run(){
 
 let d=await getCandles()
 
 let signal=signalLogic(d.data)
+
+lastSignal=signal
+lastPair=d.pair
 
 drawChart(d.data,d.pair,signal)
 
@@ -311,9 +350,9 @@ signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
 :`<span class="sell">${d.pair} SELL</span>`
 
-lastSignal=signal
-
 await sendTelegram(d.pair,signal)
+
+setTimeout(checkResult,60000)
 
 }
 
@@ -329,7 +368,7 @@ function stop(){
 
 clearInterval(engine)
 
-alert("APX BOT STOPPED")
+alert("🛑 APX BOT STOPPED")
 
 }
 
