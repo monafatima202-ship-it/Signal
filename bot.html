@@ -3,7 +3,6 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>APX ULTRA</title>
 
 <style>
@@ -18,13 +17,13 @@ text-align:center;
 .header{
 font-size:26px;
 color:#00ffc3;
-margin-top:10px;
+margin-top:15px;
 }
 
 canvas{
 background:#0b1220;
 border-radius:10px;
-margin-top:15px;
+margin-top:20px;
 }
 
 button{
@@ -34,14 +33,15 @@ border:none;
 border-radius:8px;
 background:#00ffc3;
 font-weight:bold;
+font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:26px}
-.sell{color:#ff3b3b;font-size:26px}
+.buy{color:#00ff9d;font-size:24px}
+.sell{color:#ff3b3b;font-size:24px}
 
 .footer{
 margin-top:20px;
-color:#888;
+color:#aaa;
 }
 
 </style>
@@ -81,7 +81,7 @@ const pairs=[
 
 let engine=null
 
-function nextEntry(){
+function entryTime(){
 
 let d=new Date()
 
@@ -103,66 +103,67 @@ return {pair,data:j.slice(-30)}
 
 }
 
-function signal(c){
+function getSignal(c){
 
-let a=c[c.length-1]
-let b=c[c.length-2]
+let last=c[c.length-1]
+let prev=c[c.length-2]
 
-if(a.close>b.close) return "BUY"
-else return "SELL"
+if(last.close>prev.close){
+return "BUY"
+}else{
+return "SELL"
+}
 
 }
 
-function draw(c,pair,sig){
+function drawChart(candles,pair,signal){
 
 let canvas=document.getElementById("chart")
-
 let ctx=canvas.getContext("2d")
 
 ctx.clearRect(0,0,400,250)
 
-let max=Math.max(...c.map(x=>x.high))
-let min=Math.min(...c.map(x=>x.low))
+let max=Math.max(...candles.map(x=>x.high))
+let min=Math.min(...candles.map(x=>x.low))
 
 let w=8
 let gap=4
 
-c.forEach((x,i)=>{
+candles.forEach((c,i)=>{
 
-let xPos=i*(w+gap)+20
+let x=i*(w+gap)+20
 
-let open=200-(x.open-min)/(max-min)*160
-let close=200-(x.close-min)/(max-min)*160
-let high=200-(x.high-min)/(max-min)*160
-let low=200-(x.low-min)/(max-min)*160
+let open=200-(c.open-min)/(max-min)*160
+let close=200-(c.close-min)/(max-min)*160
+let high=200-(c.high-min)/(max-min)*160
+let low=200-(c.low-min)/(max-min)*160
 
 ctx.strokeStyle="white"
 
 ctx.beginPath()
-ctx.moveTo(xPos+w/2,high)
-ctx.lineTo(xPos+w/2,low)
+ctx.moveTo(x+w/2,high)
+ctx.lineTo(x+w/2,low)
 ctx.stroke()
 
-ctx.fillStyle=x.close>x.open?"#00ff9d":"#ff3b3b"
+ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
 
-ctx.fillRect(xPos,Math.min(open,close),w,Math.abs(open-close))
+ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
 ctx.fillStyle="white"
 ctx.font="14px Arial"
-
-ctx.fillText(pair+" "+sig,130,20)
+ctx.fillText(pair+" "+signal,120,20)
 
 }
 
-async function telegram(pair,sig){
+async function sendTelegram(pair,signal){
 
-let entry=nextEntry()
+let entry=entryTime()
 
 let canvas=document.getElementById("chart")
 
-let blob=await new Promise(r=>canvas.toBlob(r,"image/png"))
+let blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/png"))
 
 let form=new FormData()
 
@@ -171,7 +172,7 @@ form.append("image",blob,"chart.png")
 let text=
 "📊 APX ULTRA SIGNAL\n\n"+
 "Pair : "+pair+"\n"+
-"Direction : "+sig+"\n"+
+"Direction : "+signal+"\n"+
 "Entry : "+entry+"\n\n"+
 "Powered by APX Premium"
 
@@ -188,16 +189,16 @@ async function run(){
 
 let d=await getData()
 
-let sig=signal(d.data)
+let signal=getSignal(d.data)
 
-draw(d.data,d.pair,sig)
+drawChart(d.data,d.pair,signal)
 
 document.getElementById("signal").innerHTML=
-sig=="BUY"
-?`<span class=buy>${d.pair} BUY</span>`
-:`<span class=sell>${d.pair} SELL</span>`
+signal=="BUY"
+?`<span class="buy">${d.pair} BUY</span>`
+:`<span class="sell">${d.pair} SELL</span>`
 
-telegram(d.pair,sig)
+sendTelegram(d.pair,signal)
 
 }
 
