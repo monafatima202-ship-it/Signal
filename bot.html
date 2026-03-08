@@ -2,8 +2,9 @@
 <html>
 
 <head>
+
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA DASHBOARD</title>
+<title>APX ULTRA PRO V3</title>
 
 <style>
 
@@ -15,9 +16,9 @@ text-align:center;
 }
 
 .header{
-font-size:26px;
+font-size:28px;
 color:#00ffc3;
-text-shadow:0 0 20px #00ffc3;
+text-shadow:0 0 25px #00ffc3;
 margin-top:10px;
 }
 
@@ -25,11 +26,11 @@ canvas{
 background:#020617;
 border-radius:12px;
 margin-top:20px;
-box-shadow:0 0 25px #00ffc3;
+box-shadow:0 0 30px #00ffc3;
 }
 
 button{
-padding:14px 25px;
+padding:14px 28px;
 margin:10px;
 border:none;
 border-radius:10px;
@@ -38,8 +39,8 @@ font-weight:bold;
 font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:22px}
-.sell{color:#ff3b3b;font-size:22px}
+.buy{color:#00ff9d;font-size:24px}
+.sell{color:#ff3b3b;font-size:24px}
 
 table{
 margin-top:20px;
@@ -63,23 +64,24 @@ color:#aaa;
 
 <body>
 
-<div class="header">🤖 APX ULTRA DASHBOARD</div>
+<div class="header">🤖 APX ULTRA PRO V3</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
-<div id="pair"></div>
-<div id="direction"></div>
+<div id="signal">SYSTEM READY</div>
 
 <br>
 
-<button onclick="run()">🚀 SIGNAL</button>
+<button onclick="start()">🚀 START</button>
+<button onclick="stop()">🛑 STOP</button>
 
-<h3>📊 Stats</h3>
+<h3>📊 Dashboard</h3>
 
 <div>
 
 ✅ WIN : <span id="win">0</span> |
-❌ LOSS : <span id="loss">0</span>
+❌ LOSS : <span id="loss">0</span> |
+🎯 ACC : <span id="acc">0%</span>
 
 </div>
 
@@ -91,6 +93,7 @@ color:#aaa;
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
+<th>Result</th>
 </tr>
 
 </table>
@@ -108,43 +111,68 @@ const pairs=[
 "USDPKR_otc",
 "USDBDT_otc",
 "USDINR_otc",
-"USDARS_otc"
+"USDARS_otc",
+"USDBRL_otc",
+"USDMXN_otc"
 ]
+
+let engine=null
+
+let pairIndex=0
 
 let win=0
 let loss=0
+let total=0
 
-async function run(){
+let signals=0
 
-let pair=pairs[Math.floor(Math.random()*pairs.length)]
+function accuracy(){
+
+if(total==0) return 0
+
+return ((win/total)*100).toFixed(1)
+
+}
+
+function entryTime(){
+
+let d=new Date()
+
+d.setMinutes(d.getMinutes()+1)
+
+return d.toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})
+
+}
+
+async function getCandles(){
+
+let pair=pairs[pairIndex]
+
+pairIndex++
+
+if(pairIndex>=pairs.length) pairIndex=0
 
 let r=await fetch(API+pair)
 
 let j=await r.json()
 
-let candles=j.slice(-30)
-
-let last=candles[candles.length-1]
-let prev=candles[candles.length-2]
-
-let signal=last.close>prev.close?"BUY":"SELL"
-
-drawChart(candles,pair,signal)
-
-document.getElementById("pair").innerText="PAIR : "+pair
-
-document.getElementById("direction").innerHTML=
-signal=="BUY"
-?'<span class="buy">BUY ↑</span>'
-:'<span class="sell">SELL ↓</span>'
-
-addHistory(pair,signal)
-
-sendTelegram(pair,signal)
+return {pair,data:j.slice(-30)}
 
 }
 
-function drawChart(candles,pair,signal){
+function signalLogic(c){
+
+let last=c[c.length-1]
+let prev=c[c.length-2]
+
+return last.close>prev.close?"BUY":"SELL"
+
+}
+
+function drawChart(candles,pair,signal,entry){
 
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
@@ -182,7 +210,12 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 ctx.fillStyle="#00ffc3"
 ctx.font="14px Arial"
-ctx.fillText(pair,10,20)
+
+ctx.fillText(
+"APX ULTRA BOT | "+pair+" | M1 | "+signal+" @ "+entry,
+20,
+20
+)
 
 if(signal=="BUY"){
 
@@ -216,7 +249,7 @@ ctx.fillText("APX PREMIUM",10,230)
 
 }
 
-function addHistory(pair,signal){
+function addHistory(pair,signal,result){
 
 let t=new Date().toLocaleTimeString()
 
@@ -225,13 +258,24 @@ let row=
 "<td>"+t+"</td>"+
 "<td>"+pair+"</td>"+
 "<td>"+signal+"</td>"+
+"<td>"+result+"</td>"+
 "</tr>"
 
 document.getElementById("history").innerHTML+=row
 
 }
 
+function updateStats(){
+
+document.getElementById("win").innerText=win
+document.getElementById("loss").innerText=loss
+document.getElementById("acc").innerText=accuracy()+"%"
+
+}
+
 async function sendTelegram(pair,signal){
+
+let entry=entryTime()
 
 let canvas=document.getElementById("chart")
 
@@ -244,8 +288,13 @@ form.append("image",blob,"chart.png")
 let text=
 "🚀 APX PREMIUM SIGNAL\n\n"+
 "📊 Pair : "+pair+"\n"+
+"🕐 Entry : "+entry+"\n"+
 "⏱ TF : M1\n"+
 "⭕ Direction : "+signal+"\n\n"+
+"📊 Stats\n"+
+"✅ Win : "+win+"\n"+
+"❌ Loss : "+loss+"\n"+
+"🎯 Accuracy : "+accuracy()+"%\n\n"+
 "🌐 Powered by APX Premium"
 
 form.append("text",text)
@@ -254,6 +303,85 @@ await fetch(SEND,{
 method:"POST",
 body:form
 })
+
+}
+
+async function checkResult(pair,signal){
+
+let r=await fetch(API+pair)
+
+let j=await r.json()
+
+let c=j.slice(-2)
+
+let prev=c[0]
+let last=c[1]
+
+let result
+
+if(signal=="BUY"){
+result=last.close>prev.close?"WIN":"LOSS"
+}else{
+result=last.close<prev.close?"WIN":"LOSS"
+}
+
+total++
+
+if(result=="WIN") win++
+else loss++
+
+updateStats()
+
+addHistory(pair,signal,result)
+
+}
+
+async function run(){
+
+if(signals>=10){
+
+alert("⏸ Cooldown 3 hours")
+
+stop()
+
+return
+
+}
+
+let d=await getCandles()
+
+let entry=entryTime()
+
+let signal=signalLogic(d.data)
+
+drawChart(d.data,d.pair,signal,entry)
+
+document.getElementById("signal").innerHTML=
+signal=="BUY"
+?`<span class="buy">${d.pair} BUY</span>`
+:`<span class="sell">${d.pair} SELL</span>`
+
+await sendTelegram(d.pair,signal)
+
+setTimeout(()=>checkResult(d.pair,signal),60000)
+
+signals++
+
+}
+
+function start(){
+
+run()
+
+engine=setInterval(run,65000)
+
+}
+
+function stop(){
+
+clearInterval(engine)
+
+alert("🛑 BOT STOPPED")
 
 }
 
