@@ -3,7 +3,7 @@
 
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA PANEL</title>
+<title>APX ULTRA DASHBOARD</title>
 
 <style>
 
@@ -14,13 +14,10 @@ font-family:Arial;
 text-align:center;
 }
 
-button{
-padding:14px 26px;
-margin:10px;
-border:none;
+canvas{
+background:#020617;
 border-radius:10px;
-background:#00ffc3;
-font-size:16px;
+box-shadow:0 0 25px #00ffc3;
 }
 
 </style>
@@ -29,36 +26,61 @@ font-size:16px;
 
 <body>
 
-<h2>🤖 APX ULTRA CONTROL PANEL</h2>
+<h2>🤖 APX ULTRA DASHBOARD</h2>
 
-<button onclick="start()">START ENGINE</button>
-
-<div id="status"></div>
+<canvas id="chart" width="380" height="240"></canvas>
 
 <script>
 
-const API="https://apxengine.mkapi009.workers.dev"
-
-function start(){
-
-fetch(API+"/start")
-
-}
+const API="https://bot1.mkapi009.workers.dev/candles?pair=USDBDT_otc"
 
 async function load(){
 
-let r=await fetch(API+"/status")
+let r=await fetch(API)
 
-let s=await r.json()
+let data=await r.json()
 
-document.getElementById("status").innerHTML=
-"Running : "+s.running+
-"<br>Signals : "+s.count+
-"<br>Cooldown : "+s.cooldown
+draw(data.slice(-30))
 
 }
 
-setInterval(load,5000)
+function draw(c){
+
+let canvas=document.getElementById("chart")
+let ctx=canvas.getContext("2d")
+
+ctx.fillStyle="#020617"
+ctx.fillRect(0,0,canvas.width,canvas.height)
+
+let max=Math.max(...c.map(x=>x.high))
+let min=Math.min(...c.map(x=>x.low))
+
+let w=8
+let gap=4
+
+c.forEach((k,i)=>{
+
+let x=i*(w+gap)+20
+
+let open=200-(k.open-min)/(max-min)*160
+let close=200-(k.close-min)/(max-min)*160
+let high=200-(k.high-min)/(max-min)*160
+let low=200-(k.low-min)/(max-min)*160
+
+ctx.strokeStyle="#888"
+
+ctx.beginPath()
+ctx.moveTo(x+w/2,high)
+ctx.lineTo(x+w/2,low)
+ctx.stroke()
+
+ctx.fillStyle=k.close>k.open?"#00ff9d":"#ff3b3b"
+
+ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
+
+})
+
+}
 
 load()
 
