@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA PRO BOT</title>
+<title>APX FINAL BOT</title>
 
 <style>
 
@@ -22,9 +22,9 @@ margin-top:10px;
 
 canvas{
 background:#020617;
-border-radius:12px;
+border-radius:10px;
 margin-top:20px;
-box-shadow:0 0 25px #00ffc3;
+box-shadow:0 0 20px #00ffc3;
 }
 
 button{
@@ -40,25 +40,9 @@ font-size:16px;
 .buy{color:#00ff9d;font-size:22px}
 .sell{color:#ff3b3b;font-size:22px}
 
-table{
-margin-top:20px;
-border-collapse:collapse;
-width:100%;
-}
-
-th,td{
-padding:8px;
-border:1px solid #333;
-}
-
-th{
-background:#111827;
-}
-
 .footer{
 margin-top:20px;
 color:#aaa;
-font-size:14px;
 }
 
 </style>
@@ -67,26 +51,16 @@ font-size:14px;
 
 <body>
 
-<div class="header">🤖 APX ULTRA PROFESSIONAL BOT</div>
+<div class="header">🤖 APX FINAL AUTO BOT</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
 <div id="signal">SYSTEM READY</div>
 
+<br>
+
 <button onclick="start()">START</button>
 <button onclick="stop()">STOP</button>
-
-<h3>📊 Signals History</h3>
-
-<table id="history">
-
-<tr>
-<th>Time</th>
-<th>Pair</th>
-<th>Signal</th>
-</tr>
-
-</table>
 
 <div class="footer">
 Powered by 🌐 APX Premium
@@ -111,12 +85,12 @@ let pairIndex=0
 
 let win=0
 let loss=0
-let mtg=0
 let total=0
+let lastSignal=null
 
 function accuracy(){
 
-if(total==0)return 0
+if(total==0) return 0
 
 return ((win/total)*100).toFixed(1)
 
@@ -125,6 +99,7 @@ return ((win/total)*100).toFixed(1)
 function entryTime(){
 
 let d=new Date()
+
 d.setMinutes(d.getMinutes()+1)
 
 return d.toLocaleTimeString([],{
@@ -136,16 +111,29 @@ minute:'2-digit'
 
 async function getData(){
 
+try{
+
 let pair=pairs[pairIndex]
 
 pairIndex++
-if(pairIndex>=pairs.length)pairIndex=0
+
+if(pairIndex>=pairs.length) pairIndex=0
 
 let r=await fetch(API+pair)
 
-let j=await r.json()
+let text=await r.text()
 
-return {pair,data:j.slice(-30)}
+let data=JSON.parse(text)
+
+return {pair,data:data.slice(-30)}
+
+}catch(e){
+
+console.log("API error",e)
+
+return null
+
+}
 
 }
 
@@ -158,22 +146,24 @@ return last.close>prev.close?"BUY":"SELL"
 
 }
 
-function checkResult(candles,signal){
+function checkResult(candles){
+
+if(!lastSignal) return
 
 let last=candles[candles.length-1]
 let prev=candles[candles.length-2]
 
 total++
 
-if(signal=="BUY"){
+if(lastSignal=="BUY"){
 
-if(last.close>prev.close){win++}
-else{loss++}
+if(last.close>prev.close) win++
+else loss++
 
 }else{
 
-if(last.close<prev.close){win++}
-else{loss++}
+if(last.close<prev.close) win++
+else loss++
 
 }
 
@@ -221,24 +211,12 @@ ctx.fillText(pair,10,20)
 if(signal=="BUY"){
 
 ctx.fillStyle="#00ff9d"
-
-ctx.beginPath()
-ctx.moveTo(330,200)
-ctx.lineTo(350,170)
-ctx.lineTo(310,170)
-ctx.closePath()
-ctx.fill()
+ctx.fillText("↑ BUY",300,200)
 
 }else{
 
 ctx.fillStyle="#ff3b3b"
-
-ctx.beginPath()
-ctx.moveTo(330,170)
-ctx.lineTo(350,200)
-ctx.lineTo(310,200)
-ctx.closePath()
-ctx.fill()
+ctx.fillText("↓ SELL",300,200)
 
 }
 
@@ -248,26 +226,9 @@ ctx.fillText("APX PREMIUM",10,230)
 
 }
 
-function addHistory(pair,signal){
-
-let t=new Date().toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
-})
-
-let row=`
-<tr>
-<td>${t}</td>
-<td>${pair}</td>
-<td>${signal}</td>
-</tr>
-`
-
-document.getElementById("history").innerHTML+=row
-
-}
-
 async function sendTelegram(pair,signal){
+
+try{
 
 let entry=entryTime()
 
@@ -284,18 +245,11 @@ let text=
 "📊 Pair : "+pair+"\n"+
 "🕓 Entry : "+entry+"\n"+
 "⏱ TF : M1\n"+
-
-(signal=="BUY"
-?"🟢 Direction : CALL\n"
-:"🔴 Direction : PUT\n")+
-
-"\n🎯 Accuracy : "+accuracy()+"%\n\n"+
-
+"⭕ Direction : "+signal+"\n\n"+
 "📈 Stats\n"+
 "✅ Win : "+win+"\n"+
 "❌ Loss : "+loss+"\n"+
-"♻ MTG1 : "+mtg+"\n\n"+
-
+"🎯 Accuracy : "+accuracy()+"%\n\n"+
 "🌐 Powered by APX Premium"
 
 form.append("text",text)
@@ -305,26 +259,42 @@ method:"POST",
 body:form
 })
 
+}catch(e){
+
+console.log("Telegram error",e)
+
+}
+
 }
 
 async function run(){
 
+try{
+
 let d=await getData()
+
+if(!d) return
+
+checkResult(d.data)
 
 let signal=getSignal(d.data)
 
-drawChart(d.data,d.pair,signal)
+lastSignal=signal
 
-checkResult(d.data,signal)
+drawChart(d.data,d.pair,signal)
 
 document.getElementById("signal").innerHTML=
 signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
 :`<span class="sell">${d.pair} SELL</span>`
 
-addHistory(d.pair,signal)
+await sendTelegram(d.pair,signal)
 
-sendTelegram(d.pair,signal)
+}catch(e){
+
+console.log("RUN error",e)
+
+}
 
 }
 
@@ -340,7 +310,7 @@ function stop(){
 
 clearInterval(engine)
 
-alert("APX BOT STOPPED")
+alert("BOT STOPPED")
 
 }
 
