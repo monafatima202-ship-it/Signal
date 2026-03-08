@@ -1,191 +1,280 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>APX PREMIUM AUTO SYSTEM - Fixed</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>APX PREMIUM BOT</title>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
 <style>
-body{background:#020617;color:white;font-family:sans-serif;text-align:center;margin:0;}
-.header{font-size:26px;color:#00ffc3;margin:15px;font-weight:bold;}
-#chart{width:100%;height:300px;}
-.panel{background:#0f172a;padding:15px;border-radius:10px;margin:10px;}
-.buy{color:#22c55e;font-size:26px;font-weight:bold}
-.sell{color:#ef4444;font-size:26px;font-weight:bold}
-button{padding:14px 25px;margin:8px;border:none;border-radius:10px;font-size:16px;color:white;font-weight:bold;}
-.start{background:#22c55e}
-.stop{background:#ef4444}
-#errorMsg{color:#ffcc00;font-size:18px;margin:10px;}
+
+body{
+background:#020617;
+color:white;
+font-family:Arial;
+text-align:center;
+}
+
+.header{
+font-size:24px;
+color:#00ffc3;
+margin-top:15px;
+}
+
+#chart{
+height:320px;
+margin:15px;
+border-radius:10px;
+}
+
+.signal{
+font-size:32px;
+font-weight:bold;
+}
+
+.buy{color:#22c55e}
+.sell{color:#ef4444}
+
+button{
+padding:14px;
+margin:8px;
+border:none;
+border-radius:10px;
+background:#022c22;
+color:white;
+box-shadow:0 0 10px #00ffc3;
+}
+
+table{
+width:95%;
+margin:auto;
+border-collapse:collapse;
+}
+
+td,th{
+border-bottom:1px solid #333;
+padding:8px;
+}
+
 </style>
+
 </head>
+
 <body>
 
-<div class="header">🤖 APX PREMIUM AUTO SYSTEM</div>
-<div id="chart"></div>
-<div id="errorMsg"></div>
+<div class="header">🤖 APX PREMIUM BOT</div>
 
-<div class="panel">
-<div id="pair">Pair: --</div>
-<div id="direction">Direction: --</div>
-<div id="signalTime">Signal Time: --</div>
-<div id="entryTime">Entry Time: --</div>
-<div id="accuracy">Accuracy: 0% (0/0)</div>
-<div style="margin-top:10px">Powered by 🌐 APX Premium</div>
+<select id="pair">
+
+<option>USDPKR_otc</option>
+<option selected>USDBDT_otc</option>
+<option>USDINR_otc</option>
+<option>USDARS_otc</option>
+<option>USDBRL_otc</option>
+<option>USDMXN_otc</option>
+
+</select>
+
+<div id="chart"></div>
+
+<div id="pairLabel"></div>
+<div id="signal" class="signal">READY</div>
+<div id="time"></div>
+
+<button onclick="start()">START</button>
+<button onclick="stop()">STOP</button>
+
+<h3>📊 Dashboard</h3>
+
+<div>
+
+WIN : <span id="win">0</span> |
+LOSS : <span id="loss">0</span> |
+MTG1 : <span id="mtg">0</span>
+
 </div>
 
-<button class="start" onclick="start()">START</button>
-<button class="stop" onclick="stop()">STOP</button>
+<h3>📈 Summary</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Time</th>
+<th>Pair</th>
+<th>Signal</th>
+<th>Result</th>
+</tr>
+</thead>
+
+<tbody id="summary"></tbody>
+
+</table>
 
 <script>
-const WORKER = "https://signal.mkapi009.workers.dev/send";
-const PAIRS = ["USDBDT_otc", "USDPKR_otc", "USDINR_otc", "USDARS_otc", "USDBRL_otc", "USDMXN_otc"];
 
-let engine = null;
-let total = 0, wins = 0, losses = 0;
+const TG="https://bot1.mkapi009.workers.dev/send"
 
-const chart = LightweightCharts.createChart(document.getElementById("chart"), {
-  width: window.innerWidth,
-  height: 300,
-  layout: { background: {color: "#000"}, textColor: "#aaa" },
-  grid: { vertLines: {color: "#222"}, horzLines: {color: "#222"} },
-  timeScale: { timeVisible: true, secondsVisible: false }
-});
+let chart=LightweightCharts.createChart(document.getElementById("chart"),{
+layout:{background:{color:"#000"},textColor:"#ccc"}
+})
 
-const series = chart.addCandlestickSeries({
-  upColor: '#22c55e', downColor: '#ef4444',
-  borderVisible: false, wickUpColor: '#22c55e', wickDownColor: '#ef4444'
-});
+let series=chart.addCandlestickSeries()
 
-window.addEventListener('resize', () => {
-  chart.applyOptions({ width: window.innerWidth });
-});
+let engine=null
 
-function showError(msg) {
-  document.getElementById("errorMsg").innerText = msg;
+let stats={
+win:0,
+loss:0,
+mtg:0
 }
 
-async function getCandles(pair) {
-  try {
-    const r = await fetch(`https://radit.top/otc.php?asset=${pair}`);
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const j = await r.json();
-    return j; // direct array hai
-  } catch (e) {
-    console.error("Fetch error for " + pair + ":", e);
-    showError("Data fetch failed for " + pair + " - Check internet or API");
-    return [];
-  }
+function convert(data){
+
+return data.map(c=>{
+
+let d=new Date(c.date+" "+c.time)
+
+return{
+
+time:Math.floor(d.getTime()/1000),
+open:c.open,
+high:c.high,
+low:c.low,
+close:c.close
+
 }
 
-function convert(data) {
-  const now = Date.now() / 1000 | 0; // current unix
-  let baseTime = now - (data.length * 60); // assume 1-min candles backward
+})
 
-  return data.map((c, i) => {
-    let timeStr = c.time || c.t; // "HH:MM"
-    let [hh, mm] = timeStr.split(':').map(Number);
-    let candleTime = baseTime + (i * 60); // approximate unix
-
-    return {
-      time: candleTime,
-      open: Number(c.o || c.open),
-      high: Number(c.h || c.high),
-      low: Number(c.l || c.low),
-      close: Number(c.c || c.close)
-    };
-  });
 }
 
-function analyze(candles) {
-  if (candles.length < 3) return null;
-  let last3 = candles.slice(-3);
-  let upCount = last3.filter(c => c.close > c.open).length;
-  let downCount = last3.filter(c => c.close < c.open).length;
+async function loadCandles(){
 
-  if (upCount >= 2) return "BUY";
-  if (downCount >= 2) return "SELL";
-  return null;
+let pair=document.getElementById("pair").value
+
+let r=await fetch("https://radit.top/otc.php?asset="+pair)
+
+let j=await r.json()
+
+let candles=convert(j)
+
+series.setData(candles)
+
+return candles
+
 }
 
-async function scan() {
-  showError(""); // clear error
-  for (let pair of PAIRS) {
-    let raw = await getCandles(pair);
-    if (raw.length < 10) continue;
+function generateSignal(candles){
 
-    let data = convert(raw);
-    series.setData(data);
-    chart.timeScale().fitContent();
+let last=candles[candles.length-1]
 
-    let signal = analyze(data);
-    if (signal) {
-      let entryPrice = data[data.length - 1].close;
-      await sendSignal(pair, signal, entryPrice);
-      return; // ek signal pe ruk jao (jaise original intent)
-    }
-  }
-  showError("No strong signal found in any pair");
+let prev=candles[candles.length-2]
+
+let dir="SELL"
+
+if(last.close>prev.close){
+
+dir="BUY"
+
 }
 
-async function sendSignal(pair, dir, price) {
-  let now = new Date();
-  let entry = new Date(now.getTime() + 60000);
+return dir
 
-  document.getElementById("pair").innerText = "Pair: " + pair;
-  document.getElementById("direction").innerHTML = `Direction: <span class="\( {dir=="BUY"?"buy":"sell"}"> \){dir}</span>`;
-  document.getElementById("signalTime").innerText = "Signal Time: " + now.toLocaleTimeString();
-  document.getElementById("entryTime").innerText = "Entry Time: " + entry.toLocaleTimeString();
-
-  await new Promise(r => setTimeout(r, 2000)); // render wait
-
-  try {
-    const canvas = await html2canvas(document.getElementById("chart"));
-    const image = canvas.toDataURL("image/jpeg", 0.8);
-
-    await fetch(WORKER, {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({ pair, dir, image })
-    });
-    console.log("Signal sent for " + pair);
-  } catch (e) {
-    console.error("Worker send failed:", e);
-  }
-
-  total++;
-  await checkResult(pair, dir, price);
-  updateAccuracy();
 }
 
-async function checkResult(pair, dir, entryPrice) {
-  await new Promise(r => setTimeout(r, 65000)); // \~1 min + buffer
-  let raw = await getCandles(pair);
-  if (raw.length === 0) return;
+function futureTime(){
 
-  let data = convert(raw);
-  let lastClose = data[data.length - 1].close;
+let d=new Date()
 
-  if ((dir === "BUY" && lastClose > entryPrice) || (dir === "SELL" && lastClose < entryPrice)) {
-    wins++;
-  } else {
-    losses++;
-  }
-  updateAccuracy();
+d.setMinutes(d.getMinutes()+1)
+
+return d.toLocaleTimeString()
+
 }
 
-function updateAccuracy() {
-  let acc = total > 0 ? Math.round((wins / total) * 100) : 0;
-  document.getElementById("accuracy").innerText = `Accuracy: \( {acc}% ( \){wins}/${total})`;
+async function sendTelegram(){
+
+let canvas=await html2canvas(document.body)
+
+let img=canvas.toDataURL()
+
+let pair=document.getElementById("pair").value
+
+let dir=document.getElementById("signal").innerText
+
+await fetch(TG,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+pair:pair,
+dir:dir,
+image:img
+})
+})
+
 }
 
-function start() {
-  scan();
-  engine = setInterval(scan, 60000);
+function updateSummary(pair,dir,res){
+
+let row=document.createElement("tr")
+
+row.innerHTML=
+
+"<td>"+new Date().toLocaleTimeString()+"</td>"+
+"<td>"+pair+"</td>"+
+"<td>"+dir+"</td>"+
+"<td>"+res+"</td>"
+
+document.getElementById("summary").prepend(row)
+
 }
 
-function stop() {
-  clearInterval(engine);
+async function run(){
+
+let pair=document.getElementById("pair").value
+
+let candles=await loadCandles()
+
+let signal=generateSignal(candles)
+
+document.getElementById("pairLabel").innerText=pair
+
+document.getElementById("signal").innerText=signal
+
+document.getElementById("signal").className=
+signal=="BUY"?"signal buy":"signal sell"
+
+document.getElementById("time").innerText=
+"Signal Time : "+futureTime()
+
+await sendTelegram()
+
 }
+
+function start(){
+
+if(engine) return
+
+run()
+
+engine=setInterval(run,60000)
+
+}
+
+function stop(){
+
+clearInterval(engine)
+
+engine=null
+
+alert("Engine stopped")
+
+}
+
 </script>
+
 </body>
 </html>
