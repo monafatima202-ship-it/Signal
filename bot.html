@@ -3,10 +3,9 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX PREMIUM BOT</title>
+<title>APX ULTRA SYSTEM</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
 <style>
 
@@ -18,38 +17,45 @@ text-align:center;
 }
 
 .header{
-font-size:24px;
+font-size:28px;
 color:#00ffc3;
 margin-top:15px;
 }
 
-#chart{
-height:320px;
-margin:15px;
-border-radius:10px;
+canvas{
+background:#0b1220;
+border-radius:12px;
+margin-top:15px;
 }
-
-.signal{
-font-size:32px;
-font-weight:bold;
-}
-
-.buy{color:#22c55e}
-.sell{color:#ef4444}
 
 button{
-padding:14px;
-margin:8px;
+padding:14px 30px;
+margin:10px;
 border:none;
 border-radius:10px;
 background:#022c22;
 color:white;
+font-size:16px;
 box-shadow:0 0 10px #00ffc3;
 }
 
+.signal{
+font-size:30px;
+margin:10px;
+}
+
+.buy{color:#00ff9d}
+.sell{color:#ff3b3b}
+
+.box{
+background:#0b1220;
+margin:15px;
+padding:15px;
+border-radius:10px;
+}
+
 table{
-width:95%;
-margin:auto;
+width:100%;
 border-collapse:collapse;
 }
 
@@ -64,7 +70,7 @@ padding:8px;
 
 <body>
 
-<div class="header">🤖 APX PREMIUM BOT</div>
+<div class="header">🤖 APX ULTRA PROFESSIONAL</div>
 
 <select id="pair">
 
@@ -77,51 +83,57 @@ padding:8px;
 
 </select>
 
-<div id="chart"></div>
+<br>
 
-<div id="pairLabel"></div>
+<canvas id="chart" width="380" height="250"></canvas>
+
 <div id="signal" class="signal">READY</div>
-<div id="time"></div>
 
 <button onclick="start()">START</button>
 <button onclick="stop()">STOP</button>
 
-<h3>📊 Dashboard</h3>
+<div class="box">
 
-<div>
+📊 Dashboard
 
-WIN : <span id="win">0</span> |
-LOSS : <span id="loss">0</span> |
+<br><br>
+
+WIN : <span id="win">0</span>
+
+LOSS : <span id="loss">0</span>
+
 MTG1 : <span id="mtg">0</span>
 
 </div>
 
-<h3>📈 Summary</h3>
+<div class="box">
+
+📈 Summary
 
 <table>
 
 <thead>
+
 <tr>
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
 <th>Result</th>
 </tr>
+
 </thead>
 
 <tbody id="summary"></tbody>
 
 </table>
 
+</div>
+
 <script>
 
 const TG="https://bot1.mkapi009.workers.dev/send"
 
-let chart=LightweightCharts.createChart(document.getElementById("chart"),{
-layout:{background:{color:"#000"},textColor:"#ccc"}
-})
-
-let series=chart.addCandlestickSeries()
+let ctx=document.getElementById("chart").getContext("2d")
 
 let engine=null
 
@@ -131,61 +143,7 @@ loss:0,
 mtg:0
 }
 
-function convert(data){
-
-return data.map(c=>{
-
-let d=new Date(c.date+" "+c.time)
-
-return{
-
-time:Math.floor(d.getTime()/1000),
-open:c.open,
-high:c.high,
-low:c.low,
-close:c.close
-
-}
-
-})
-
-}
-
-async function loadCandles(){
-
-let pair=document.getElementById("pair").value
-
-let r=await fetch("https://radit.top/otc.php?asset="+pair)
-
-let j=await r.json()
-
-let candles=convert(j)
-
-series.setData(candles)
-
-return candles
-
-}
-
-function generateSignal(candles){
-
-let last=candles[candles.length-1]
-
-let prev=candles[candles.length-2]
-
-let dir="SELL"
-
-if(last.close>prev.close){
-
-dir="BUY"
-
-}
-
-return dir
-
-}
-
-function futureTime(){
+function entryTime(){
 
 let d=new Date()
 
@@ -195,29 +153,98 @@ return d.toLocaleTimeString()
 
 }
 
-async function sendTelegram(){
-
-let canvas=await html2canvas(document.body)
-
-let img=canvas.toDataURL()
+async function getData(){
 
 let pair=document.getElementById("pair").value
 
-let dir=document.getElementById("signal").innerText
+let r=await fetch("https://radit.top/otc.php?asset="+pair)
 
-await fetch(TG,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-pair:pair,
-dir:dir,
-image:img
-})
-})
+let j=await r.json()
+
+return j.slice(-30)
 
 }
 
-function updateSummary(pair,dir,res){
+function drawChart(candles,signal){
+
+ctx.clearRect(0,0,400,300)
+
+let w=10
+let gap=2
+
+let max=Math.max(...candles.map(c=>c.high))
+let min=Math.min(...candles.map(c=>c.low))
+
+candles.forEach((c,i)=>{
+
+let x=i*(w+gap)+20
+
+let openY=200-(c.open-min)/(max-min)*180
+let closeY=200-(c.close-min)/(max-min)*180
+let highY=200-(c.high-min)/(max-min)*180
+let lowY=200-(c.low-min)/(max-min)*180
+
+ctx.strokeStyle="white"
+
+ctx.beginPath()
+ctx.moveTo(x+5,highY)
+ctx.lineTo(x+5,lowY)
+ctx.stroke()
+
+ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
+
+ctx.fillRect(x,Math.min(openY,closeY),w,Math.abs(openY-closeY))
+
+})
+
+ctx.fillStyle="white"
+
+ctx.font="16px Arial"
+
+ctx.fillText(document.getElementById("pair").value,140,20)
+
+ctx.fillStyle=signal=="BUY"?"#00ff9d":"#ff3b3b"
+
+ctx.font="18px Arial"
+
+ctx.fillText(signal,300,220)
+
+}
+
+function getSignal(c){
+
+let last=c[c.length-1]
+let prev=c[c.length-2]
+
+return last.close>prev.close?"BUY":"SELL"
+
+}
+
+async function run(){
+
+let candles=await getData()
+
+let sig=getSignal(candles)
+
+drawChart(candles,sig)
+
+document.getElementById("signal").innerText=
+
+sig+" | Entry "+entryTime()
+
+document.getElementById("signal").className=
+
+sig=="BUY"?"signal buy":"signal sell"
+
+sendTG(sig)
+
+updateSummary(sig)
+
+}
+
+function updateSummary(sig){
+
+let pair=document.getElementById("pair").value
 
 let row=document.createElement("tr")
 
@@ -225,38 +252,42 @@ row.innerHTML=
 
 "<td>"+new Date().toLocaleTimeString()+"</td>"+
 "<td>"+pair+"</td>"+
-"<td>"+dir+"</td>"+
-"<td>"+res+"</td>"
+"<td>"+sig+"</td>"+
+"<td>Pending</td>"
 
 document.getElementById("summary").prepend(row)
 
 }
 
-async function run(){
+async function sendTG(sig){
 
-let pair=document.getElementById("pair").value
+let canvas=document.getElementById("chart")
 
-let candles=await loadCandles()
+let img=canvas.toDataURL()
 
-let signal=generateSignal(candles)
+await fetch(TG,{
 
-document.getElementById("pairLabel").innerText=pair
+method:"POST",
 
-document.getElementById("signal").innerText=signal
+headers:{"Content-Type":"application/json"},
 
-document.getElementById("signal").className=
-signal=="BUY"?"signal buy":"signal sell"
+body:JSON.stringify({
 
-document.getElementById("time").innerText=
-"Signal Time : "+futureTime()
+pair:document.getElementById("pair").value,
+dir:sig,
+image:img
 
-await sendTelegram()
+})
+
+})
 
 }
 
 function start(){
 
 if(engine) return
+
+alert("🚀 APX ULTRA SYSTEM STARTED")
 
 run()
 
@@ -270,7 +301,14 @@ clearInterval(engine)
 
 engine=null
 
-alert("Engine stopped")
+alert(
+
+"🛑 SYSTEM STOPPED\n\n"+
+"WIN : "+stats.win+"\n"+
+"LOSS : "+stats.loss+"\n"+
+"MTG1 : "+stats.mtg
+
+)
 
 }
 
