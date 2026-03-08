@@ -3,7 +3,8 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA SYSTEM</title>
+
+<title>APX PRO FINAL</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -70,7 +71,7 @@ padding:8px;
 
 <body>
 
-<div class="header">🤖 APX ULTRA PROFESSIONAL</div>
+<div class="header">🤖 APX PREMIUM BOT</div>
 
 <select id="pair">
 
@@ -118,7 +119,6 @@ MTG1 : <span id="mtg">0</span>
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
-<th>Result</th>
 </tr>
 
 </thead>
@@ -131,17 +131,12 @@ MTG1 : <span id="mtg">0</span>
 
 <script>
 
+const API="https://bot1.mkapi009.workers.dev/candles?pair="
 const TG="https://bot1.mkapi009.workers.dev/send"
 
 let ctx=document.getElementById("chart").getContext("2d")
 
 let engine=null
-
-let stats={
-win:0,
-loss:0,
-mtg:0
-}
 
 function entryTime(){
 
@@ -157,7 +152,7 @@ async function getData(){
 
 let pair=document.getElementById("pair").value
 
-let r=await fetch("https://radit.top/otc.php?asset="+pair)
+let r=await fetch(API+pair)
 
 let j=await r.json()
 
@@ -198,14 +193,12 @@ ctx.fillRect(x,Math.min(openY,closeY),w,Math.abs(openY-closeY))
 })
 
 ctx.fillStyle="white"
-
 ctx.font="16px Arial"
 
 ctx.fillText(document.getElementById("pair").value,140,20)
 
 ctx.fillStyle=signal=="BUY"?"#00ff9d":"#ff3b3b"
-
-ctx.font="18px Arial"
+ctx.font="20px Arial"
 
 ctx.fillText(signal,300,220)
 
@@ -229,11 +222,9 @@ let sig=getSignal(candles)
 drawChart(candles,sig)
 
 document.getElementById("signal").innerText=
-
 sig+" | Entry "+entryTime()
 
 document.getElementById("signal").className=
-
 sig=="BUY"?"signal buy":"signal sell"
 
 sendTG(sig)
@@ -249,11 +240,9 @@ let pair=document.getElementById("pair").value
 let row=document.createElement("tr")
 
 row.innerHTML=
-
 "<td>"+new Date().toLocaleTimeString()+"</td>"+
 "<td>"+pair+"</td>"+
-"<td>"+sig+"</td>"+
-"<td>Pending</td>"
+"<td>"+sig+"</td>"
 
 document.getElementById("summary").prepend(row)
 
@@ -266,19 +255,13 @@ let canvas=document.getElementById("chart")
 let img=canvas.toDataURL()
 
 await fetch(TG,{
-
 method:"POST",
-
 headers:{"Content-Type":"application/json"},
-
 body:JSON.stringify({
-
 pair:document.getElementById("pair").value,
 dir:sig,
 image:img
-
 })
-
 })
 
 }
@@ -287,7 +270,7 @@ function start(){
 
 if(engine) return
 
-alert("🚀 APX ULTRA SYSTEM STARTED")
+alert("🚀 APX ENGINE STARTED")
 
 run()
 
@@ -301,18 +284,4 @@ clearInterval(engine)
 
 engine=null
 
-alert(
-
-"🛑 SYSTEM STOPPED\n\n"+
-"WIN : "+stats.win+"\n"+
-"LOSS : "+stats.loss+"\n"+
-"MTG1 : "+stats.mtg
-
-)
-
-}
-
-</script>
-
-</body>
-</html>
+alert
