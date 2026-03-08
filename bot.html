@@ -16,6 +16,7 @@ background:#020617;
 color:white;
 font-family:sans-serif;
 text-align:center;
+margin:0;
 }
 
 .header{
@@ -26,8 +27,8 @@ font-weight:bold;
 }
 
 #chart{
+width:100%;
 height:300px;
-margin:10px;
 }
 
 .panel{
@@ -37,8 +38,8 @@ border-radius:10px;
 margin:10px;
 }
 
-.buy{color:#22c55e;font-size:28px;font-weight:bold}
-.sell{color:#ef4444;font-size:28px;font-weight:bold}
+.buy{color:#22c55e;font-size:26px;font-weight:bold}
+.sell{color:#ef4444;font-size:26px;font-weight:bold}
 
 button{
 padding:14px 25px;
@@ -62,7 +63,7 @@ font-weight:bold;
 
 <div id="chart"></div>
 
-<div class="panel">
+<div id="panel" class="panel">
 
 <div id="pair">Pair: --</div>
 <div id="direction">Direction: --</div>
@@ -97,12 +98,17 @@ let engine=null
 let total=0
 let wins=0
 let losses=0
-let mtg1=0
 
 const chart=LightweightCharts.createChart(
 document.getElementById("chart"),
-{layout:{background:{color:"#000"},textColor:"#aaa"}}
-)
+{
+width:window.innerWidth,
+height:300,
+layout:{
+background:{color:"#000"},
+textColor:"#aaa"
+}
+})
 
 const series=chart.addCandlestickSeries()
 
@@ -120,11 +126,11 @@ function convert(data){
 
 return data.map(c=>({
 
-time:c.t||c.time,
-open:c.o||c.open,
-high:c.h||c.high,
-low:c.l||c.low,
-close:c.c||c.close
+time:Number(c.t||c.time),
+open:Number(c.o||c.open),
+high:Number(c.h||c.high),
+low:Number(c.l||c.low),
+close:Number(c.c||c.close)
 
 }))
 
@@ -136,11 +142,19 @@ let a=c[c.length-1]
 let b=c[c.length-2]
 let c2=c[c.length-3]
 
-let bullish=a.close>a.open && b.close>b.open && c2.close>c2.open
-let bearish=a.close<a.open && b.close<b.open && c2.close<c2.open
+if(
+a.close>a.open &&
+b.close>b.open &&
+c2.close>c2.open
+)
+return "BUY"
 
-if(bullish) return "BUY"
-if(bearish) return "SELL"
+if(
+a.close<a.open &&
+b.close<b.open &&
+c2.close<c2.open
+)
+return "SELL"
 
 return null
 
@@ -168,7 +182,11 @@ break
 
 }
 
-}catch(e){}
+}catch(e){
+
+console.log("error",pair)
+
+}
 
 }
 
@@ -193,7 +211,7 @@ document.getElementById("entryTime").innerText=
 
 await new Promise(r=>setTimeout(r,2000))
 
-const canvas=await html2canvas(document.body)
+const canvas=await html2canvas(document.getElementById("chart"))
 
 const image=canvas.toDataURL("image/jpeg",0.8)
 
@@ -257,7 +275,6 @@ Signals: ${total}
 
 Wins: ${wins}
 Loss: ${losses}
-MTG1: ${mtg1}
 
 Accuracy: ${Math.round((wins/total)*100)}%
 
@@ -279,7 +296,6 @@ function resetStats(){
 total=0
 wins=0
 losses=0
-mtg1=0
 
 }
 
