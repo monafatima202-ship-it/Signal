@@ -24,6 +24,7 @@ canvas{
 background:#020617;
 border-radius:10px;
 margin-top:20px;
+box-shadow:0 0 25px #00ffc3;
 }
 
 button{
@@ -106,20 +107,26 @@ const pairs=[
 ]
 
 let engine=null
+let pairIndex=0
 
 function entryTime(){
 
 let d=new Date()
-
 d.setMinutes(d.getMinutes()+1)
 
-return d.toLocaleTimeString()
+return d.toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})
 
 }
 
 async function getData(){
 
-let pair=pairs[Math.floor(Math.random()*pairs.length)]
+let pair=pairs[pairIndex]
+
+pairIndex++
+if(pairIndex>=pairs.length)pairIndex=0
 
 let r=await fetch(API+pair)
 
@@ -202,7 +209,10 @@ ctx.fillText("APX PREMIUM",10,230)
 
 function addHistory(pair,signal){
 
-let t=new Date().toLocaleTimeString()
+let t=new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})
 
 let row=`
 <tr>
@@ -277,7 +287,7 @@ function stop(){
 
 clearInterval(engine)
 
-alert("APX ULTRA STOPPED")
+alert("🛑 APX ULTRA STOPPED")
 
 }
 
