@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA BOT</title>
+<title>APX ULTRA PRO BOT</title>
 
 <style>
 
@@ -24,10 +24,7 @@ canvas{
 background:#020617;
 border-radius:12px;
 margin-top:20px;
-box-shadow:
-0 0 20px #00ffc3,
-0 0 40px #00ffc3,
-0 0 80px #00ffc3;
+box-shadow:0 0 25px #00ffc3;
 }
 
 button{
@@ -40,8 +37,8 @@ font-weight:bold;
 font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:24px}
-.sell{color:#ff3b3b;font-size:24px}
+.buy{color:#00ff9d;font-size:22px}
+.sell{color:#ff3b3b;font-size:22px}
 
 table{
 margin-top:20px;
@@ -70,7 +67,7 @@ font-size:14px;
 
 <body>
 
-<div class="header">🤖 APX ULTRA AUTO BOT</div>
+<div class="header">🤖 APX ULTRA PROFESSIONAL BOT</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
@@ -120,6 +117,7 @@ let total=0
 function accuracy(){
 
 if(total==0)return 0
+
 return ((win/total)*100).toFixed(1)
 
 }
@@ -156,11 +154,7 @@ function getSignal(c){
 let last=c[c.length-1]
 let prev=c[c.length-2]
 
-if(last.close>prev.close){
-return "BUY"
-}else{
-return "SELL"
-}
+return last.close>prev.close?"BUY":"SELL"
 
 }
 
@@ -190,8 +184,7 @@ function drawChart(candles,pair,signal){
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
 
-ctx.fillStyle="#020617"
-ctx.fillRect(0,0,canvas.width,canvas.height)
+ctx.clearRect(0,0,canvas.width,canvas.height)
 
 let max=Math.max(...candles.map(c=>c.high))
 let min=Math.min(...candles.map(c=>c.low))
@@ -208,7 +201,7 @@ let close=200-(c.close-min)/(max-min)*160
 let high=200-(c.high-min)/(max-min)*160
 let low=200-(c.low-min)/(max-min)*160
 
-ctx.strokeStyle="white"
+ctx.strokeStyle="#888"
 
 ctx.beginPath()
 ctx.moveTo(x+w/2,high)
@@ -221,35 +214,31 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
-ctx.fillStyle="white"
+ctx.fillStyle="#00ffc3"
 ctx.font="16px Arial"
-ctx.fillText(pair+" "+signal,120,20)
+ctx.fillText(pair,10,20)
 
 if(signal=="BUY"){
 
-ctx.strokeStyle="#00ff9d"
-ctx.lineWidth=3
+ctx.fillStyle="#00ff9d"
 
 ctx.beginPath()
-ctx.moveTo(310,200)
-ctx.lineTo(340,170)
-ctx.stroke()
-
-ctx.fillStyle="#00ff9d"
-ctx.fillText("BUY",310,210)
+ctx.moveTo(330,200)
+ctx.lineTo(350,170)
+ctx.lineTo(310,170)
+ctx.closePath()
+ctx.fill()
 
 }else{
 
-ctx.strokeStyle="#ff3b3b"
-ctx.lineWidth=3
+ctx.fillStyle="#ff3b3b"
 
 ctx.beginPath()
-ctx.moveTo(310,170)
-ctx.lineTo(340,200)
-ctx.stroke()
-
-ctx.fillStyle="#ff3b3b"
-ctx.fillText("SELL",310,210)
+ctx.moveTo(330,170)
+ctx.lineTo(350,200)
+ctx.lineTo(310,200)
+ctx.closePath()
+ctx.fill()
 
 }
 
@@ -339,22 +328,7 @@ sendTelegram(d.pair,signal)
 
 }
 
-async function start(){
-
-let form=new FormData()
-
-form.append("text",
-
-"🚀 APX PREMIUM BOT STARTED\n\n"+
-"⚡ Auto Signal Engine Activated\n"+
-"📊 Pair Scanner Running\n"+
-"🎯 Accuracy System Online\n\n"+
-"Good Luck Traders!")
-
-await fetch(SEND,{
-method:"POST",
-body:form
-})
+function start(){
 
 run()
 
@@ -362,32 +336,11 @@ engine=setInterval(run,65000)
 
 }
 
-async function stop(){
+function stop(){
 
 clearInterval(engine)
 
-let form=new FormData()
-
-form.append("text",
-
-"🛑 APX BOT STOPPED\n\n"+
-
-"📊 Session Summary\n\n"+
-
-"✅ Win : "+win+"\n"+
-"❌ Loss : "+loss+"\n"+
-"♻ MTG1 : "+mtg+"\n\n"+
-
-"🎯 Accuracy : "+accuracy()+"%\n\n"+
-
-"🌐 Powered by APX Premium"
-
-)
-
-await fetch(SEND,{
-method:"POST",
-body:form
-})
+alert("APX BOT STOPPED")
 
 }
 
