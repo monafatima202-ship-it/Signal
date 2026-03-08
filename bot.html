@@ -1,110 +1,78 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>APX MASTER PANEL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
     <style>
-        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
-        .container { max-width: 400px; margin: auto; }
-        
-        #chart-container {
-            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
-            padding: 25px;
-            border-radius: 15px;
-            border: 2px solid #333;
-            margin-bottom: 20px;
-        }
-
-        .logo { font-size: 20px; font-weight: bold; color: #ffca28; margin-bottom: 5px; }
-        .pair-name { font-size: 28px; font-weight: 800; }
-        .signal-dir { font-size: 40px; font-weight: 900; margin: 10px 0; }
-        .buy { color: #00ff00; text-shadow: 0 0 15px rgba(0,255,0,0.3); }
-        .sell { color: #ff3d00; text-shadow: 0 0 15px rgba(255,61,0,0.3); }
-
-        .inputs { display: flex; flex-direction: column; gap: 10px; }
-        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; }
-        button { background: #ffca28; color: black; font-weight: bold; cursor: pointer; border: none; }
-        #status { margin-top: 15px; font-weight: bold; }
+        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; padding: 10px; }
+        #chart-container { background: #1a1a1a; padding: 20px; border-radius: 15px; border: 2px solid #333; width: 330px; margin: 20px auto; }
+        .logo { color: #ffca28; font-weight: bold; }
+        .buy { color: #00ff00; font-size: 35px; font-weight: 900; text-shadow: 0 0 10px rgba(0,255,0,0.3); }
+        .sell { color: #ff3d00; font-size: 35px; font-weight: 900; text-shadow: 0 0 10px rgba(255,61,0,0.3); }
+        input, select, button { padding: 12px; margin: 5px; width: 90%; border-radius: 8px; border: none; font-size: 16px; }
+        button { background: #ffca28; font-weight: bold; cursor: pointer; }
+        #status { font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <h2 style="color: #ffca28;">🤖 APX MASTER PANEL</h2>
-
-        <div id="login-section">
-            <input type="text" id="user" placeholder="Username">
-            <input type="password" id="pass" placeholder="Password">
-            <button onclick="doLogin()" style="width:100%; margin-top:10px;">LOGIN</button>
-        </div>
-
-        <div id="signal-section" style="display:none;">
-            <div id="chart-container">
-                <div class="logo">📊 APX PREMIUM</div>
-                <div class="pair-name" id="disp-pair">USDBDT_otc</div>
-                <div class="signal-dir" id="disp-dir">---</div>
-                <div style="color:#777; font-size:12px;" id="disp-time">Ready...</div>
-            </div>
-
-            <div class="inputs">
-                <input type="text" id="pair-input" value="USDBDT_otc">
-                <select id="dir-input">
-                    <option value="BUY 🟢">BUY</option>
-                    <option value="SELL 🔴">SELL</option>
-                </select>
-                <button onclick="sendSignal()" id="send-btn">🚀 SEND FEATURE SIGNAL</button>
-            </div>
-        </div>
-
-        <div id="status">Please Login First</div>
+    <div id="login-box">
+        <h2>🤖 APX LOGIN</h2>
+        <input type="text" id="user" placeholder="Username">
+        <input type="password" id="pass" placeholder="Password">
+        <button onclick="doLogin()">LOGIN</button>
     </div>
 
-    <script>
-        const WORKER_URL = "https://signal.mkapi009.workers.dev";
+    <div id="main-panel" style="display:none;">
+        <div id="chart-container">
+            <div class="logo">📊 APX PREMIUM</div>
+            <h2 id="d-pair">USDBDT_otc</h2>
+            <div id="d-dir">---</div>
+            <div id="d-time" style="color:#666; font-size: 12px;">Ready</div>
+        </div>
+        <input type="text" id="p-in" value="USDBDT_otc">
+        <select id="d-in"><option value="BUY 🟢">BUY</option><option value="SELL 🔴">SELL</option></select>
+        <button onclick="send()" id="btn">🚀 SEND FEATURE SIGNAL</button>
+    </div>
+    <p id="status"></p>
 
+    <script>
+        const WORKER = "https://signal.mkapi009.workers.dev";
         async function doLogin() {
-            const user = document.getElementById('user').value;
-            const pass = document.getElementById('pass').value;
-            try {
-                const res = await fetch(`${WORKER_URL}/login`, {
-                    method: "POST",
-                    body: JSON.stringify({ user, pass })
-                });
-                if(res.ok) {
-                    document.getElementById('login-section').style.display = 'none';
-                    document.getElementById('signal-section').style.display = 'block';
-                    document.getElementById('status').innerText = "✅ Logged In";
-                } else {
-                    alert("Ghalat Details!");
-                }
-            } catch(e) { alert("Connection Error"); }
+            const res = await fetch(`${WORKER}/login`, { method:"POST", body: JSON.stringify({user: document.getElementById('user').value, pass: document.getElementById('pass').value}) });
+            if(res.ok) { document.getElementById('login-box').style.display='none'; document.getElementById('main-panel').style.display='block'; document.getElementById('status').innerText="Logged In"; }
+            else alert("Invalid Credentials!");
         }
 
-        async function sendSignal() {
-            const pair = document.getElementById('pair-input').value;
-            const dir = document.getElementById('dir-input').value;
+        async function send() {
+            const pair = document.getElementById('p-in').value;
+            const dir = document.getElementById('d-in').value;
+            const btn = document.getElementById('btn');
             const status = document.getElementById('status');
+
+            document.getElementById('d-pair').innerText = pair;
+            document.getElementById('d-dir').innerText = dir;
+            document.getElementById('d-dir').className = dir.includes("BUY") ? "buy" : "sell";
+            document.getElementById('d-time').innerText = "Time: " + new Date().toLocaleTimeString();
+
+            btn.disabled = true;
+            status.innerText = "📸 Capturing...";
             
-            document.getElementById('disp-pair').innerText = pair;
-            document.getElementById('disp-dir').innerText = dir;
-            document.getElementById('disp-dir').className = "signal-dir " + (dir.includes("BUY") ? "buy" : "sell");
-            document.getElementById('disp-time').innerText = "Time: " + new Date().toLocaleTimeString();
-
-            status.innerText = "📸 Sending...";
             try {
-                const canvas = await html2canvas(document.querySelector("#chart-container"), { scale: 1 });
-                const image = canvas.toDataURL("image/jpeg", 0.8);
+                // Wait for UI update
+                await new Promise(r => setTimeout(r, 300));
 
-                const res = await fetch(`${WORKER_URL}/send`, {
-                    method: "POST",
-                    body: JSON.stringify({ pair, dir, image })
-                });
-                const result = await res.json();
-                status.innerText = result.ok ? "✅ Sent!" : "❌ Error";
-            } catch (e) { status.innerText = "❌ Failed"; }
+                // Lower scale and JPEG format for smaller size
+                const canvas = await html2canvas(document.querySelector("#chart-container"), { scale: 0.8 });
+                const imgData = canvas.toDataURL("image/jpeg", 0.7);
+
+                status.innerText = "📤 Sending...";
+                const resp = await fetch(`${WORKER}/send`, { method:"POST", body: JSON.stringify({ pair, dir, image: imgData }) });
+                const result = await resp.json();
+                
+                if(result.ok) { status.innerText = "✅ Success!"; status.style.color="#00ff00"; }
+                else { status.innerText = "❌ Error: " + (result.description || "API Reject"); status.style.color="#ff3d00"; }
+            } catch(e) { status.innerText = "❌ Failed: " + e.message; }
+            btn.disabled = false;
         }
     </script>
 </body>
