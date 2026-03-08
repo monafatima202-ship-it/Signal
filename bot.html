@@ -16,31 +16,31 @@ text-align:center;
 }
 
 .header{
-font-size:26px;
+font-size:24px;
 color:#00ffc3;
-text-shadow:0 0 20px #00ffc3;
+text-shadow:0 0 15px #00ffc3;
 margin-top:10px;
 }
 
 canvas{
 background:#020617;
-border-radius:12px;
+border-radius:10px;
 margin-top:20px;
-box-shadow:0 0 25px #00ffc3;
+box-shadow:0 0 20px #00ffc3;
 }
 
 button{
-padding:14px 26px;
+padding:14px 25px;
 margin:10px;
 border:none;
-border-radius:10px;
+border-radius:8px;
 background:#00ffc3;
 font-weight:bold;
 font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:24px}
-.sell{color:#ff3b3b;font-size:24px}
+.buy{color:#00ff9d;font-size:22px}
+.sell{color:#ff3b3b;font-size:22px}
 
 table{
 margin-top:20px;
@@ -115,7 +115,6 @@ const pairs=[
 ]
 
 let engine=null
-
 let pairIndex=0
 
 let win=0
@@ -171,7 +170,7 @@ return last.close>prev.close?"BUY":"SELL"
 
 }
 
-function drawChart(candles,pair,signal){
+function drawChart(candles,pair,signal,entry){
 
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
@@ -210,7 +209,11 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 ctx.fillStyle="#ffffff"
 ctx.font="12px Arial"
 
-ctx.fillText(pair+" "+signal,120,15)
+ctx.fillText(
+"APX BOT | "+pair+" | M1 | "+signal+" @ "+entry,
+70,
+15
+)
 
 if(signal=="BUY"){
 
@@ -221,6 +224,9 @@ ctx.moveTo(300,200)
 ctx.lineTo(340,170)
 ctx.stroke()
 
+ctx.fillStyle="#00ff9d"
+ctx.fillText("CALL",300,220)
+
 }else{
 
 ctx.strokeStyle="#ff3b3b"
@@ -230,13 +236,19 @@ ctx.moveTo(300,170)
 ctx.lineTo(340,200)
 ctx.stroke()
 
+ctx.fillStyle="#ff3b3b"
+ctx.fillText("PUT",300,220)
+
 }
 
 }
 
 function addHistory(pair,signal,result){
 
-let t=new Date().toLocaleTimeString()
+let t=new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})
 
 let row=
 "<tr>"+
@@ -271,7 +283,6 @@ form.append("image",blob,"chart.png")
 let text=
 "🚀 APX PREMIUM SIGNAL\n\n"+
 "📊 Pair : "+pair+"\n"+
-"⏱ TF : M1\n"+
 "⭕ Direction : "+signal+"\n\n"+
 "🌐 Powered by APX Premium"
 
@@ -298,13 +309,9 @@ let last=c[1]
 let result
 
 if(lastSignal=="BUY"){
-
 result=last.close>prev.close?"WIN":"LOSS"
-
 }else{
-
 result=last.close<prev.close?"WIN":"LOSS"
-
 }
 
 total++
@@ -322,12 +329,14 @@ async function run(){
 
 let d=await getCandles()
 
+let entry=entryTime()
+
 let signal=signalLogic(d.data)
 
-lastSignal=signal
 lastPair=d.pair
+lastSignal=signal
 
-drawChart(d.data,d.pair,signal)
+drawChart(d.data,d.pair,signal,entry)
 
 document.getElementById("signal").innerHTML=d.pair+" "+signal
 
