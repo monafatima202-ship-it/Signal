@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA</title>
+<title>APX ULTRA BOT</title>
 
 <style>
 
@@ -17,11 +17,11 @@ text-align:center;
 .header{
 font-size:26px;
 color:#00ffc3;
-margin-top:15px;
+margin-top:10px;
 }
 
 canvas{
-background:#0b1220;
+background:#020617;
 border-radius:10px;
 margin-top:20px;
 }
@@ -39,9 +39,25 @@ font-size:16px;
 .buy{color:#00ff9d;font-size:24px}
 .sell{color:#ff3b3b;font-size:24px}
 
+table{
+margin-top:20px;
+border-collapse:collapse;
+width:100%;
+}
+
+th,td{
+padding:8px;
+border:1px solid #333;
+}
+
+th{
+background:#111827;
+}
+
 .footer{
 margin-top:20px;
 color:#aaa;
+font-size:14px;
 }
 
 </style>
@@ -56,10 +72,20 @@ color:#aaa;
 
 <div id="signal">SYSTEM READY</div>
 
-<br>
-
 <button onclick="start()">START</button>
 <button onclick="stop()">STOP</button>
+
+<h3>📊 Signals History</h3>
+
+<table id="history">
+
+<tr>
+<th>Time</th>
+<th>Pair</th>
+<th>Signal</th>
+</tr>
+
+</table>
 
 <div class="footer">
 Powered by 🌐 APX Premium
@@ -121,10 +147,11 @@ function drawChart(candles,pair,signal){
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
 
-ctx.clearRect(0,0,400,250)
+ctx.fillStyle="#020617"
+ctx.fillRect(0,0,canvas.width,canvas.height)
 
-let max=Math.max(...candles.map(x=>x.high))
-let min=Math.min(...candles.map(x=>x.low))
+let max=Math.max(...candles.map(c=>c.high))
+let min=Math.min(...candles.map(c=>c.low))
 
 let w=8
 let gap=4
@@ -152,8 +179,40 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 })
 
 ctx.fillStyle="white"
-ctx.font="14px Arial"
+ctx.font="16px Arial"
 ctx.fillText(pair+" "+signal,120,20)
+
+if(signal=="BUY"){
+
+ctx.fillStyle="#00ff9d"
+ctx.fillText("↑ BUY",300,220)
+
+}else{
+
+ctx.fillStyle="#ff3b3b"
+ctx.fillText("↓ SELL",300,220)
+
+}
+
+ctx.fillStyle="#00ffc3"
+ctx.font="12px Arial"
+ctx.fillText("APX PREMIUM",10,230)
+
+}
+
+function addHistory(pair,signal){
+
+let t=new Date().toLocaleTimeString()
+
+let row=`
+<tr>
+<td>${t}</td>
+<td>${pair}</td>
+<td>${signal}</td>
+</tr>
+`
+
+document.getElementById("history").innerHTML+=row
 
 }
 
@@ -170,11 +229,13 @@ let form=new FormData()
 form.append("image",blob,"chart.png")
 
 let text=
-"📊 APX ULTRA SIGNAL\n\n"+
-"Pair : "+pair+"\n"+
-"Direction : "+signal+"\n"+
-"Entry : "+entry+"\n\n"+
-"Powered by APX Premium"
+"🤖 APX BOT ====== 🚧\n\n"+
+"📊 Pair "+pair+"\n"+
+"🕓 ENTRY "+entry+"\n"+
+"⌛ M1\n"+
+"⭕ DIRECTION "+signal+"\n\n"+
+"📳 SIGNAL : "+new Date().toLocaleString()+"\n\n"+
+"🌐Telegram @MMQUOBOT"
 
 form.append("text",text)
 
@@ -198,6 +259,8 @@ signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
 :`<span class="sell">${d.pair} SELL</span>`
 
+addHistory(d.pair,signal)
+
 sendTelegram(d.pair,signal)
 
 }
@@ -206,7 +269,7 @@ function start(){
 
 run()
 
-engine=setInterval(run,60000)
+engine=setInterval(run,65000)
 
 }
 
