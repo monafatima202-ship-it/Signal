@@ -2,82 +2,124 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>APX AUTO OTC SIGNAL BOT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APX SIGNAL BOT PANEL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
-        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; }
-        #bot-container { border: 2px solid #333; width: 400px; margin: 50px auto; padding: 20px; border-radius: 15px; background: #1a1a1a; }
-        .signal-info { font-size: 24px; font-weight: bold; margin: 20px 0; padding: 10px; border: 1px dashed #555; }
-        .buy { color: #00ff00; }
-        .sell { color: #ff0000; }
-        iframe { display: none; } /* Background mein data lene ke liye */
+        body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+        
+        /* Ye area photo mein capture hoga */
+        #chart-container {
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
+            width: 380px;
+            margin: 20px auto;
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid #333;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .logo { font-size: 24px; font-weight: bold; color: #ffca28; margin-bottom: 10px; }
+        .pair-name { font-size: 32px; font-weight: 800; margin: 10px 0; }
+        .signal-dir { font-size: 45px; font-weight: 900; text-transform: uppercase; }
+        .time { color: #888; margin-top: 15px; font-size: 14px; }
+
+        .buy-style { color: #00ff00; text-shadow: 0 0 20px rgba(0,255,0,0.4); }
+        .sell-style { color: #ff3d00; text-shadow: 0 0 20px rgba(255,61,0,0.4); }
+
+        .controls { margin-top: 30px; display: flex; flex-direction: column; width: 300px; margin-left: auto; margin-right: auto; gap: 10px; }
+        input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; font-size: 16px; }
+        button { background: #ffca28; color: black; font-weight: bold; cursor: pointer; border: none; transition: 0.3s; }
+        button:hover { background: #ffd54f; transform: scale(1.05); }
+        #status-msg { margin-top: 20px; color: #ffca28; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="bot-container">
-        <h2>🤖 APX OTC AUTO BOT</h2>
-        <p>Target: <b>USDBDT OTC</b></p>
-        <div id="capture-area">
-            <div class="signal-info">
-                Asset: <span id="asset-name">USDBDT_otc</span><br>
-                Signal: <span id="signal-text">ANALYZING...</span>
-            </div>
-        </div>
-        <p id="status">Waiting for Signal from Radit.top...</p>
-        <button onclick="fetchAndSend()" style="padding:10px 20px; cursor:pointer; background:#007bff; color:white; border:none; border-radius:5px;">Manual Force Send</button>
+    <h1 style="color: #ffca28;">🤖 APX SIGNAL SYSTEM</h1>
+    <p>Fill details and click send for Image + Text signal</p>
+
+    <div id="chart-container">
+        <div class="logo">📊 APX PREMIUM</div>
+        <div class="pair-name" id="display-pair">USDBDT_otc</div>
+        <div class="signal-dir" id="display-dir">---</div>
+        <div class="time" id="display-time">Ready to scan...</div>
+    </div>
+    <div class="controls">
+        <input type="text" id="asset-input" placeholder="Enter Asset (e.g. USDBDT_otc)" value="USDBDT_otc">
+        <select id="dir-input">
+            <option value="BUY 🟢">BUY</option>
+            <option value="SELL 🔴">SELL</option>
+        </select>
+        <button onclick="sendFinalSignal()">🚀 SEND FEATURE SIGNAL</button>
     </div>
 
-    <iframe id="signal-source" src="https://radit.top/otc.php?asset=USDBDT_otc"></iframe>
+    <div id="status-msg"></div>
 
     <script>
-        async function fetchAndSend() {
-            const status = document.getElementById('status');
-            const signalText = document.getElementById('signal-text');
-            
-            status.innerText = "🔍 Fetching Data from Source...";
-            
-            // Note: Radit.top CORS block kar sakta hai, isliye hum iframe ya proxy use karte hain.
-            // Yahan hum dummy logic de rahe hain jo aapke pattern ko capture karega.
-            
-            // Fake analysis for demo (Actual integration needs Proxy or local scrape)
-            const directions = ["BUY 🟢", "SELL 🔴"];
-            const currentSignal = directions[Math.floor(Math.random() * directions.length)];
-            
-            signalText.innerText = currentSignal;
-            signalText.className = "signal-info " + (currentSignal.includes("BUY") ? "buy" : "sell");
+        async function sendFinalSignal() {
+            const status = document.getElementById('status-msg');
+            const asset = document.getElementById('asset-input').value || "USDBDT_otc";
+            const direction = document.getElementById('dir-input').value;
+            const currentTime = new Date().toLocaleTimeString();
 
-            status.innerText = "📸 Generating Image...";
+            // UI Update before capture
+            document.getElementById('display-pair').innerText = asset;
+            document.getElementById('display-dir').innerText = direction;
+            document.getElementById('display-time').innerText = "Generated at: " + currentTime;
+            
+            if(direction.includes("BUY")) {
+                document.getElementById('display-dir').className = "signal-dir buy-style";
+            } else {
+                document.getElementById('display-dir').className = "signal-dir sell-style";
+            }
+
+            status.innerText = "📸 Capturing Chart Photo...";
 
             try {
-                // Screenshot lena area ka
-                const canvas = await html2canvas(document.querySelector("#capture-area"));
-                const base64Image = canvas.toDataURL("image/png").split(',')[1];
+                // Wait small delay to render UI changes
+                await new Promise(r => setTimeout(r, 500));
 
-                status.innerText = "📤 Sending to Telegram Worker...";
+                // 1. Capture Div as Canvas
+                const canvas = await html2canvas(document.querySelector("#chart-container"), {
+                    backgroundColor: "#0a0a0a",
+                    scale: 2 // High quality
+                });
 
-                // Worker ko bhej dena
-                const res = await fetch("https://signal.mkapi009.workers.dev/send", {
+                // 2. Convert to Base64
+                const base64Image = canvas.toDataURL("image/png");
+
+                status.innerText = "📤 Sending to Telegram...";
+
+                // 3. Send to your Worker
+                const response = await fetch("https://signal.mkapi009.workers.dev/send", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        pair: "USDBDT_otc",
-                        dir: currentSignal,
+                        pair: asset,
+                        dir: direction,
+                        time: currentTime,
                         image: base64Image
                     })
                 });
 
-                const result = await res.json();
-                if(result.ok) status.innerText = "✅ Signal Sent to Telegram!";
-                else status.innerText = "❌ Worker Error!";
-                
+                const result = await response.json();
+
+                if(result.ok) {
+                    status.innerText = "✅ Signal + Image Sent Successfully!";
+                    console.log("Worker Response:", result);
+                } else {
+                    status.innerText = "❌ Worker Error: Check Logs";
+                    console.error("Worker Error:", result);
+                }
+
             } catch (err) {
                 status.innerText = "❌ Error: " + err.message;
+                console.error("Capture Failed:", err);
             }
         }
-
-        // Automatic check har 1 minute baad
-        setInterval(fetchAndSend, 60000);
     </script>
+
 </body>
 </html>
