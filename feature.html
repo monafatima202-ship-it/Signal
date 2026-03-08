@@ -214,20 +214,30 @@ async function generateFlow() {
 
   output.innerText = text;
 }
-
 async function sendToTelegram() {
-  if (signals.length === 0) { alert("Generate Premium Flow First! ⚡"); return; }
 
-  let msg = "🔏 ADOX premium\n⌚ UTC+6 timezone\n💹 Time 1 minute\n\n";
-  msg += "✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine Activated\n\n";
-  signals.forEach(s => {
-    msg += `M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction.padEnd(6)}\n`;
-  });
-  msg += "\n━━━━━━━━━━━━━━━━━━━━━━\n• M1 Signals • MG1 Max\n• Avoid High Impact News\n• Stop After 2 Losses\nTrade safe APX members 🔥 Mona\n\nPowered by 🌐 APX Premium";
+  if (signals.length === 0) {
+    alert("Generate Premium Flow First! ⚡");
+    return;
+  }
 
-  await fetch(TG, {method: "POST", headers: {"Content-Type": "text/plain"}, body: msg});
+  for (let s of signals) {
+
+    await fetch(TG, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        pair: s.pair,
+        dir: s.direction,
+        time: s.time
+      })
+    });
+
+    await new Promise(r => setTimeout(r, 800)); // anti spam
+  }
+
   alert("ADOX Premium Flow Sent to Telegram! 📤");
-}
-</script>
-</body>
-</html>
+
+                          }
