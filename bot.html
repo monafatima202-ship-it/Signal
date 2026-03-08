@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX SIGNAL BOT PANEL</title>
+    <title>APX MASTER PANEL</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
-        body { background: #0f0f0f; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; padding: 20px; }
+        body { background: #0f0f0f; color: white; font-family: sans-serif; text-align: center; padding: 20px; }
         .container { max-width: 400px; margin: auto; }
         
-        /* Signal Card (Photo Area) */
         #chart-container {
             background: linear-gradient(145deg, #1a1a1a, #0a0a0a);
             padding: 25px;
@@ -28,8 +27,7 @@
         .inputs { display: flex; flex-direction: column; gap: 10px; }
         input, select, button { padding: 12px; border-radius: 8px; border: 1px solid #444; background: #222; color: white; }
         button { background: #ffca28; color: black; font-weight: bold; cursor: pointer; border: none; }
-        button:disabled { background: #555; cursor: not-allowed; }
-        #status { margin-top: 15px; font-weight: bold; font-size: 14px; }
+        #status { margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -40,7 +38,7 @@
         <div id="login-section">
             <input type="text" id="user" placeholder="Username">
             <input type="password" id="pass" placeholder="Password">
-            <button onclick="doLogin()" id="login-btn" style="margin-top:10px; width:100%;">LOGIN TO SYSTEM</button>
+            <button onclick="doLogin()" style="width:100%; margin-top:10px;">LOGIN</button>
         </div>
 
         <div id="signal-section" style="display:none;">
@@ -52,7 +50,7 @@
             </div>
 
             <div class="inputs">
-                <input type="text" id="pair-input" value="USDBDT_otc" placeholder="Asset Name">
+                <input type="text" id="pair-input" value="USDBDT_otc">
                 <select id="dir-input">
                     <option value="BUY 🟢">BUY</option>
                     <option value="SELL 🔴">SELL</option>
@@ -66,84 +64,47 @@
 
     <script>
         const WORKER_URL = "https://signal.mkapi009.workers.dev";
-        const status = document.getElementById('status');
 
-        // 1. Login Function
         async function doLogin() {
             const user = document.getElementById('user').value;
             const pass = document.getElementById('pass').value;
-            
-            status.innerText = "Authenticating...";
             try {
                 const res = await fetch(`${WORKER_URL}/login`, {
                     method: "POST",
                     body: JSON.stringify({ user, pass })
                 });
-                const data = await res.json();
-                
-                if(data.ok) {
+                if(res.ok) {
                     document.getElementById('login-section').style.display = 'none';
                     document.getElementById('signal-section').style.display = 'block';
-                    status.innerText = "✅ Login Successful!";
-                    status.style.color = "#00ff00";
+                    document.getElementById('status').innerText = "✅ Logged In";
                 } else {
-                    status.innerText = "❌ Invalid Credentials";
-                    status.style.color = "#ff3d00";
+                    alert("Ghalat Details!");
                 }
-            } catch(e) {
-                status.innerText = "❌ Login Connection Error";
-            }
+            } catch(e) { alert("Connection Error"); }
         }
 
-        // 2. Signal Sending Function
         async function sendSignal() {
             const pair = document.getElementById('pair-input').value;
             const dir = document.getElementById('dir-input').value;
-            const time = new Date().toLocaleTimeString();
-            const btn = document.getElementById('send-btn');
-
-            // Update UI
+            const status = document.getElementById('status');
+            
             document.getElementById('disp-pair').innerText = pair;
             document.getElementById('disp-dir').innerText = dir;
             document.getElementById('disp-dir').className = "signal-dir " + (dir.includes("BUY") ? "buy" : "sell");
-            document.getElementById('disp-time').innerText = "Generated at: " + time;
+            document.getElementById('disp-time').innerText = "Time: " + new Date().toLocaleTimeString();
 
-            btn.disabled = true;
-            status.innerText = "📸 Capturing & Sending...";
-
+            status.innerText = "📸 Sending...";
             try {
-                // Wait for UI to update
-                await new Promise(r => setTimeout(r, 400));
+                const canvas = await html2canvas(document.querySelector("#chart-container"), { scale: 1 });
+                const image = canvas.toDataURL("image/jpeg", 0.8);
 
-                // Capture image with optimized scale for worker
-                const canvas = await html2canvas(document.querySelector("#chart-container"), {
-                    scale: 1, // Keep 1 to avoid "Worker Error" from large files
-                    backgroundColor: "#0a0a0a"
-                });
-
-                const base64Image = canvas.toDataURL("image/png");
-
-                // Post to worker
-                const response = await fetch(`${WORKER_URL}/send`, {
+                const res = await fetch(`${WORKER_URL}/send`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ pair, dir, time, image: base64Image })
+                    body: JSON.stringify({ pair, dir, image })
                 });
-
-                const result = await response.json();
-                
-                if(result.ok) {
-                    status.innerText = "✅ Signal Sent Successfully!";
-                    status.style.color = "#00ff00";
-                } else {
-                    status.innerText = "❌ Worker Error: " + (result.error || "Check Logs");
-                    status.style.color = "#ff3d00";
-                }
-            } catch (err) {
-                status.innerText = "❌ Connection Failed";
-            } finally {
-                btn.disabled = false;
-            }
+                const result = await res.json();
+                status.innerText = result.ok ? "✅ Sent!" : "❌ Error";
+            } catch (e) { status.innerText = "❌ Failed"; }
         }
     </script>
 </body>
