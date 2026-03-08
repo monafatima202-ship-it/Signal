@@ -93,151 +93,183 @@ button { width: 100%; padding: 20px; margin: 15px 0; border: none; border-radius
 </div>
 
 <script>
-const API_BASE = "https://quotexotc-futureapi.poghen-dx.workers.dev/pairs=";
+    const API_BASE = "https://quotexotc-futureapi.poghen-dx.workers.dev/pairs=";
 const TG = "https://signal.mkapi009.workers.dev/send";
 
 const PAIRS = {
-  OTC: [
-    "AUDUSD_otc", "EURUSD_otc", "GBPUSD_otc", "NZDUSD_otc", "USDCAD_otc", "USDCHF_otc", "USDJPY_otc",
-    "USDINR_otc", "USDBDT_otc", "USDPKR_otc", "USDNGN_otc", "USDARS_otc", "USDMXN_otc", "USDTRY_otc",
-    "EURGBP_otc", "EURJPY_otc", "GBPJPY_otc", "XAUUSD_otc"
-  ],
-  CRYPTO: [
-    "BTCUSD_otc", "ETHUSD_otc", "XRPUSD_otc"
-  ],
-  STOCK: [
-    "FB_otc", "AXP_otc", "PFE_otc", "JNJ_otc", "MCD_otc", "BA_otc"
-  ]
+OTC:[
+"AUDUSD_otc","EURUSD_otc","GBPUSD_otc","NZDUSD_otc","USDCAD_otc","USDCHF_otc","USDJPY_otc",
+"USDINR_otc","USDBDT_otc","USDPKR_otc","USDNGN_otc","USDARS_otc","USDMXN_otc","USDTRY_otc",
+"EURGBP_otc","EURJPY_otc","GBPJPY_otc","XAUUSD_otc"
+],
+CRYPTO:[
+"BTCUSD_otc","ETHUSD_otc","XRPUSD_otc"
+],
+STOCK:[
+"FB_otc","AXP_otc","PFE_otc","JNJ_otc","MCD_otc","BA_otc"
+]
 };
 
-let currentMarket = "OTC";
-let signals = [];
-let cacheKey = "";
+let currentMarket="OTC";
+let signals=[];
+let cacheKey="";
 
-function setMarket(type, el) {
-  currentMarket = type;
-  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-  el.classList.add("active");
-  let select = document.getElementById("pairs");
-  select.innerHTML = "";
-  PAIRS[type].forEach(p => {
-    let o = document.createElement("option");
-    o.value = p;
-    o.textContent = p.replace("_otc", "");
-    select.appendChild(o);
-  });
-}
-setMarket("OTC", document.querySelector(".tab.active"));
+function setMarket(type,el){
 
-function toMin(t) {
-  let [h, m] = t.split(":").map(Number);
-  return h * 60 + m;
-}
+currentMarket=type;
 
-function pad(min) {
-  let h = Math.floor(min / 60) % 24;
-  let m = min % 60;
-  return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+el.classList.add("active");
+
+let select=document.getElementById("pairs");
+select.innerHTML="";
+
+PAIRS[type].forEach(p=>{
+let o=document.createElement("option");
+o.value=p;
+o.textContent=p.replace("_otc","");
+select.appendChild(o);
+});
+
 }
 
-async function generateFlow() {
-  let selected = [...document.getElementById("pairs").selectedOptions].map(o => o.value);
-  if (selected.length === 0) {
-    document.getElementById("output").innerText = "⚠️ SELECT AT LEAST 1 PAIR";
-    return;
-  }
-
-  let startMin = toMin(document.getElementById("start").value || "00:00");
-  let endMin = toMin(document.getElementById("end").value || "23:59");
-
-  let newCacheKey = currentMarket + "|" + selected.sort().join(",") + "|" + startMin + "|" + endMin;
-  if (newCacheKey === cacheKey && signals.length > 0) {
-    document.getElementById("output").innerText = "♻️ USING CACHED ADOX PREMIUM FLOW";
-    return;
-  }
-  cacheKey = newCacheKey;
-
-  signals = [];
-  let output = document.getElementById("output");
-  let loader = document.getElementById("loader");
-  let progress = document.getElementById("progress");
-  loader.style.display = "block";
-  output.innerText = "";
-
-  let total = selected.length;
-  let count = 0;
-
-  for (let pair of selected) {
-    try {
-      let r = await fetch(API_BASE + pair);
-      let j = await r.json();
-      if (j.status !== "success" || !j.signals) continue;
-
-      let pairSignals = j.signals || [];
-      pairSignals.forEach(s => {
-        let utcMin = toMin(s.time);
-        let localMin = (utcMin + 360) % 1440; // UTC+6
-        let localTime = pad(localMin);
-
-        if (localMin >= startMin && localMin <= endMin) {
-          signals.push({
-            time: localTime,
-            pair: pair.replace("_otc", ""),
-            direction: s.direction
-          });
-        }
-      });
-    } catch (e) {
-      console.log(`Fetch fail for ${pair}:`, e);
-    }
-
-    count++;
-    progress.style.width = (count / total * 100) + "%";
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  signals.sort((a, b) => toMin(a.time) - toMin(b.time));
-
-  loader.style.display = "none";
-
-  if (signals.length === 0) {
-    output.innerText = "🌑 No premium signals in range.\nTry core pairs like USDINR_otc, USDBDT_otc.";
-    return;
-  }
-
-  let text = "🔏 ADOX premium\n⌚ UTC+6 timezone\n💹 Time 1 minute\n\n";
-  text += "✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine Activated\n\n";
-  signals.forEach(s => {
-    text += `M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction.padEnd(6)}\n`;
-  });
-  text += "\n━━━━━━━━━━━━━━━━━━━━━━\n• M1 Signals • MG1 Max\n• Avoid High Impact News\n• Stop After 2 Losses\nTrade Safe 🔥 Mona\n\nPowered by 🌐 APX Premium";
-
-  output.innerText = text;
+function toMin(t){
+let [h,m]=t.split(":").map(Number);
+return h*60+m;
 }
-async function sendToTelegram() {
 
-  if (signals.length === 0) {
-    alert("Generate Premium Flow First! ⚡");
-    return;
-  }
+function pad(min){
+let h=Math.floor(min/60)%24;
+let m=min%60;
+return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+}
 
-  for (let s of signals) {
+async function generateFlow(){
 
-    await fetch(TG, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        pair: s.pair,
-        dir: s.direction,
-        time: s.time
-      })
-    });
+let selected=[...document.getElementById("pairs").selectedOptions].map(o=>o.value);
 
-    await new Promise(r => setTimeout(r, 800)); // anti spam
-  }
+if(selected.length===0){
+document.getElementById("output").innerText="⚠️ SELECT AT LEAST 1 PAIR";
+return;
+}
 
-  alert("ADOX Premium Flow Sent to Telegram! 📤");
+let startMin=toMin(document.getElementById("start").value||"00:00");
+let endMin=toMin(document.getElementById("end").value||"23:59");
 
-                          }
+let newCacheKey=currentMarket+"|"+selected.sort().join(",")+"|"+startMin+"|"+endMin;
+
+if(newCacheKey===cacheKey && signals.length>0){
+document.getElementById("output").innerText="♻️ USING CACHED ADOX PREMIUM FLOW";
+return;
+}
+
+cacheKey=newCacheKey;
+
+signals=[];
+
+let output=document.getElementById("output");
+let loader=document.getElementById("loader");
+let progress=document.getElementById("progress");
+
+loader.style.display="block";
+output.innerText="";
+
+let total=selected.length;
+let count=0;
+
+for(let pair of selected){
+
+try{
+
+let r=await fetch(API_BASE+pair);
+let j=await r.json();
+
+if(j.status!=="success"||!j.signals)continue;
+
+let pairSignals=j.signals||[];
+
+pairSignals.forEach(s=>{
+
+let utcMin=toMin(s.time);
+let localMin=(utcMin+360)%1440;
+let localTime=pad(localMin);
+
+if(localMin>=startMin && localMin<=endMin){
+
+signals.push({
+time:localTime,
+pair:pair.replace("_otc",""),
+direction:s.direction
+});
+
+}
+
+});
+
+}catch(e){console.log(e)}
+
+count++;
+progress.style.width=(count/total*100)+"%";
+
+await new Promise(r=>setTimeout(r,400));
+
+}
+
+signals.sort((a,b)=>toMin(a.time)-toMin(b.time));
+
+loader.style.display="none";
+
+if(signals.length===0){
+output.innerText="🌑 No premium signals in range";
+return;
+}
+
+let text="🔏 ADOX premium\n⌚ UTC+6 timezone\n💹 Time 1 minute\n\n";
+text+="✦ ADOX PREMIUM FLOW APX ✦\n━━━━━━━━━━━━━━━━━━━━━━\nUTC+6 | ADOX Premium Engine Activated\n\n";
+
+signals.forEach(s=>{
+text+=`M1 | ${s.pair.padEnd(8)} | ${s.time} | ${s.direction.padEnd(6)}\n`;
+});
+
+text+="\n━━━━━━━━━━━━━━━━━━━━━━\n• M1 Signals • MG1 Max\n• Avoid High Impact News\n• Stop After 2 Losses\nTrade Safe 🔥 Mona\n\nPowered by 🌐 APX Premium";
+
+output.innerText=text;
+
+}
+
+async function sendToTelegram(){
+
+if(signals.length===0){
+alert("Generate Premium Flow First! ⚡");
+return;
+}
+
+for(let s of signals){
+
+await fetch(TG,{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+pair:s.pair,
+dir:s.direction,
+time:s.time
+})
+});
+
+await new Promise(r=>setTimeout(r,800));
+
+}
+
+alert("ADOX Premium Flow Sent to Telegram! 📤");
+
+}
+
+/* PAGE LOAD FIX */
+
+document.addEventListener("DOMContentLoaded",function(){
+
+setMarket("OTC",document.querySelector(".tab"));
+
+});
