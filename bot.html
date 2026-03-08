@@ -22,9 +22,12 @@ margin-top:10px;
 
 canvas{
 background:#020617;
-border-radius:10px;
+border-radius:12px;
 margin-top:20px;
-box-shadow:0 0 25px #00ffc3;
+box-shadow:
+0 0 20px #00ffc3,
+0 0 40px #00ffc3,
+0 0 80px #00ffc3;
 }
 
 button{
@@ -109,6 +112,18 @@ const pairs=[
 let engine=null
 let pairIndex=0
 
+let win=0
+let loss=0
+let mtg=0
+let total=0
+
+function accuracy(){
+
+if(total==0)return 0
+return ((win/total)*100).toFixed(1)
+
+}
+
 function entryTime(){
 
 let d=new Date()
@@ -145,6 +160,27 @@ if(last.close>prev.close){
 return "BUY"
 }else{
 return "SELL"
+}
+
+}
+
+function checkResult(candles,signal){
+
+let last=candles[candles.length-1]
+let prev=candles[candles.length-2]
+
+total++
+
+if(signal=="BUY"){
+
+if(last.close>prev.close){win++}
+else{loss++}
+
+}else{
+
+if(last.close<prev.close){win++}
+else{loss++}
+
 }
 
 }
@@ -191,13 +227,29 @@ ctx.fillText(pair+" "+signal,120,20)
 
 if(signal=="BUY"){
 
+ctx.strokeStyle="#00ff9d"
+ctx.lineWidth=3
+
+ctx.beginPath()
+ctx.moveTo(310,200)
+ctx.lineTo(340,170)
+ctx.stroke()
+
 ctx.fillStyle="#00ff9d"
-ctx.fillText("↑ BUY",300,220)
+ctx.fillText("BUY",310,210)
 
 }else{
 
+ctx.strokeStyle="#ff3b3b"
+ctx.lineWidth=3
+
+ctx.beginPath()
+ctx.moveTo(310,170)
+ctx.lineTo(340,200)
+ctx.stroke()
+
 ctx.fillStyle="#ff3b3b"
-ctx.fillText("↓ SELL",300,220)
+ctx.fillText("SELL",310,210)
 
 }
 
@@ -239,13 +291,23 @@ let form=new FormData()
 form.append("image",blob,"chart.png")
 
 let text=
-"🤖 APX BOT ====== 🚧\n\n"+
-"📊 Pair "+pair+"\n"+
-"🕓 ENTRY "+entry+"\n"+
-"⌛ M1\n"+
-"⭕ DIRECTION "+signal+"\n\n"+
-"📳 SIGNAL : "+new Date().toLocaleString()+"\n\n"+
-"🌐Telegram @MMQUOBOT"
+"🚀 APX PREMIUM SIGNAL\n\n"+
+"📊 Pair : "+pair+"\n"+
+"🕓 Entry : "+entry+"\n"+
+"⏱ TF : M1\n"+
+
+(signal=="BUY"
+?"🟢 Direction : CALL\n"
+:"🔴 Direction : PUT\n")+
+
+"\n🎯 Accuracy : "+accuracy()+"%\n\n"+
+
+"📈 Stats\n"+
+"✅ Win : "+win+"\n"+
+"❌ Loss : "+loss+"\n"+
+"♻ MTG1 : "+mtg+"\n\n"+
+
+"🌐 Powered by APX Premium"
 
 form.append("text",text)
 
@@ -264,6 +326,8 @@ let signal=getSignal(d.data)
 
 drawChart(d.data,d.pair,signal)
 
+checkResult(d.data,signal)
+
 document.getElementById("signal").innerHTML=
 signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
@@ -275,7 +339,22 @@ sendTelegram(d.pair,signal)
 
 }
 
-function start(){
+async function start(){
+
+let form=new FormData()
+
+form.append("text",
+
+"🚀 APX PREMIUM BOT STARTED\n\n"+
+"⚡ Auto Signal Engine Activated\n"+
+"📊 Pair Scanner Running\n"+
+"🎯 Accuracy System Online\n\n"+
+"Good Luck Traders!")
+
+await fetch(SEND,{
+method:"POST",
+body:form
+})
 
 run()
 
@@ -283,11 +362,32 @@ engine=setInterval(run,65000)
 
 }
 
-function stop(){
+async function stop(){
 
 clearInterval(engine)
 
-alert("🛑 APX ULTRA STOPPED")
+let form=new FormData()
+
+form.append("text",
+
+"🛑 APX BOT STOPPED\n\n"+
+
+"📊 Session Summary\n\n"+
+
+"✅ Win : "+win+"\n"+
+"❌ Loss : "+loss+"\n"+
+"♻ MTG1 : "+mtg+"\n\n"+
+
+"🎯 Accuracy : "+accuracy()+"%\n\n"+
+
+"🌐 Powered by APX Premium"
+
+)
+
+await fetch(SEND,{
+method:"POST",
+body:form
+})
 
 }
 
