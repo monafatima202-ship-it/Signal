@@ -1,145 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>APX AUTO-FIXED PANEL</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APX AUTO-FIXED PANEL - With Buy Arrow</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <style>
-        body { background:#020617; color:white; font-family:sans-serif; text-align:center; padding:10px; margin:0; }
-        .header { color:#00ffc3; font-size:20px; font-weight:bold; padding:15px 0; }
-        
-        /* Chart & Signal Display */
-        #chart-container { background:#0a0a0a; padding:10px; border-radius:15px; width:92%; margin:auto; border:1px solid #1e293b; }
-        #tv-chart { height: 220px; width: 100%; background: #000; }
-        
-        .signal-display { padding:15px 0; border-top:1px solid #1e293b; margin-top:10px; }
-        #v-dir { font-size:32px; font-weight:900; margin:10px 0; }
-        
-        /* Buttons */
-        .controls { display:flex; gap:10px; width:92%; margin:15px auto; }
-        .btn-start { background:#22c55e; flex:1; padding:15px; border-radius:10px; border:none; color:white; font-weight:bold; }
-        .btn-stop { background:#ef4444; flex:1; padding:15px; border-radius:10px; border:none; color:white; font-weight:bold; }
-        
-        /* Summary */
-        .summary-box { width:92%; margin:20px auto; background:#0f172a; border-radius:12px; padding:10px; }
-        table { width:100%; border-collapse:collapse; font-size:12px; }
-        th { color:#94a3b8; padding:8px; border-bottom:1px solid #1e293b; }
-        td { padding:8px; }
-        .buy { color:#00ff00; } .sell { color:#ff3d00; }
+        body { background:#020617; color:#e2e8f0; font-family:sans-serif; margin:0; padding:15px; text-align:center; }
+        .header { color:#00ffc3; font-size:24px; font-weight:bold; margin:15px 0; }
+        #chart-container { background:#0f172a; border-radius:12px; padding:12px; border:1px solid #1e293b; max-width:95%; margin:0 auto; position:relative; }
+        #tv-chart { height:320px; width:100%; background:#000; border-radius:8px; }
+        .signal-box { margin:20px 0; font-size:32px; font-weight:900; }
+        .buy { color:#22c55e; } .sell { color:#ef4444; }
+        .controls { display:flex; gap:12px; justify-content:center; margin:20px 0; }
+        button { padding:14px 28px; font-size:18px; font-weight:bold; border:none; border-radius:10px; cursor:pointer; color:white; }
+        .start { background:#22c55e; } .stop { background:#ef4444; }
+        select { padding:12px; font-size:16px; background:#1e293b; color:white; border:1px solid #334155; border-radius:8px; margin-bottom:15px; }
+        .summary { margin:25px auto; max-width:95%; background:#0f172a; border-radius:12px; padding:15px; border:1px solid #1e293b; }
+        table { width:100%; border-collapse:collapse; font-size:14px; }
+        th { background:#1e293b; padding:10px; color:#94a3b8; }
+        td { padding:10px; border-top:1px solid #1e293b; }
     </style>
 </head>
 <body>
 
-<div class="header">🤖 APX AUTO-SIGNAL SYSTEM</div>
+<div class="header">🤖 APX AUTO-SIGNAL SYSTEM - Arrow Style</div>
+
+<select id="pairSelect">
+    <option value="USDBDT_otc">USDBDT_otc</option>
+    <option value="EURUSD_otc">EURUSD_otc</option>
+    <option value="GBPUSD_otc">GBPUSD_otc</option>
+    <option value="USDJPY_otc">USDJPY_otc</option>
+</select>
 
 <div id="chart-container">
     <div id="tv-chart"></div>
-    <div class="signal-display">
-        <p id="v-pair">USDBDT_otc</p>
-        <div id="v-dir">SYSTEM READY</div>
-    </div>
+    <div id="signalBox" class="signal-box">SYSTEM READY</div>
 </div>
 
 <div class="controls">
-    <button class="btn-start" id="startBtn" onclick="startEngine()">▶ START AUTO</button>
-    <button class="btn-stop" id="stopBtn" onclick="stopEngine()" disabled>■ STOP</button>
+    <button class="start" id="startBtn" onclick="startEngine()">START AUTO</button>
+    <button class="stop" id="stopBtn" onclick="stopEngine()" disabled>STOP</button>
 </div>
 
-<div class="summary-box">
-    <b>📊 SIGNAL SUMMARY</b>
-    <table id="summaryTable">
+<div class="summary">
+    <h3>📊 SIGNAL SUMMARY</h3>
+    <table>
         <thead><tr><th>Time</th><th>Pair</th><th>Signal</th></tr></thead>
         <tbody id="summaryBody"></tbody>
     </table>
 </div>
 
 <script>
-const WORKER = "https://signal.mkapi009.workers.dev/send";
-let engine = null;
-
-// Chart Initialization
+const WORKER_URL = "https://signal.mkapi009.workers.dev/send";
+let engineInterval = null;
 let chart, candleSeries;
+let currentPair = "USDBDT_otc";
+
 function initChart() {
-    const chartElement = document.getElementById('tv-chart');
-    chart = LightweightCharts.createChart(chartElement, {
-        layout: { background: { color: '#000' }, textColor: '#94a3b8' },
-        grid: { vertLines: { visible: false }, horzLines: { color: '#1e293b' } },
-        timeScale: { visible: false },
+    chart = LightweightCharts.createChart(document.getElementById('tv-chart'), {
+        layout: { 
+            background: { color: '#000' }, 
+            textColor: '#94a3b8' 
+        },
+        grid: { 
+            vertLines: { visible: false }, 
+            horzLines: { color: '#1e293b', visible: true } 
+        },
+        timeScale: { 
+            visible: true, 
+            borderVisible: false,
+            timeVisible: true,
+            secondsVisible: false
+        },
+        rightPriceScale: { 
+            borderVisible: false 
+        },
         handleScale: false,
-        handleScroll: false
+        handleScroll: false,
+        crosshair: {
+            mode: LightweightCharts.CrosshairMode.Normal
+        }
     });
     candleSeries = chart.addCandlestickSeries({
-        upColor: '#22c55e', downColor: '#ef4444', borderVisible: false, wickVisible: true
+        upColor: '#22c55e',
+        downColor: '#ef4444',
+        borderVisible: false,
+        wickUpColor: '#22c55e',
+        wickDownColor: '#ef4444'
     });
 }
 initChart();
 
-async function analyzeAndSend() {
-    const pair = "USDBDT_otc";
-    const status = document.getElementById("v-dir");
-    
-    try {
-        status.innerText = "ANALYZING...";
-        const res = await fetch(`https://radit.top/otc.php?asset=${pair}`);
-        const data = await res.json();
-        
-        if(!data.data || data.data.length === 0) throw new Error("No Data");
+async function fetchAndUpdate() {
+    currentPair = document.getElementById('pairSelect').value;
+    document.getElementById('signalBox').innerText = "RETRIEVING...";
 
-        // Update Chart
-        candleSeries.setData(data.data.slice(-40));
+    try {
+        const res = await fetch(`https://radit.top/otc.php?asset=${currentPair}`);
+        const json = await res.json();
+        if (!json.data || json.data.length === 0) throw new Error("No data");
+
+        const candles = json.data.slice(-40); // Last 40 for view
+        candleSeries.setData(candles);
         chart.timeScale().fitContent();
 
-        // Signal Logic
-        const last = data.data[data.data.length - 1];
-        const dir = (last.close > last.open) ? "BUY 🟢" : "SELL 🔴";
-        
-        status.innerText = dir;
-        status.className = dir.includes("BUY") ? "buy" : "sell";
+        const lastCandle = candles[candles.length - 1];
+        const isBuy = lastCandle.close > lastCandle.open;
+        const direction = isBuy ? "BUY" : "SELL";
+        const signalText = `${direction} ↑`; // Arrow style text
 
-        // Telegram Send
-        await sendTelegram(pair, dir);
-        addSummary(pair, dir);
-        
-    } catch(e) {
-        status.innerText = "RETRYING...";
-        console.error("Fetch Error:", e);
+        document.getElementById('signalBox').innerText = `${currentPair.toUpperCase()} - ${signalText}`;
+        document.getElementById('signalBox').className = 'signal-box ' + (isBuy ? 'buy' : 'sell');
+
+        // Add arrow marker on last candle (like your screenshot)
+        const markers = [{
+            time: lastCandle.time,
+            position: isBuy ? 'aboveBar' : 'belowBar',
+            color: isBuy ? '#22c55e' : '#ef4444',
+            shape: isBuy ? 'arrowUp' : 'arrowDown',
+            text: isBuy ? 'BUY ↑' : 'SELL ↓'
+        }];
+        candleSeries.setMarkers(markers);
+
+        // Summary
+        const timeStr = new Date().toLocaleTimeString();
+        const row = document.getElementById('summaryBody').insertRow(0);
+        row.innerHTML = `<td>\( {timeStr}</td><td> \){currentPair}</td><td class="\( {isBuy ? 'buy' : 'sell'}"> \){signalText}</td>`;
+
+        // Send to worker with chart screenshot
+        await sendSignalWithImage(currentPair, signalText);
+    } catch (err) {
+        console.error(err);
+        document.getElementById('signalBox').innerText = "ERROR / RETRYING...";
     }
 }
 
-async function sendTelegram(pair, dir) {
+async function sendSignalWithImage(pair, direction) {
     try {
-        await new Promise(r => setTimeout(r, 500)); // Wait for chart to render
-        const canvas = await html2canvas(document.querySelector("#chart-container"), { scale: 1 });
-        const image = canvas.toDataURL("image/jpeg", 0.7);
+        await new Promise(resolve => setTimeout(resolve, 1200)); // Render hone do (markers ke saath)
 
-        await fetch(WORKER, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ pair, dir, image })
+        const canvas = await html2canvas(document.getElementById('chart-container'), {
+            scale: 1.5,
+            backgroundColor: null
         });
-    } catch(e) { console.log("Telegram Failed"); }
+        const imageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+
+        const payload = {
+            pair: pair,
+            dir: direction,
+            image: imageBase64
+        };
+
+        const response = await fetch(WORKER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            console.log("Sent to worker → Telegram (with arrow chart)");
+        } else {
+            console.log("Worker status:", response.status);
+        }
+    } catch (e) {
+        console.error("Send failed:", e);
+    }
 }
 
 function startEngine() {
-    document.getElementById("startBtn").disabled = true;
-    document.getElementById("stopBtn").disabled = false;
-    analyzeAndSend();
-    engine = setInterval(analyzeAndSend, 60000); // 1 minute interval
+    document.getElementById('startBtn').disabled = true;
+    document.getElementById('stopBtn').disabled = false;
+    fetchAndUpdate();
+    engineInterval = setInterval(fetchAndUpdate, 60000);
 }
 
 function stopEngine() {
-    clearInterval(engine);
-    document.getElementById("startBtn").disabled = false;
-    document.getElementById("stopBtn").disabled = true;
-    document.getElementById("v-dir").innerText = "STOPPED";
+    clearInterval(engineInterval);
+    document.getElementById('startBtn').disabled = false;
+    document.getElementById('stopBtn').disabled = true;
+    document.getElementById('signalBox').innerText = "STOPPED";
+    candleSeries.setMarkers([]); // Clear markers
 }
 
-function addSummary(pair, dir) {
-    const body = document.getElementById("summaryBody");
-    const row = body.insertRow(0);
-    row.innerHTML = `<td>${new Date().toLocaleTimeString()}</td><td>${pair}</td><td class="${dir.includes('BUY')?'buy':'sell'}">${dir}</td>`;
-}
+document.getElementById('pairSelect').addEventListener('change', () => {
+    if (!document.getElementById('stopBtn').disabled) fetchAndUpdate();
+});
 </script>
+
 </body>
 </html>
