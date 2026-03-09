@@ -316,6 +316,8 @@ let d=await getCandles()
 
 let signal=signalLogic(d.data)
 
+if(!signal) return
+
 lastSignal=signal
 lastPair=d.pair
 
