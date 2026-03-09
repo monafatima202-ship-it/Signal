@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA BOT</title>
+<title>APX ULTRA PRO</title>
 
 <style>
 
@@ -15,17 +15,16 @@ text-align:center;
 }
 
 .header{
-font-size:26px;
+font-size:28px;
 color:#00ffc3;
-margin-top:10px;
 text-shadow:0 0 15px #00ffc3;
 }
 
 canvas{
 background:#000;
 border-radius:12px;
-margin-top:20px;
-box-shadow:0 0 20px #00ffc3;
+box-shadow:0 0 25px #00ffc3;
+margin-top:10px;
 }
 
 button{
@@ -38,8 +37,8 @@ font-weight:bold;
 font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:22px}
-.sell{color:#ff3b3b;font-size:22px}
+.buy{color:#00ff9d;font-size:24px}
+.sell{color:#ff3b3b;font-size:24px}
 
 table{
 margin-top:20px;
@@ -52,24 +51,17 @@ border:1px solid #333;
 padding:8px;
 }
 
-.footer{
-margin-top:20px;
-color:#aaa;
-}
-
 </style>
 
 </head>
 
 <body>
 
-<div class="header">🤖 APX ULTRA BOT</div>
+<div class="header">🤖 APX ULTRA PRO</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
 <div id="signal">SYSTEM READY</div>
-
-<br>
 
 <button onclick="start()">🚀 START</button>
 <button onclick="stop()">🛑 STOP</button>
@@ -77,29 +69,21 @@ color:#aaa;
 <h3>📊 Dashboard</h3>
 
 <div>
-
 ✅ WIN : <span id="win">0</span> |
 ❌ LOSS : <span id="loss">0</span> |
 🎯 ACC : <span id="acc">0%</span>
-
 </div>
 
 <h3>📜 Signal History</h3>
 
 <table id="history">
-
 <tr>
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
 <th>Result</th>
 </tr>
-
 </table>
-
-<div class="footer">
-🌐 Powered by APX Premium
-</div>
 
 <script>
 
@@ -110,9 +94,7 @@ const pairs=[
 "USDPKR_otc",
 "USDBDT_otc",
 "USDINR_otc",
-"USDARS_otc",
-"USDBRL_otc",
-"USDMXN_otc"
+"USDARS_otc"
 ]
 
 let pairIndex=0
@@ -136,7 +118,6 @@ return ((win/total)*100).toFixed(1)
 function entryTime(){
 
 let d=new Date()
-
 d.setMinutes(d.getMinutes()+1)
 
 return d.toLocaleTimeString([],{
@@ -146,13 +127,23 @@ minute:'2-digit'
 
 }
 
+async function sendTG(text){
+
+let f=new FormData()
+f.append("text",text)
+
+await fetch(SEND,{
+method:"POST",
+body:f
+})
+
+}
+
 async function getCandles(){
 
 let pair=pairs[pairIndex]
 
-pairIndex++
-
-if(pairIndex>=pairs.length) pairIndex=0
+pairIndex=(pairIndex+1)%pairs.length
 
 let r=await fetch(API+pair)
 
@@ -164,68 +155,51 @@ return {pair,data:j.slice(-30)}
 
 function signalLogic(c){
 
-let last=c[c.length-1]
-let prev=c[c.length-2]
+let a=c[c.length-1]
+let b=c[c.length-2]
 
-if(last.close>prev.close){
-return "BUY"
-}else{
-return "SELL"
-}
+if(a.close>b.close) return "BUY"
+if(a.close<b.close) return "SELL"
 
 }
 
-function drawChart(candles,pair,signal){
+function drawChart(c,pair){
 
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
 
-ctx.fillStyle="#000"
-ctx.fillRect(0,0,canvas.width,canvas.height)
+ctx.clearRect(0,0,380,240)
 
-let max=Math.max(...candles.map(c=>c.high))
-let min=Math.min(...candles.map(c=>c.low))
+let max=Math.max(...c.map(x=>x.high))
+let min=Math.min(...c.map(x=>x.low))
 
-let w=8
-let gap=4
+let w=7
+let gap=3
 
-candles.forEach((c,i)=>{
+c.forEach((v,i)=>{
 
-let x=i*(w+gap)+20
+let x=i*(w+gap)+10
 
-let open=200-(c.open-min)/(max-min)*160
-let close=200-(c.close-min)/(max-min)*160
-let high=200-(c.high-min)/(max-min)*160
-let low=200-(c.low-min)/(max-min)*160
+let open=200-(v.open-min)/(max-min)*160
+let close=200-(v.close-min)/(max-min)*160
+let high=200-(v.high-min)/(max-min)*160
+let low=200-(v.low-min)/(max-min)*160
 
-ctx.strokeStyle="white"
+ctx.strokeStyle="#888"
 
 ctx.beginPath()
 ctx.moveTo(x+w/2,high)
 ctx.lineTo(x+w/2,low)
 ctx.stroke()
 
-ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
+ctx.fillStyle=v.close>v.open?"#00ff9d":"#ff3b3b"
 
 ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
 ctx.fillStyle="#00ffc3"
-ctx.font="14px Arial"
-ctx.fillText(pair,10,20)
-
-if(signal=="BUY"){
-
-ctx.fillStyle="#00ff9d"
-ctx.fillText("BUY ↑",300,220)
-
-}else{
-
-ctx.fillStyle="#ff3b3b"
-ctx.fillText("SELL ↓",300,220)
-
-}
+ctx.fillText(pair,10,15)
 
 }
 
@@ -256,34 +230,43 @@ document.getElementById("acc").innerText=accuracy()+"%"
 
 }
 
-async function sendTelegram(pair,signal){
+async function run(){
+
+let d=await getCandles()
+
+let signal=signalLogic(d.data)
+
+if(!signal) return
+
+lastSignal=signal
+lastPair=d.pair
+
+drawChart(d.data,d.pair)
+
+document.getElementById("signal").innerHTML=
+signal=="BUY"
+?`<span class="buy">${d.pair} BUY ↑</span>`
+:`<span class="sell">${d.pair} SELL ↓</span>`
 
 let entry=entryTime()
 
 let text=
 "🚀 APX PREMIUM SIGNAL\n\n"+
-"📊 Pair : "+pair+"\n"+
+"📊 Pair : "+d.pair+"\n"+
 "🕓 Entry : "+entry+"\n"+
 "⏱ TF : M1\n"+
 "⭕ Direction : "+signal+"\n\n"+
-"📈 Prepare for entry\n\n"+
 "🌐 Powered by APX Premium"
 
-let form=new FormData()
+await sendTG(text)
 
-form.append("text",text)
-
-await fetch(SEND,{
-method:"POST",
-body:form
-})
+setTimeout(checkResult,60000)
 
 }
 
 async function checkResult(){
 
 let r=await fetch(API+lastPair)
-
 let j=await r.json()
 
 let c=j.slice(-2)
@@ -301,8 +284,13 @@ result=last.close<prev.close?"WIN":"LOSS"
 
 total++
 
-if(result=="WIN") win++
-else loss++
+if(result=="WIN"){
+win++
+await sendTG("✅ WIN\n\n📊 "+lastPair)
+}else{
+loss++
+await sendTG("❌ LOSS\n\n📊 "+lastPair)
+}
 
 updateStats()
 
@@ -310,31 +298,9 @@ addHistory(lastPair,lastSignal,result)
 
 }
 
-async function run(){
-
-let d=await getCandles()
-
-let signal=signalLogic(d.data)
-
-if(!signal) return
-
-lastSignal=signal
-lastPair=d.pair
-
-drawChart(d.data,d.pair,signal)
-
-document.getElementById("signal").innerHTML=
-signal=="BUY"
-?`<span class="buy">${d.pair} BUY</span>`
-:`<span class="sell">${d.pair} SELL</span>`
-
-await sendTelegram(d.pair,signal)
-
-setTimeout(checkResult,60000)
-
-}
-
 function start(){
+
+sendTG("🤖 APX BOT STARTED")
 
 run()
 
@@ -346,7 +312,7 @@ function stop(){
 
 clearInterval(engine)
 
-alert("🛑 APX BOT STOPPED")
+sendTG("🛑 APX BOT STOPPED")
 
 }
 
