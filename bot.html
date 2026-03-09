@@ -3,7 +3,7 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA V10</title>
+<title>APX ULTRA V10 FIXED</title>
 
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
@@ -17,10 +17,10 @@ text-align:center;
 }
 
 .header{
-font-size:28px;
+font-size:26px;
 color:#00ffc3;
-text-shadow:0 0 15px #00ffc3;
 margin-top:10px;
+text-shadow:0 0 15px #00ffc3;
 }
 
 #chart{
@@ -32,7 +32,7 @@ border-radius:12px;
 }
 
 button{
-padding:14px 25px;
+padding:14px 24px;
 margin:10px;
 border:none;
 border-radius:10px;
@@ -54,11 +54,6 @@ border:1px solid #333;
 padding:8px;
 }
 
-.footer{
-margin-top:20px;
-color:#aaa;
-}
-
 </style>
 
 </head>
@@ -77,9 +72,9 @@ color:#aaa;
 <h3>Dashboard</h3>
 
 <div>
-✅ WIN : <span id="win">0</span> |
-❌ LOSS : <span id="loss">0</span> |
-🎯 ACC : <span id="acc">0</span>%
+WIN : <span id="win">0</span> |
+LOSS : <span id="loss">0</span> |
+ACC : <span id="acc">0</span>%
 </div>
 
 <h3>Signal History</h3>
@@ -93,8 +88,6 @@ color:#aaa;
 </tr>
 </table>
 
-<div class="footer">🌐 Powered by APX Premium</div>
-
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
@@ -102,10 +95,7 @@ const API="https://bot1.mkapi009.workers.dev/candles?pair="
 const pairs=[
 "USDPKR_otc",
 "USDBDT_otc",
-"USDINR_otc",
-"USDARS_otc",
-"USDBRL_otc",
-"USDMXN_otc"
+"USDINR_otc"
 ]
 
 let pairIndex=0
@@ -131,11 +121,6 @@ grid:{vertLines:{color:"#333"},horzLines:{color:"#333"}}
 
 const candleSeries=chart.addCandlestickSeries()
 
-const emaSeries=chart.addLineSeries({
-color:"#00ffc3",
-lineWidth:2
-})
-
 /* EMA */
 
 function EMA(values,period){
@@ -154,31 +139,7 @@ return ema
 
 }
 
-/* RSI */
-
-function RSI(values,period=14){
-
-let gains=0
-let losses=0
-
-for(let i=1;i<=period;i++){
-
-let diff=values[i]-values[i-1]
-
-if(diff>=0) gains+=diff
-else losses-=diff
-
-}
-
-if(losses==0) return 100
-
-let rs=gains/losses
-
-return 100-(100/(1+rs))
-
-}
-
-/* Signal Logic */
+/* Signal */
 
 function signalLogic(c){
 
@@ -186,14 +147,11 @@ let closes=c.map(x=>parseFloat(x.close))
 
 let ema=EMA(closes,10)
 
-let rsi=RSI(closes)
-
 let lastClose=closes[closes.length-1]
 let lastEMA=ema[ema.length-1]
 
-if(lastClose>lastEMA && rsi>55) return "BUY"
-
-if(lastClose<lastEMA && rsi<45) return "SELL"
+if(lastClose>lastEMA) return "BUY"
+if(lastClose<lastEMA) return "SELL"
 
 return null
 
@@ -211,9 +169,7 @@ let r=await fetch(API+pair)
 
 let j=await r.json()
 
-let candles=j.slice(-60)
-
-return {pair,candles}
+return {pair,candles:j.slice(-50)}
 
 }
 
@@ -221,9 +177,11 @@ return {pair,candles}
 
 function drawChart(candles,signal){
 
+let base=Math.floor(Date.now()/1000)
+
 let data=candles.map((c,i)=>({
 
-time:i,
+time:base-(candles.length-i)*60,
 open:parseFloat(c.open),
 high:parseFloat(c.high),
 low:parseFloat(c.low),
@@ -233,23 +191,13 @@ close:parseFloat(c.close)
 
 candleSeries.setData(data)
 
-let closes=candles.map(c=>parseFloat(c.close))
-
-let ema=EMA(closes,10)
-
-let emaData=ema.map((v,i)=>({time:i,value:v}))
-
-emaSeries.setData(emaData)
-
-/* arrow marker */
-
 if(signal){
 
-let lastIndex=data.length-1
+let last=data[data.length-1]
 
 candleSeries.setMarkers([{
 
-time:lastIndex,
+time:last.time,
 position:signal=="BUY"?"belowBar":"aboveBar",
 color:signal=="BUY"?"#00ff9d":"#ff3b3b",
 shape:signal=="BUY"?"arrowUp":"arrowDown",
@@ -315,8 +263,6 @@ signal=="BUY"
 ?`<span class="buy">${d.pair} BUY ↑</span>`
 :`<span class="sell">${d.pair} SELL ↓</span>`
 
-/* result check */
-
 setTimeout(async()=>{
 
 let r=await fetch(API+d.pair)
@@ -367,7 +313,7 @@ clearInterval(engine)
 
 engine=null
 
-document.getElementById("signal").innerHTML="SYSTEM STOPPED"
+document.getElementById("signal").innerHTML="BOT STOPPED"
 
 }
 
