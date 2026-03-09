@@ -8,37 +8,49 @@
 <style>
 
 body{
-background:#050505;
+background:#020617;
 color:white;
 font-family:Arial;
 text-align:center;
 }
 
 .header{
-font-size:24px;
+font-size:28px;
 color:#00ffc3;
-text-shadow:0 0 10px #00ffc3;
+text-shadow:0 0 15px #00ffc3;
 margin-top:10px;
 }
 
 canvas{
 background:#000;
-border-radius:10px;
+border-radius:12px;
 box-shadow:0 0 20px #00ffc3;
-margin-top:15px;
+margin-top:10px;
 }
 
 button{
-padding:14px 24px;
+padding:14px 26px;
 margin:10px;
 border:none;
-border-radius:8px;
+border-radius:10px;
 background:#00ffc3;
 font-weight:bold;
+font-size:16px;
 }
 
-.buy{color:#00ff9d;font-size:20px}
-.sell{color:#ff3b3b;font-size:20px}
+.buy{color:#00ff9d;font-size:22px}
+.sell{color:#ff3b3b;font-size:22px}
+
+table{
+margin-top:15px;
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid #333;
+padding:8px;
+}
 
 </style>
 
@@ -52,22 +64,54 @@ font-weight:bold;
 
 <div id="signal">SYSTEM READY</div>
 
-<button onclick="start()">START</button>
-<button onclick="stop()">STOP</button>
+<button onclick="start()">🚀 START</button>
+<button onclick="stop()">🛑 STOP</button>
+
+<h3>📊 Dashboard</h3>
+
+<div>
+✅ WIN : <span id="win">0</span> |
+❌ LOSS : <span id="loss">0</span> |
+🔥 MTG1 : <span id="mtg">0</span> |
+🎯 ACC : <span id="acc">0</span>%
+</div>
+
+<h3>📜 Signal History</h3>
+
+<table id="history">
+
+<tr>
+<th>Time</th>
+<th>Pair</th>
+<th>Signal</th>
+<th>Result</th>
+</tr>
+
+</table>
 
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
+const SEND="https://bot1.mkapi009.workers.dev/send"
 
 const pairs=[
 "USDPKR_otc",
 "USDBDT_otc",
 "USDINR_otc",
+"USDARS_otc",
 "USDMXN_otc"
 ]
 
 let pairIndex=0
 let engine=null
+
+let win=0
+let loss=0
+let mtg=0
+let total=0
+
+let lastSignal=null
+let lastPair=null
 
 /* EMA */
 
@@ -77,9 +121,7 @@ let k=2/(period+1)
 let ema=[values[0]]
 
 for(let i=1;i<values.length;i++){
-
 ema.push(values[i]*k+ema[i-1]*(1-k))
-
 }
 
 return ema
@@ -110,14 +152,13 @@ return 100-(100/(1+rs))
 
 }
 
-/* SIGNAL */
+/* Signal */
 
 function signalLogic(c){
 
 let closes=c.map(x=>parseFloat(x.close))
 
 let ema=EMA(closes,10)
-
 let rsi=RSI(closes)
 
 let last=closes[closes.length-1]
@@ -130,7 +171,7 @@ return null
 
 }
 
-/* FETCH */
+/* Fetch candles */
 
 async function getCandles(){
 
@@ -142,42 +183,33 @@ let r=await fetch(API+pair)
 
 let j=await r.json()
 
-return {pair,candles:j.slice(-40)}
+return {pair,candles:j.slice(-30)}
 
 }
 
-/* CHART */
+/* Chart */
 
 function drawChart(c,pair,signal){
 
 let canvas=document.getElementById("chart")
-
 let ctx=canvas.getContext("2d")
 
 ctx.clearRect(0,0,380,260)
 
-/* grid */
-
 ctx.strokeStyle="#111"
 
 for(let i=0;i<10;i++){
-
 ctx.beginPath()
 ctx.moveTo(0,i*25)
 ctx.lineTo(380,i*25)
 ctx.stroke()
-
 }
-
-/* range */
 
 let max=Math.max(...c.map(x=>x.high))
 let min=Math.min(...c.map(x=>x.low))
 
 let w=7
 let gap=3
-
-/* candles */
 
 c.forEach((v,i)=>{
 
@@ -201,88 +233,115 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
-/* EMA */
+}
 
-let closes=c.map(x=>x.close)
+/* Dashboard */
 
-let ema=EMA(closes,10)
+function updateStats(){
 
-ctx.strokeStyle="#00eaff"
+document.getElementById("win").innerText=win
+document.getElementById("loss").innerText=loss
+document.getElementById("mtg").innerText=mtg
 
-ctx.beginPath()
+let acc=total?((win/total)*100).toFixed(1):0
 
-ema.forEach((v,i)=>{
+document.getElementById("acc").innerText=acc
 
-let x=i*(w+gap)+10
-let y=200-(v-min)/(max-min)*160
+}
 
-if(i==0) ctx.moveTo(x,y)
-else ctx.lineTo(x,y)
+/* History */
 
+function addHistory(pair,signal,result){
+
+let t=new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
 })
 
-ctx.stroke()
+let row=
+"<tr>"+
+"<td>"+t+"</td>"+
+"<td>"+pair+"</td>"+
+"<td>"+signal+"</td>"+
+"<td>"+result+"</td>"+
+"</tr>"
 
-/* dots */
+document.getElementById("history").innerHTML+=row
 
-c.forEach((v,i)=>{
+}
 
-let x=i*(w+gap)+10
+/* Send telegram */
 
-let y=200-(v.close-min)/(max-min)*160
+async function sendTelegram(pair,signal){
 
-ctx.fillStyle="#ff00ff"
-
-ctx.beginPath()
-ctx.arc(x+4,y,3,0,Math.PI*2)
-ctx.fill()
-
+await fetch(
+SEND,
+{
+method:"POST",
+headers:{
+'content-type':'application/json'
+},
+body:JSON.stringify({
+pair:pair,
+signal:signal
 })
-
-/* label */
-
-ctx.fillStyle="#00ffc3"
-
-ctx.font="13px Arial"
-
-ctx.fillText(pair+" M1",10,15)
-
-/* signal */
-
-if(signal=="BUY"){
-
-ctx.fillStyle="#00ff9d"
-ctx.fillText("BUY ↑",300,240)
+}
+)
 
 }
 
-if(signal=="SELL"){
-
-ctx.fillStyle="#ff3b3b"
-ctx.fillText("SELL ↓",300,240)
-
-}
-
-}
-
-/* RUN */
+/* Engine */
 
 async function run(){
 
 let d=await getCandles()
 
+drawChart(d.candles,d.pair)
+
 let signal=signalLogic(d.candles)
 
-drawChart(d.candles,d.pair,signal)
+if(!signal) return
 
-if(signal){
+lastSignal=signal
+lastPair=d.pair
 
 document.getElementById("signal").innerHTML=
 signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
 :`<span class="sell">${d.pair} SELL</span>`
 
+await sendTelegram(d.pair,signal)
+
+/* Result */
+
+setTimeout(async()=>{
+
+let r=await fetch(API+d.pair)
+let j=await r.json()
+
+let c=j.slice(-2)
+
+let prev=c[0]
+let last=c[1]
+
+let result
+
+if(signal=="BUY"){
+result=last.close>prev.close?"WIN":"LOSS"
+}else{
+result=last.close<prev.close?"WIN":"LOSS"
 }
+
+total++
+
+if(result=="WIN") win++
+else loss++
+
+updateStats()
+
+addHistory(d.pair,signal,result)
+
+},60000)
 
 }
 
@@ -290,13 +349,15 @@ function start(){
 
 run()
 
-engine=setInterval(run,60000)
+engine=setInterval(run,65000)
 
 }
 
 function stop(){
 
 clearInterval(engine)
+
+alert("Session Closed")
 
 }
 
