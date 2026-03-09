@@ -3,7 +3,9 @@
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA V8 PRO</title>
+<title>APX ULTRA V10</title>
+
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
 
 <style>
 
@@ -15,27 +17,27 @@ text-align:center;
 }
 
 .header{
-font-size:26px;
+font-size:28px;
 color:#00ffc3;
-margin-top:10px;
 text-shadow:0 0 15px #00ffc3;
+margin-top:10px;
 }
 
-canvas{
-background:#020617;
-border-radius:12px;
-margin-top:20px;
+#chart{
+width:380px;
+height:240px;
+margin:auto;
 box-shadow:0 0 25px #00ffc3;
+border-radius:12px;
 }
 
 button{
-padding:14px 24px;
+padding:14px 25px;
 margin:10px;
 border:none;
 border-radius:10px;
 background:#00ffc3;
 font-weight:bold;
-font-size:16px;
 }
 
 .buy{color:#00ff9d;font-size:22px}
@@ -63,49 +65,39 @@ color:#aaa;
 
 <body>
 
-<div class="header">🤖 APX ULTRA V8 PRO</div>
+<div class="header">🤖 APX ULTRA V10</div>
 
-<canvas id="chart" width="380" height="240"></canvas>
+<div id="chart"></div>
 
 <div id="signal">SYSTEM READY</div>
-
-<br>
 
 <button onclick="start()">🚀 START</button>
 <button onclick="stop()">🛑 STOP</button>
 
-<h3>📊 Dashboard</h3>
+<h3>Dashboard</h3>
 
 <div>
-
 ✅ WIN : <span id="win">0</span> |
 ❌ LOSS : <span id="loss">0</span> |
-🔥 MTG1 : <span id="mtg">0</span> |
-🎯 ACC : <span id="acc">0%</span>
-
+🎯 ACC : <span id="acc">0</span>%
 </div>
 
-<h3>📜 Signal History</h3>
+<h3>Signal History</h3>
 
 <table id="history">
-
 <tr>
 <th>Time</th>
 <th>Pair</th>
 <th>Signal</th>
 <th>Result</th>
 </tr>
-
 </table>
 
-<div class="footer">
-🌐 Powered by APX Premium
-</div>
+<div class="footer">🌐 Powered by APX Premium</div>
 
 <script>
 
 const API="https://bot1.mkapi009.workers.dev/candles?pair="
-const SEND="https://bot1.mkapi009.workers.dev/send"
 
 const pairs=[
 "USDPKR_otc",
@@ -121,124 +113,168 @@ let engine=null
 
 let win=0
 let loss=0
-let mtg1=0
 let total=0
 
-let trades=[]
+let lastSignal=null
+let lastPair=null
 
-function accuracy(){
+/* Chart */
 
-if(total==0) return 0
-
-return ((win/total)*100).toFixed(1)
-
-}
-
-function entryTime(){
-
-let d=new Date()
-
-d.setMinutes(d.getMinutes()+1)
-
-return d.toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
+const chart=LightweightCharts.createChart(
+document.getElementById("chart"),
+{
+width:380,
+height:240,
+layout:{background:{color:"#020617"},textColor:"#ddd"},
+grid:{vertLines:{color:"#333"},horzLines:{color:"#333"}}
 })
 
+const candleSeries=chart.addCandlestickSeries()
+
+const emaSeries=chart.addLineSeries({
+color:"#00ffc3",
+lineWidth:2
+})
+
+/* EMA */
+
+function EMA(values,period){
+
+let k=2/(period+1)
+
+let ema=[values[0]]
+
+for(let i=1;i<values.length;i++){
+
+ema.push(values[i]*k+ema[i-1]*(1-k))
+
 }
 
-async function getCandles(){
-
-let pair=pairs[pairIndex]
-
-pairIndex++
-
-if(pairIndex>=pairs.length) pairIndex=0
-
-let r=await fetch(API+pair)
-
-let j=await r.json()
-
-return {pair,data:j.slice(-30)}
+return ema
 
 }
+
+/* RSI */
+
+function RSI(values,period=14){
+
+let gains=0
+let losses=0
+
+for(let i=1;i<=period;i++){
+
+let diff=values[i]-values[i-1]
+
+if(diff>=0) gains+=diff
+else losses-=diff
+
+}
+
+if(losses==0) return 100
+
+let rs=gains/losses
+
+return 100-(100/(1+rs))
+
+}
+
+/* Signal Logic */
 
 function signalLogic(c){
 
-let a=c[c.length-1]
-let b=c[c.length-2]
-let c3=c[c.length-3]
+let closes=c.map(x=>parseFloat(x.close))
 
-if(a.close>b.close && b.close>c3.close) return "BUY"
+let ema=EMA(closes,10)
 
-if(a.close<b.close && b.close<c3.close) return "SELL"
+let rsi=RSI(closes)
+
+let lastClose=closes[closes.length-1]
+let lastEMA=ema[ema.length-1]
+
+if(lastClose>lastEMA && rsi>55) return "BUY"
+
+if(lastClose<lastEMA && rsi<45) return "SELL"
 
 return null
 
 }
 
-function drawChart(candles,pair,signal){
+/* Candles */
 
-let canvas=document.getElementById("chart")
-let ctx=canvas.getContext("2d")
+async function getCandles(){
 
-ctx.fillStyle="#020617"
-ctx.fillRect(0,0,canvas.width,canvas.height)
+let pair=pairs[pairIndex]
 
-let max=Math.max(...candles.map(c=>c.high))
-let min=Math.min(...candles.map(c=>c.low))
+pairIndex=(pairIndex+1)%pairs.length
 
-let w=8
-let gap=4
+let r=await fetch(API+pair)
 
-candles.forEach((c,i)=>{
+let j=await r.json()
 
-let x=i*(w+gap)+20
+let candles=j.slice(-60)
 
-let open=200-(c.open-min)/(max-min)*160
-let close=200-(c.close-min)/(max-min)*160
-let high=200-(c.high-min)/(max-min)*160
-let low=200-(c.low-min)/(max-min)*160
+return {pair,candles}
 
-ctx.strokeStyle="#aaa"
+}
 
-ctx.beginPath()
-ctx.moveTo(x+w/2,high)
-ctx.lineTo(x+w/2,low)
-ctx.stroke()
+/* Chart */
 
-ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
+function drawChart(candles,signal){
 
-ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
+let data=candles.map((c,i)=>({
 
-})
+time:i,
+open:parseFloat(c.open),
+high:parseFloat(c.high),
+low:parseFloat(c.low),
+close:parseFloat(c.close)
 
-ctx.fillStyle="#00ffc3"
-ctx.font="14px Arial"
-ctx.fillText("APX BOT | "+pair+" | "+entryTime(),10,20)
+}))
 
-if(signal=="BUY"){
+candleSeries.setData(data)
 
-ctx.fillStyle="#00ff9d"
-ctx.fillText("BUY ↑",300,220)
+let closes=candles.map(c=>parseFloat(c.close))
 
-}else{
+let ema=EMA(closes,10)
 
-ctx.fillStyle="#ff3b3b"
-ctx.fillText("SELL ↓",290,220)
+let emaData=ema.map((v,i)=>({time:i,value:v}))
+
+emaSeries.setData(emaData)
+
+/* arrow marker */
+
+if(signal){
+
+let lastIndex=data.length-1
+
+candleSeries.setMarkers([{
+
+time:lastIndex,
+position:signal=="BUY"?"belowBar":"aboveBar",
+color:signal=="BUY"?"#00ff9d":"#ff3b3b",
+shape:signal=="BUY"?"arrowUp":"arrowDown",
+text:signal
+
+}])
 
 }
 
 }
+
+/* Stats */
 
 function updateStats(){
 
 document.getElementById("win").innerText=win
 document.getElementById("loss").innerText=loss
-document.getElementById("mtg").innerText=mtg1
-document.getElementById("acc").innerText=accuracy()+"%"
+
+let acc=total?((win/total)*100).toFixed(1):0
+
+document.getElementById("acc").innerText=acc
 
 }
+
+/* History */
 
 function addHistory(pair,signal,result){
 
@@ -259,77 +295,31 @@ document.getElementById("history").innerHTML+=row
 
 }
 
-async function sendSignal(pair,signal){
+/* Run */
 
-let entry=entryTime()
+async function run(){
 
-let canvas=document.getElementById("chart")
+let d=await getCandles()
 
-let blob=await new Promise(r=>canvas.toBlob(r,"image/png"))
+let signal=signalLogic(d.candles)
 
-let form=new FormData()
+drawChart(d.candles,signal)
 
-form.append("image",blob,"chart.png")
+if(!signal) return
 
-let text=
-"🚀 APX PREMIUM SIGNAL\n\n"+
-"📊 Pair : "+pair+"\n"+
-"🕓 Entry : "+entry+"\n"+
-"⏱ TF : M1\n"+
-"⭕ Direction : "+signal+"\n"+
-"🎯 Accuracy : "+accuracy()+"%\n\n"+
-"📈 Prepare for entry\n\n"+
-"🌐 Powered by APX Premium"
+lastSignal=signal
+lastPair=d.pair
 
-form.append("text",text)
+document.getElementById("signal").innerHTML=
+signal=="BUY"
+?`<span class="buy">${d.pair} BUY ↑</span>`
+:`<span class="sell">${d.pair} SELL ↓</span>`
 
-await fetch(SEND,{
-method:"POST",
-body:form
-})
+/* result check */
 
-}
+setTimeout(async()=>{
 
-async function sendResult(pair,result){
-
-let text=""
-
-if(result=="WIN"){
-
-text="✅ TRADE RESULT\n\n📊 Pair : "+pair+"\n🎉 Result : WIN\n\n🔥 Perfect entry"
-
-}
-
-if(result=="LOSS"){
-
-text="❌ TRADE RESULT\n\n📊 Pair : "+pair+"\n⚠ Result : LOSS"
-
-}
-
-if(result=="MTG1 WIN"){
-
-text="🟡 MARTINGALE RESULT\n\n📊 Pair : "+pair+"\n🎯 Result : MTG1 WIN\n\n💰 Recovery successful"
-
-}
-
-let form=new FormData()
-
-form.append("text",text)
-
-await fetch(SEND,{
-method:"POST",
-body:form
-})
-
-}
-
-async function checkTrades(){
-
-for(let t of trades){
-
-if(t.checked) continue
-
-let r=await fetch(API+t.pair)
+let r=await fetch(API+d.pair)
 
 let j=await r.json()
 
@@ -340,69 +330,26 @@ let last=c[1]
 
 let result
 
-if(t.signal=="BUY"){
+if(signal=="BUY"){
 result=last.close>prev.close?"WIN":"LOSS"
 }else{
 result=last.close<prev.close?"WIN":"LOSS"
 }
 
-t.checked=true
-
 total++
 
-if(result=="WIN"){
-win++
-}else{
-
-if(t.mtg==false){
-
-t.mtg=true
-mtg1++
-result="MTG1 WIN"
-
-}else{
-
-loss++
-
-}
-
-}
+if(result=="WIN") win++
+else loss++
 
 updateStats()
 
-addHistory(t.pair,t.signal,result)
+addHistory(d.pair,signal,result)
 
-await sendResult(t.pair,result)
-
-}
+},60000)
 
 }
 
-async function run(){
-
-let d=await getCandles()
-
-let signal=signalLogic(d.data)
-
-if(!signal) return
-
-drawChart(d.data,d.pair,signal)
-
-document.getElementById("signal").innerHTML=
-signal=="BUY"
-?`<span class="buy">${d.pair} BUY</span>`
-:`<span class="sell">${d.pair} SELL</span>`
-
-await sendSignal(d.pair,signal)
-
-trades.push({
-pair:d.pair,
-signal:signal,
-checked:false,
-mtg:false
-})
-
-}
+/* Engine */
 
 function start(){
 
@@ -412,15 +359,15 @@ run()
 
 engine=setInterval(run,65000)
 
-setInterval(checkTrades,65000)
-
 }
 
 function stop(){
 
 clearInterval(engine)
 
-alert("🛑 BOT STOPPED")
+engine=null
+
+document.getElementById("signal").innerHTML="SYSTEM STOPPED"
 
 }
 
