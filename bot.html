@@ -2,183 +2,158 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX V15 ELITE</title>
+    <title>APX V16 DIAMOND</title>
     <style>
-        :root { --bg: #0d0f12; --panel: #16191e; --primary: #00ffc3; --text-dim: #999; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; }
+        :root { --bg: #0a0a0a; --primary: #00ffc3; --gray: #1a1a1a; }
+        body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; }
         
-        /* Fancy Header */
-        .header-top { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; }
-        .logo { font-weight: 900; color: var(--primary); letter-spacing: 1px; }
-        .live-status { font-size: 11px; color: #555; }
-
-        /* Chart Frame - Dark Gray Styling */
-        .chart-container {
-            background: #080808; border-radius: 12px; border: 1px solid #1a1c20;
-            margin: 15px 0; position: relative; padding: 5px;
+        .chart-box { 
+            background: #000; border: 1px solid var(--gray); border-radius: 10px; 
+            display: inline-block; position: relative; margin-top: 10px;
         }
-        .movement-strip {
-            display: flex; justify-content: space-between; padding: 5px 15px;
-            font-size: 12px; color: var(--text-dim); background: rgba(255,255,255,0.02);
-        }
-
-        .dashboard {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-            background: var(--panel); padding: 15px; border-radius: 10px; margin-bottom: 15px;
-        }
-        .stat-box span { font-size: 10px; color: #555; display: block; }
-        .stat-box b { font-size: 16px; color: #ddd; }
-
-        /* Action Buttons */
-        .controls { display: flex; gap: 10px; }
-        button {
-            flex: 1; padding: 15px; border: none; border-radius: 8px;
-            font-weight: bold; cursor: pointer; transition: 0.3s;
-        }
-        .btn-start { background: var(--primary); color: #000; box-shadow: 0 4px 15px rgba(0,255,195,0.2); }
-        .btn-stop { background: #1f2228; color: #fff; }
-
-        /* Signal History Table */
-        .history { width: 100%; margin-top: 20px; border-collapse: collapse; font-size: 12px; }
-        .history th { color: #444; text-align: left; padding: 8px; border-bottom: 1px solid #222; }
-        .history td { padding: 12px 8px; border-bottom: 1px solid #111; }
         
-        .footer-tag { margin-top: 20px; font-size: 10px; color: #333; text-align: center; }
+        .dashboard { 
+            display: flex; justify-content: space-around; background: #111; 
+            padding: 15px; margin: 15px auto; width: 95%; border-radius: 8px;
+        }
+        .stat b { display: block; font-size: 18px; color: var(--primary); }
+        .stat span { font-size: 10px; color: #666; }
+
+        .btns button { padding: 15px 40px; margin: 5px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .start { background: var(--primary); color: #000; }
+        .stop { background: #222; color: #fff; }
+
+        table { width: 100%; font-size: 12px; margin-top: 15px; border-collapse: collapse; }
+        td, th { padding: 10px; border-bottom: 1px solid #111; text-align: left; }
+        .win { color: #00ff9d; } .loss { color: #ff3b3b; } .mtg { color: #ffea00; }
     </style>
 </head>
 <body>
 
-    <div class="header-top">
-        <div class="logo">💎 APX V15 PRO</div>
-        <div class="live-status">LATENCY: 12ms</div>
-    </div>
+    <h3 style="color:var(--primary); letter-spacing: 2px;">APX V16 DIAMOND</h3>
 
-    <div class="chart-container">
-        <div class="movement-strip">
-            <span id="price_start">START: --</span>
-            <span id="price_end" style="color:var(--primary)">LIVE: --</span>
-        </div>
-        <canvas id="apxChart" width="350" height="220"></canvas>
+    <div class="chart-box">
+        <canvas id="apxCanvas" width="360" height="220"></canvas>
     </div>
 
     <div class="dashboard">
-        <div class="stat-box"><span>PROFIT</span><b id="w_val">0</b></div>
-        <div class="stat-box"><span>LOSS</span><b id="l_val">0</b></div>
-        <div class="stat-box"><span>SUCCESS</span><b id="a_val" style="color:var(--primary)">0%</b></div>
+        <div class="stat"><span>WIN</span><b id="w_c">0</b></div>
+        <div class="stat"><span>LOSS</span><b id="l_c">0</b></div>
+        <div class="stat"><span>MTG1</span><b id="m_c">0</b></div>
+        <div class="stat"><span>ACC</span><b id="a_c">0%</b></div>
     </div>
 
-    <div class="controls">
-        <button class="btn-start" onclick="startEngine()">🚀 START ENGINE</button>
-        <button class="btn-stop" onclick="stopEngine()">STOP</button>
+    <div class="btns">
+        <button class="start" onclick="powerOn()">🚀 START</button>
+        <button class="stop" onclick="location.reload()">STOP</button>
     </div>
 
-    <table class="history">
-        <thead><tr><th>TIME</th><th>PAIR</th><th>SIDE</th><th>RESULT</th></tr></thead>
-        <tbody id="rows"></tbody>
+    <table>
+        <thead><tr><th>TIME</th><th>PAIR</th><th>SIG</th><th>RESULT</th></tr></thead>
+        <tbody id="log"></tbody>
     </table>
-
-    <div class="footer-tag">POWERED BY APX PREMIUM</div>
 
 <script>
     const API = "https://bot1.mkapi009.workers.dev/candles?pair=";
-    const TELEGRAM = "https://bot1.mkapi009.workers.dev/send";
-    const pairs = ["USDPKR_otc", "USDBDT_otc", "USDINR_otc"];
-    let isActive = false, stats = { w:0, l:0, t:0 };
+    const SEND = "https://bot1.mkapi009.workers.dev/send";
+    const pairs = ["USDPKR_otc", "USDBDT_otc", "USDINR_otc", "USDBRL_otc"];
+    
+    let stats = { w:0, l:0, m:0, t:0 };
 
-    async function tgSend(data) {
-        try { await fetch(TELEGRAM, { method: "POST", body: data }); } catch(e) {}
-    }
+    async function tg(fd) { try { await fetch(SEND, {method:"POST", body:fd}); } catch(e){} }
 
-    // Charting with better Visibility
-    function renderChart(data, pair, signal, time) {
-        const c = document.getElementById("apxChart"), ctx = c.getContext("2d");
-        ctx.fillStyle = "#080808"; ctx.fillRect(0,0,350,220);
-        
+    function draw(data, pair, sig, isMtg = false) {
+        const c = document.getElementById("apxCanvas"), ctx = c.getContext("2d");
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,360,220);
         let max = Math.max(...data.map(x=>x.high)), min = Math.min(...data.map(x=>x.low));
-        document.getElementById("price_start").innerText = `START: ${data[0].open.toFixed(4)}`;
-        document.getElementById("price_end").innerText = `END: ${data[data.length-1].close.toFixed(4)}`;
 
+        // APX Endorsement
+        ctx.fillStyle = "rgba(0,255,195,0.4)"; ctx.font = "bold 11px Arial";
+        ctx.fillText("APX PREMIUM", 15, 25);
+        
+        // Small Font Info (Top Right)
+        ctx.fillStyle = "#555"; ctx.font = "9px Arial";
+        let now = new Date();
+        ctx.fillText(`${pair} | ${now.toLocaleDateString()} | ${now.toLocaleTimeString()}`, 210, 20);
+
+        // Candles
         data.forEach((can, i) => {
-            let x = i * 8 + 30; // Better Width & Gap
+            let x = i * 8 + 35;
             let o = 180 - (can.open-min)/(max-min)*140;
             let cl = 180 - (can.close-min)/(max-min)*140;
-            
-            ctx.strokeStyle = "#222"; ctx.beginPath();
-            ctx.moveTo(x+2.5, 180-(can.high-min)/(max-min)*140);
-            ctx.lineTo(x+2.5, 180-(can.low-min)/(max-min)*140); ctx.stroke();
-            
+            ctx.strokeStyle = "#222"; ctx.beginPath(); ctx.moveTo(x+3, 180-(can.high-min)/(max-min)*140); ctx.lineTo(x+3, 180-(can.low-min)/(max-min)*140); ctx.stroke();
             ctx.fillStyle = can.close > can.open ? "#00ff9d" : "#ff3b3b";
-            ctx.fillRect(x, Math.min(o, cl), 5, Math.max(Math.abs(o-cl), 2)); // Balanced Bars
+            ctx.fillRect(x, Math.min(o,cl), 5, Math.max(Math.abs(o-cl), 2));
         });
 
-        // Fancy APX Overlay
-        ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.font = "bold 10px Arial";
-        ctx.fillText("APX PREMIUM ENDORSEMENT", 15, 20);
-        
-        // Signal Arrow Logic
-        ctx.fillStyle = signal === "CALL" ? "#00ff9d" : "#ff3b3b";
-        ctx.font = "bold 15px Arial";
-        ctx.fillText(signal === "CALL" ? "▲ CALL" : "▼ PUT", 260, 200);
-        ctx.font = "10px Arial"; ctx.fillText(`Entry: ${time}`, 260, 212);
+        // Direction Arrow
+        ctx.fillStyle = isMtg ? "#ffea00" : (sig === "CALL" ? "#00ff9d" : "#ff3b3b");
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(isMtg ? "⚠️ MTG1 " + sig : "🎯 " + sig, 270, 205);
     }
 
-    async function processTrade() {
-        if(!isActive) return;
-        let pair = pairs[Math.floor(Math.random() * pairs.length)];
+    async function startTrade(forcePair = null, isMtg = false) {
+        let pair = forcePair || pairs[Math.floor(Math.random()*pairs.length)];
         let res = await fetch(API + pair);
         let candles = (await res.json()).slice(-40);
-        let signal = candles[candles.length-1].close > candles[candles.length-2].close ? "CALL" : "PUT";
-        let time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        let last = candles[candles.length-1], prev = candles[candles.length-2];
+        let sig = last.close > prev.close ? "CALL" : "PUT";
+        
+        draw(candles, pair, sig, isMtg);
 
-        renderChart(candles, pair, signal, time);
-
-        // Telegram Signal
-        document.getElementById("apxChart").toBlob(async (blob) => {
+        document.getElementById("apxCanvas").toBlob(async (blob) => {
             let fd = new FormData();
             fd.append("image", blob, "apx.png");
-            fd.append("text", `🚀 *APX PREMIUM SIGNAL*\n\n📊 *Pair:* ${pair}\n🕒 *Time:* ${time}\n🎯 *Direction:* ${signal === 'CALL' ? 'UP 🍏' : 'DOWN 🍎'}\n\n✨ _Powered by APX Premium_`);
-            await tgSend(fd);
+            fd.append("text", `${isMtg ? '⚠️ *MTG1 ALERT*' : '🚀 *SIGNAL RECEIVED*'}\n\n📊 *Pair:* ${pair}\n🎯 *Side:* ${sig}\n📝 *Type:* ${isMtg ? 'Martingale' : 'Fresh'}\n\n📉 _Start:* ${last.open} | _Live:* ${last.close}\n💎 *Powered by APX Premium*`);
+            await tg(fd);
         });
 
-        // Wait for Candle Close (62s)
-        setTimeout(() => checkResult(pair, signal), 62000);
+        // Wait for candle close (61s)
+        setTimeout(() => check(pair, sig, isMtg), 61000);
     }
 
-    async function checkResult(pair, sig) {
+    async function check(pair, sig, wasMtg) {
         let res = await fetch(API + pair);
         let data = await res.json();
-        let last = data[data.length-1];
-        let isWin = (sig === "CALL" && last.close > last.open) || (sig === "PUT" && last.close < last.open);
+        let c = data[data.length-1];
+        let win = (sig === "CALL" && c.close > c.open) || (sig === "PUT" && c.close < c.open);
         
-        let result = isWin ? "WIN" : "LOSS";
-        if(isWin) stats.w++; else stats.l++;
-        stats.t++;
+        if (win) {
+            if(wasMtg) stats.m++; else stats.w++;
+            stats.t++;
+            finish(pair, sig, wasMtg ? "MTG1 WIN" : "WIN");
+        } else {
+            if (!wasMtg) {
+                // Trigger MTG1 if first loss
+                startTrade(pair, true);
+            } else {
+                stats.l++;
+                stats.t++;
+                finish(pair, sig, "LOSS");
+            }
+        }
+    }
 
-        updateDashboard(pair, sig, result);
+    function finish(p, s, r) {
+        document.getElementById("w_c").innerText = stats.w;
+        document.getElementById("l_c").innerText = stats.l;
+        document.getElementById("m_c").innerText = stats.m;
+        document.getElementById("a_c").innerText = (( (stats.w+stats.m) / stats.t)*100).toFixed(1) + "%";
+        
+        let row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${p}</td><td>${s}</td><td class="${r.includes('WIN')?'win':'loss'}">${r}</td></tr>`;
+        document.getElementById("log").insertAdjacentHTML('afterbegin', row);
 
-        // Telegram Result
         let fd = new FormData();
-        fd.append("text", `${isWin ? '✅' : '❌'} *TRADE RESULT*\n\n📊 *Pair:* ${pair}\n🏆 *Result:* ${result}\n💰 *Session Acc:* ${document.getElementById("a_val").innerText}`);
-        await tgSend(fd);
+        fd.append("text", `${r.includes('WIN') ? '✅' : '❌'} *RESULT: ${r}*\n\n📊 Pair: ${p}\n💰 Session Accuracy: ${document.getElementById("a_c").innerText}\n💎 *APX Premium: Quality signals only!*`);
+        tg(fd);
     }
 
-    function updateDashboard(p, s, r) {
-        document.getElementById("w_val").innerText = stats.w;
-        document.getElementById("l_val").innerText = stats.l;
-        document.getElementById("a_val").innerText = ((stats.w/stats.t)*100).toFixed(1) + "%";
-        document.getElementById("rows").insertAdjacentHTML('afterbegin', `<tr><td>${new Date().toLocaleTimeString()}</td><td>${p}</td><td>${s}</td><td style="color:${r==='WIN'?'#00ff9d':'#ff3b3b'}">${r}</td></tr>`);
-    }
-
-    async function startEngine() {
-        isActive = true;
+    async function powerOn() {
         let fd = new FormData();
-        fd.append("text", "🌟 *APX V15 ENGINE ONLINE*\n[▓▓▓▓▓▓▓▓▓▓] 100%\n\n_System Ready. Monitoring Volatility..._");
-        await tgSend(fd);
-        processTrade(); setInterval(processTrade, 65000);
+        fd.append("text", "🌟 *APX V16 DIAMOND ACTIVE*\n[🟥🟧🟨🟩🟦🟪]\n\n_MTG1 Auto-Recovery Enabled._");
+        await tg(fd);
+        startTrade(); setInterval(() => { if(stats.t % 2 === 0) startTrade(); }, 130000);
     }
-
-    function stopEngine() { isActive = false; location.reload(); }
 </script>
 </body>
 </html>
