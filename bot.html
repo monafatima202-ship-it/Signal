@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
-<title>APX ULTRA V7</title>
+<title>APX ULTRA V8 PRO</title>
 
 <style>
 
@@ -27,7 +25,7 @@ canvas{
 background:#020617;
 border-radius:12px;
 margin-top:20px;
-box-shadow:0 0 20px #00ffc3;
+box-shadow:0 0 25px #00ffc3;
 }
 
 button{
@@ -65,7 +63,7 @@ color:#aaa;
 
 <body>
 
-<div class="header">🤖 APX ULTRA V7</div>
+<div class="header">🤖 APX ULTRA V8 PRO</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
@@ -126,8 +124,7 @@ let loss=0
 let mtg1=0
 let total=0
 
-let lastSignal=null
-let lastPair=null
+let trades=[]
 
 function accuracy(){
 
@@ -203,7 +200,7 @@ let close=200-(c.close-min)/(max-min)*160
 let high=200-(c.high-min)/(max-min)*160
 let low=200-(c.low-min)/(max-min)*160
 
-ctx.strokeStyle="#888"
+ctx.strokeStyle="#aaa"
 
 ctx.beginPath()
 ctx.moveTo(x+w/2,high)
@@ -216,39 +213,30 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
-/* indicator dots */
-
-candles.forEach((c,i)=>{
-
-let x=i*(w+gap)+20
-
-let price=200-(c.close-min)/(max-min)*160
-
-ctx.beginPath()
-
-ctx.arc(x+4,price,3,0,Math.PI*2)
-
-ctx.fillStyle=i%2?"#00ffff":"#ff00ff"
-
-ctx.fill()
-
-})
-
 ctx.fillStyle="#00ffc3"
 ctx.font="14px Arial"
-ctx.fillText("APX BOT | "+pair+" | M1",10,20)
+ctx.fillText("APX BOT | "+pair+" | "+entryTime(),10,20)
 
 if(signal=="BUY"){
 
 ctx.fillStyle="#00ff9d"
-ctx.fillText("BUY ↑",310,220)
+ctx.fillText("BUY ↑",300,220)
 
 }else{
 
 ctx.fillStyle="#ff3b3b"
-ctx.fillText("SELL ↓",300,220)
+ctx.fillText("SELL ↓",290,220)
 
 }
+
+}
+
+function updateStats(){
+
+document.getElementById("win").innerText=win
+document.getElementById("loss").innerText=loss
+document.getElementById("mtg").innerText=mtg1
+document.getElementById("acc").innerText=accuracy()+"%"
 
 }
 
@@ -268,15 +256,6 @@ let row=
 "</tr>"
 
 document.getElementById("history").innerHTML+=row
-
-}
-
-function updateStats(){
-
-document.getElementById("win").innerText=win
-document.getElementById("loss").innerText=loss
-document.getElementById("mtg").innerText=mtg1
-document.getElementById("acc").innerText=accuracy()+"%"
 
 }
 
@@ -344,9 +323,13 @@ body:form
 
 }
 
-async function checkResult(){
+async function checkTrades(){
 
-let r=await fetch(API+lastPair)
+for(let t of trades){
+
+if(t.checked) continue
+
+let r=await fetch(API+t.pair)
 
 let j=await r.json()
 
@@ -357,24 +340,24 @@ let last=c[1]
 
 let result
 
-if(lastSignal=="BUY"){
+if(t.signal=="BUY"){
 result=last.close>prev.close?"WIN":"LOSS"
 }else{
 result=last.close<prev.close?"WIN":"LOSS"
 }
 
+t.checked=true
+
 total++
 
 if(result=="WIN"){
-
 win++
-
 }else{
 
-if(loss==0){
+if(t.mtg==false){
 
+t.mtg=true
 mtg1++
-win++
 result="MTG1 WIN"
 
 }else{
@@ -387,9 +370,11 @@ loss++
 
 updateStats()
 
-addHistory(lastPair,lastSignal,result)
+addHistory(t.pair,t.signal,result)
 
-await sendResult(lastPair,result)
+await sendResult(t.pair,result)
+
+}
 
 }
 
@@ -401,9 +386,6 @@ let signal=signalLogic(d.data)
 
 if(!signal) return
 
-lastSignal=signal
-lastPair=d.pair
-
 drawChart(d.data,d.pair,signal)
 
 document.getElementById("signal").innerHTML=
@@ -413,15 +395,24 @@ signal=="BUY"
 
 await sendSignal(d.pair,signal)
 
-setTimeout(checkResult,60000)
+trades.push({
+pair:d.pair,
+signal:signal,
+checked:false,
+mtg:false
+})
 
 }
 
 function start(){
 
+if(engine) return
+
 run()
 
 engine=setInterval(run,65000)
+
+setInterval(checkTrades,65000)
 
 }
 
