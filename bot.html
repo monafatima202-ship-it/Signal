@@ -1,8 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>APX ULTRA BOT PRO</title>
 
 <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
@@ -11,17 +13,17 @@
 <style>
 
 body{
-background:linear-gradient(135deg,#020617,#0f172a);
-color:#e2e8f0;
-font-family:Segoe UI;
+background:#000;
+color:white;
+font-family:Arial;
 text-align:center;
 padding:15px;
 }
 
 .header{
-font-size:32px;
+font-size:30px;
 color:#00ffc3;
-text-shadow:0 0 15px #00ffc3;
+text-shadow:0 0 20px #00ffc3;
 margin:15px 0;
 }
 
@@ -30,28 +32,24 @@ width:100%;
 max-width:420px;
 height:280px;
 margin:20px auto;
-border-radius:16px;
+border-radius:12px;
 overflow:hidden;
 box-shadow:0 0 25px rgba(0,255,195,0.4);
-background:#0f172a;
 }
 
 #signal{
-font-size:26px;
+font-size:24px;
 margin:15px 0;
-padding:12px;
-border-radius:12px;
-background:#0f172a;
 }
 
 .buy{color:#00ff9d}
 .sell{color:#ff3b3b}
 
 .btn{
-padding:14px 32px;
+padding:12px 28px;
 margin:10px;
 border:none;
-border-radius:40px;
+border-radius:30px;
 font-size:18px;
 cursor:pointer;
 }
@@ -61,8 +59,8 @@ cursor:pointer;
 
 .dashboard{
 background:#0f172a;
-border-radius:16px;
-padding:20px;
+border-radius:12px;
+padding:15px;
 margin:20px auto;
 max-width:420px;
 }
@@ -70,38 +68,36 @@ max-width:420px;
 .stats{
 display:flex;
 justify-content:space-around;
-margin:10px 0;
 }
 
 .stat-box{
+background:#1e293b;
 padding:10px;
 border-radius:10px;
-background:#1e293b;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
 margin-top:20px;
-font-size:14px;
 }
 
 th,td{
-padding:8px;
 border:1px solid #334155;
+padding:8px;
 }
 
 th{background:#1e293b}
 
 .footer{
 margin-top:20px;
-color:#94a3b8;
+color:#aaa;
 font-size:14px;
 }
 
 </style>
-</head>
 
+</head>
 <body>
 
 <div class="header">⚡ APX ULTRA BOT PRO</div>
@@ -119,13 +115,13 @@ font-size:14px;
 
 <div class="stats">
 
-<div class="stat-box">✅ WIN <span id="win">0</span></div>
-<div class="stat-box">❌ LOSS <span id="loss">0</span></div>
-<div class="stat-box">🎯 ACC <span id="acc">0</span>%</div>
+<div class="stat-box">WIN <span id="win">0</span></div>
+<div class="stat-box">LOSS <span id="loss">0</span></div>
+<div class="stat-box">ACC <span id="acc">0</span>%</div>
 
 </div>
 
-<h4>Martingale Suggestion: <span id="mtg">—</span></h4>
+<h4>Martingale: <span id="mtg">—</span></h4>
 
 </div>
 
@@ -142,12 +138,14 @@ font-size:14px;
 
 </table>
 
-<div class="footer">🌐 Powered by APX Premium</div>
+<div class="footer">
+Powered by APX Premium
+</div>
 
 <script>
 
-const API="https://bot1.mkapi009.workers.dev/candles?pair=";
-const SEND="https://bot1.mkapi009.workers.dev/send";
+const API="https://bot1.mkapi009.workers.dev/candles?pair="
+const SEND="https://bot1.mkapi009.workers.dev/send"
 
 const pairs=[
 "USDPKR_otc",
@@ -156,156 +154,185 @@ const pairs=[
 "USDARS_otc",
 "USDBRL_otc",
 "USDMXN_otc"
-];
+]
 
-let pairIndex=0;
-let engine=null;
+let pairIndex=0
+let engine=null
 
-let win=0;
-let loss=0;
-let total=0;
+let win=0
+let loss=0
+let total=0
 
-let lastSignal=null;
-let lastPair=null;
-let lastEntryTime=null;
-let consecutiveLoss=0;
+let lastSignal=null
+let lastPair=null
+let lastEntryTime=null
+let lossStreak=0
 
-let chart,candleSeries;
+let chart
+let candleSeries
 
 function initChart(){
 
-const container=document.getElementById("chart-container");
+const container=document.getElementById("chart-container")
 
 chart=LightweightCharts.createChart(container,{
+
 width:container.clientWidth,
 height:280,
-layout:{background:{color:"#0f172a"},textColor:"#e2e8f0"},
-grid:{vertLines:{color:"#334155"},horzLines:{color:"#334155"}}
-});
+
+layout:{
+background:{color:"#000"},
+textColor:"#ffffff"
+},
+
+grid:{
+vertLines:{color:"#1f2937"},
+horzLines:{color:"#1f2937"}
+}
+
+})
 
 candleSeries=chart.addCandlestickSeries({
+
 upColor:"#00ff9d",
 downColor:"#ff3b3b",
 borderVisible:false,
 wickUpColor:"#00ff9d",
 wickDownColor:"#ff3b3b"
-});
+
+})
 
 }
 
-window.addEventListener("resize",()=>{
-chart.applyOptions({width:document.getElementById("chart-container").clientWidth});
-});
-
 function entryTime(){
 
-let d=new Date();
-d.setMinutes(d.getMinutes()+1);
+let d=new Date()
+d.setMinutes(d.getMinutes()+1)
 
-return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+return d.toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+})
 
 }
 
 function signalLogic(c){
 
-let a=c[c.length-1];
-let b=c[c.length-2];
+let last=c[c.length-1]
+let prev=c[c.length-2]
 
-if(parseFloat(a.close)>parseFloat(b.close)) return "CALL";
-if(parseFloat(a.close)<parseFloat(b.close)) return "PUT";
+if(parseFloat(last.close)>parseFloat(prev.close)) return "CALL"
+if(parseFloat(last.close)<parseFloat(prev.close)) return "PUT"
 
-return null;
+return null
 
 }
 
 async function getCandles(){
 
-let pair=pairs[pairIndex];
-pairIndex=(pairIndex+1)%pairs.length;
+let pair=pairs[pairIndex]
+pairIndex=(pairIndex+1)%pairs.length
 
-let r=await fetch(API+pair);
-let j=await r.json();
+let r=await fetch(API+pair)
+let j=await r.json()
 
-return {pair,data:j.slice(-60)};
+return{pair,data:j.slice(-50)}
 
 }
 
-async function drawChart(c,pair,signal){
+async function drawChart(candles,pair,signal){
 
-let data=c.map((x,i)=>({
+let data=candles.map((c,i)=>({
 
-time:Math.floor(Date.now()/1000)-(c.length-1-i)*60,
-open:parseFloat(x.open),
-high:parseFloat(x.high),
-low:parseFloat(x.low),
-close:parseFloat(x.close)
+time:Math.floor(Date.now()/1000)-(candles.length-1-i)*60,
+open:parseFloat(c.open),
+high:parseFloat(c.high),
+low:parseFloat(c.low),
+close:parseFloat(c.close)
 
-}));
+}))
 
-candleSeries.setData(data);
+candleSeries.setData(data)
+
+chart.applyOptions({
+
+watermark:{
+visible:true,
+fontSize:16,
+horzAlign:'center',
+vertAlign:'top',
+color:'rgba(255,255,255,0.8)',
+text:`APX BOT | ${pair} | M1 | ${signal} @ ${lastEntryTime}`
+}
+
+})
+
+let last=data[data.length-1].time
+
+candleSeries.setMarkers([{
+
+time:last,
+position:signal==="CALL"?"belowBar":"aboveBar",
+color:signal==="CALL"?"#00ff9d":"#ff3b3b",
+shape:signal==="CALL"?"arrowUp":"arrowDown",
+text:signal
+
+}])
 
 document.getElementById("signal").innerHTML=
 signal=="CALL"
 ?`<span class="buy">${pair} CALL ↑</span>`
-:`<span class="sell">${pair} PUT ↓</span>`;
+:`<span class="sell">${pair} PUT ↓</span>`
 
 }
 
 function updateStats(result){
 
-total++;
+total++
 
 if(result=="WIN"){
-win++;
-consecutiveLoss=0;
+win++
+lossStreak=0
 }else{
-loss++;
-consecutiveLoss++;
+loss++
+lossStreak++
 }
 
-let acc=(total?((win/total)*100):0).toFixed(1);
+let acc=(total?((win/total)*100):0).toFixed(1)
 
-document.getElementById("win").innerText=win;
-document.getElementById("loss").innerText=loss;
-document.getElementById("acc").innerText=acc;
+document.getElementById("win").innerText=win
+document.getElementById("loss").innerText=loss
+document.getElementById("acc").innerText=acc
 
 document.getElementById("mtg").innerText=
-consecutiveLoss>0?`Next trade x2 (${consecutiveLoss} loss)`:"—";
+lossStreak>0?`Next trade x2 (${lossStreak} loss)`:"—"
 
 }
 
 function addHistory(time,pair,signal,result){
 
-let table=document.getElementById("history");
-
-let row=table.insertRow(1);
+let table=document.getElementById("history")
+let row=table.insertRow(1)
 
 row.innerHTML=`
 <td>${time}</td>
 <td>${pair}</td>
 <td>${signal}</td>
 <td>${result}</td>
-`;
+`
 
-if(table.rows.length>21) table.deleteRow(-1);
+if(table.rows.length>21) table.deleteRow(-1)
 
 }
 
 async function sendTelegram(pair,signal,entry){
 
-let canvas=document.querySelector("#chart-container canvas");
+let capture=await html2canvas(document.getElementById("chart-container"))
 
-let blob;
+let blob=await new Promise(r=>capture.toBlob(r,"image/png"))
 
-if(canvas){
-blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
-}else{
-let capture=await html2canvas(document.getElementById("chart-container"));
-blob=await new Promise(r=>capture.toBlob(r,"image/png"));
-}
-
-let text=`
-⚡ APX ULTRA SIGNAL
+let text=
+`⚡ APX ULTRA SIGNAL
 
 Pair: ${pair}
 Entry: ${entry}
@@ -314,85 +341,88 @@ Direction: ${signal}
 Win: ${win}
 Loss: ${loss}
 Accuracy: ${(total?((win/total)*100):0).toFixed(1)}%
-`;
+`
 
-let form=new FormData();
+let form=new FormData()
 
-form.append("image",blob,"chart.png");
-form.append("text",text);
+form.append("image",blob,"chart.png")
+form.append("text",text)
 
-await fetch(SEND,{method:"POST",body:form});
+await fetch(SEND,{method:"POST",body:form})
 
 }
 
 async function checkResult(){
 
-let r=await fetch(API+lastPair);
-let j=await r.json();
+let r=await fetch(API+lastPair)
+let j=await r.json()
 
-let c=j.slice(-2);
+let c=j.slice(-2)
 
-let prev=parseFloat(c[0].close);
-let last=parseFloat(c[1].close);
+let prev=parseFloat(c[0].close)
+let last=parseFloat(c[1].close)
 
-let result;
+let result
 
 if(lastSignal=="CALL"){
-result=last>prev?"WIN":"LOSS";
+result=last>prev?"WIN":"LOSS"
 }else{
-result=last<prev?"WIN":"LOSS";
+result=last<prev?"WIN":"LOSS"
 }
 
-updateStats(result);
+updateStats(result)
 
 addHistory(
-new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}),
+new Date().toLocaleTimeString([],{
+hour:'2-digit',
+minute:'2-digit'
+}),
 lastPair,
 lastSignal,
 result
-);
+)
 
 }
 
 async function run(){
 
-let d=await getCandles();
+let d=await getCandles()
 
-let signal=signalLogic(d.data);
+let signal=signalLogic(d.data)
 
-if(!signal) return;
+if(!signal) return
 
-lastSignal=signal;
-lastPair=d.pair;
-lastEntryTime=entryTime();
+lastSignal=signal
+lastPair=d.pair
+lastEntryTime=entryTime()
 
-await drawChart(d.data,d.pair,signal);
+await drawChart(d.data,d.pair,signal)
 
-await sendTelegram(d.pair,signal,lastEntryTime);
+await sendTelegram(d.pair,signal,lastEntryTime)
 
-setTimeout(checkResult,61000);
+setTimeout(checkResult,61000)
 
 }
 
 function start(){
 
-if(engine) return;
+if(engine) return
 
-initChart();
+initChart()
 
-run();
+run()
 
-engine=setInterval(run,65000);
+engine=setInterval(run,65000)
 
 }
 
 function stop(){
 
-if(engine) clearInterval(engine);
+if(engine) clearInterval(engine)
 
-engine=null;
+engine=null
 
-alert("BOT STOPPED");
+alert("BOT STOPPED")
 
 }
 
