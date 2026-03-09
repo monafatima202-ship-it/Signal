@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html>
-
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,6 +17,7 @@ text-align:center;
 .header{
 font-size:28px;
 color:#00ffc3;
+margin-top:10px;
 text-shadow:0 0 20px #00ffc3;
 }
 
@@ -38,6 +38,9 @@ font-weight:bold;
 font-size:16px;
 }
 
+.buy{color:#00ff9d;font-size:24px}
+.sell{color:#ff3b3b;font-size:24px}
+
 table{
 margin-top:20px;
 width:100%;
@@ -48,9 +51,6 @@ th,td{
 border:1px solid #333;
 padding:8px;
 }
-
-.win{color:#00ff9d}
-.loss{color:#ff3b3b}
 
 .footer{
 margin-top:20px;
@@ -76,13 +76,15 @@ color:#aaa;
 
 <h3>📊 Dashboard</h3>
 
-Signals : <span id="signals">0</span> |
-WIN : <span id="win">0</span> |
-LOSS : <span id="loss">0</span> |
-MTG1 : <span id="mtg">0</span> |
-ACC : <span id="acc">0%</span>
+<div>
 
-<h3>📜 History</h3>
+✅ WIN : <span id="win">0</span> |
+❌ LOSS : <span id="loss">0</span> |
+🎯 ACC : <span id="acc">0%</span>
+
+</div>
+
+<h3>📜 Signal History</h3>
 
 <table id="history">
 
@@ -95,10 +97,6 @@ ACC : <span id="acc">0%</span>
 
 </table>
 
-<h3>📊 Session Summary</h3>
-
-<div id="summary">Session Running</div>
-
 <div class="footer">
 🌐 Powered by APX Premium
 </div>
@@ -109,8 +107,8 @@ const API="https://bot1.mkapi009.workers.dev/candles?pair="
 const SEND="https://bot1.mkapi009.workers.dev/send"
 
 const pairs=[
-"USDBDT_otc",
 "USDPKR_otc",
+"USDBDT_otc",
 "USDINR_otc",
 "USDARS_otc",
 "USDBRL_otc",
@@ -122,17 +120,14 @@ let engine=null
 
 let win=0
 let loss=0
-let mtg=0
-let signals=0
 let total=0
 
-let lastPair=""
-let lastSignal=""
-let lastEntry=""
+let lastSignal=null
+let lastPair=null
 
 function accuracy(){
 
-if(total==0)return 0
+if(total==0) return 0
 
 return ((win/total)*100).toFixed(1)
 
@@ -157,7 +152,7 @@ let pair=pairs[pairIndex]
 
 pairIndex++
 
-if(pairIndex>=pairs.length)pairIndex=0
+if(pairIndex>=pairs.length) pairIndex=0
 
 let r=await fetch(API+pair)
 
@@ -169,19 +164,17 @@ return {pair,data:j.slice(-30)}
 
 function signalLogic(c){
 
-let a=c[c.length-1]
-let b=c[c.length-2]
-let c3=c[c.length-3]
+let last=c[c.length-1]
+let prev=c[c.length-2]
 
-if(a.close>b.close && b.close>c3.close) return "BUY"
+if(last.close>prev.close) return "BUY"
+if(last.close<prev.close) return "SELL"
 
-if(a.close<b.close && b.close<c3.close) return "SELL"
-
-return Math.random()>0.5?"BUY":"SELL"
+return null
 
 }
 
-function drawChart(c,pair,signal){
+function drawChart(candles,pair,signal){
 
 let canvas=document.getElementById("chart")
 let ctx=canvas.getContext("2d")
@@ -189,20 +182,20 @@ let ctx=canvas.getContext("2d")
 ctx.fillStyle="#020617"
 ctx.fillRect(0,0,canvas.width,canvas.height)
 
-let max=Math.max(...c.map(x=>x.high))
-let min=Math.min(...c.map(x=>x.low))
+let max=Math.max(...candles.map(c=>c.high))
+let min=Math.min(...candles.map(c=>c.low))
 
 let w=8
 let gap=4
 
-c.forEach((k,i)=>{
+candles.forEach((c,i)=>{
 
 let x=i*(w+gap)+20
 
-let open=200-(k.open-min)/(max-min)*160
-let close=200-(k.close-min)/(max-min)*160
-let high=200-(k.high-min)/(max-min)*160
-let low=200-(k.low-min)/(max-min)*160
+let open=200-(c.open-min)/(max-min)*160
+let close=200-(c.close-min)/(max-min)*160
+let high=200-(c.high-min)/(max-min)*160
+let low=200-(c.low-min)/(max-min)*160
 
 ctx.strokeStyle="#888"
 
@@ -211,36 +204,51 @@ ctx.moveTo(x+w/2,high)
 ctx.lineTo(x+w/2,low)
 ctx.stroke()
 
-ctx.fillStyle=k.close>k.open?"#00ff9d":"#ff3b3b"
+ctx.fillStyle=c.close>c.open?"#00ff9d":"#ff3b3b"
 
 ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
 ctx.fillStyle="#00ffc3"
-ctx.font="12px Arial"
-ctx.fillText("APX "+pair+" "+signal,120,15)
+ctx.font="16px Arial"
+ctx.fillText(pair,10,20)
 
 if(signal=="BUY"){
 
+ctx.strokeStyle="#00ff9d"
+
+ctx.beginPath()
+ctx.moveTo(310,200)
+ctx.lineTo(350,170)
+ctx.stroke()
+
 ctx.fillStyle="#00ff9d"
-ctx.fillText("↑ BUY",310,220)
+ctx.fillText("BUY ↑",300,220)
 
 }else{
 
+ctx.strokeStyle="#ff3b3b"
+
+ctx.beginPath()
+ctx.moveTo(310,170)
+ctx.lineTo(350,200)
+ctx.stroke()
+
 ctx.fillStyle="#ff3b3b"
-ctx.fillText("↓ SELL",300,220)
+ctx.fillText("SELL ↓",290,220)
 
 }
+
+ctx.fillStyle="#00ffc3"
+ctx.font="12px Arial"
+ctx.fillText("APX PREMIUM",10,230)
 
 }
 
 function addHistory(pair,signal,result){
 
-let t=new Date().toLocaleTimeString([],{
-hour:'2-digit',
-minute:'2-digit'
-})
+let t=new Date().toLocaleTimeString()
 
 let row=
 "<tr>"+
@@ -256,15 +264,15 @@ document.getElementById("history").innerHTML+=row
 
 function updateStats(){
 
-document.getElementById("signals").innerText=signals
 document.getElementById("win").innerText=win
 document.getElementById("loss").innerText=loss
-document.getElementById("mtg").innerText=mtg
 document.getElementById("acc").innerText=accuracy()+"%"
 
 }
 
-async function sendTelegram(text){
+async function sendTelegram(pair,signal){
+
+let entry=entryTime()
 
 let canvas=document.getElementById("chart")
 
@@ -273,62 +281,25 @@ let blob=await new Promise(r=>canvas.toBlob(r,"image/png"))
 let form=new FormData()
 
 form.append("image",blob,"chart.png")
+
+let text=
+"🚀 APX PREMIUM SIGNAL\n\n"+
+"📊 Pair : "+pair+"\n"+
+"🕓 Entry : "+entry+"\n"+
+"⏱ TF : M1\n"+
+"⭕ Direction : "+signal+"\n\n"+
+"📊 Stats\n"+
+"✅ Win : "+win+"\n"+
+"❌ Loss : "+loss+"\n"+
+"🎯 Accuracy : "+accuracy()+"%\n\n"+
+"🌐 Powered by APX Premium"
+
 form.append("text",text)
 
 await fetch(SEND,{
 method:"POST",
 body:form
 })
-
-}
-
-async function sendSignal(pair,signal){
-
-let text=
-"🚀 APX PREMIUM SIGNAL\n\n"+
-"📊 Pair : "+pair+"\n"+
-"🕓 Entry : "+lastEntry+"\n"+
-"⭕ Direction : "+signal+"\n"+
-"🎯 Accuracy : "+accuracy()+"%\n\n"+
-"📈 Prepare for entry\n\n"+
-"🌐 Powered by APX Premium"
-
-sendTelegram(text)
-
-}
-
-async function sendWin(pair){
-
-let text=
-"✅ TRADE RESULT\n\n"+
-"📊 Pair : "+pair+"\n"+
-"🎉 Result : WIN\n\n"+
-"🔥 Perfect entry"
-
-sendTelegram(text)
-
-}
-
-async function sendLoss(pair){
-
-let text=
-"❌ TRADE RESULT\n\n"+
-"📊 Pair : "+pair+"\n"+
-"⚠ Result : LOSS"
-
-sendTelegram(text)
-
-}
-
-async function sendMtg(pair){
-
-let text=
-"🟡 MARTINGALE RESULT\n\n"+
-"📊 Pair : "+pair+"\n"+
-"🎯 Result : MTG1 WIN\n\n"+
-"💰 Recovery successful"
-
-sendTelegram(text)
 
 }
 
@@ -357,21 +328,12 @@ result=last.close<prev.close?"WIN":"LOSS"
 
 total++
 
-if(result=="WIN"){
-
-win++
-sendWin(lastPair)
-
-}else{
-
-loss++
-sendLoss(lastPair)
-
-}
-
-addHistory(lastPair,lastSignal,result)
+if(result=="WIN") win++
+else loss++
 
 updateStats()
+
+addHistory(lastPair,lastSignal,result)
 
 }
 
@@ -381,35 +343,21 @@ let d=await getCandles()
 
 let signal=signalLogic(d.data)
 
-lastPair=d.pair
-lastSignal=signal
-lastEntry=entryTime()
+if(!signal) return
 
-signals++
+lastSignal=signal
+lastPair=d.pair
 
 drawChart(d.data,d.pair,signal)
 
 document.getElementById("signal").innerHTML=
-d.pair+" "+signal+" ENTRY "+lastEntry
+signal=="BUY"
+?`<span class="buy">${d.pair} BUY</span>`
+:`<span class="sell">${d.pair} SELL</span>`
 
-sendSignal(d.pair,signal)
+await sendTelegram(d.pair,signal)
 
 setTimeout(checkResult,60000)
-
-updateStats()
-
-if(signals>=10){
-
-document.getElementById("summary").innerHTML=
-"Signals:"+signals+
-" Win:"+win+
-" Loss:"+loss+
-" MTG:"+mtg+
-" Accuracy:"+accuracy()+"%"
-
-stop()
-
-}
 
 }
 
@@ -424,6 +372,8 @@ engine=setInterval(run,65000)
 function stop(){
 
 clearInterval(engine)
+
+alert("🛑 APX BOT STOPPED")
 
 }
 
