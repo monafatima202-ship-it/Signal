@@ -3,81 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>APX ULTRA V9 GOLD</title>
+    <title>APX ULTRA V10 DIAMOND</title>
     <style>
-        :root { --bg: #000000; --card: #0a0a0a; --primary: #00ffc3; --buy: #00ff9d; --sell: #ff3b3b; }
-        body { background: var(--bg); color: white; font-family: 'Inter', sans-serif; text-align: center; margin: 0; padding: 10px; }
+        :root { --bg: #000000; --card: #080808; --primary: #00ffc3; --buy: #00ff9d; --sell: #ff3b3b; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; text-align: center; margin: 0; padding: 10px; }
         
-        .header { font-size: 22px; font-weight: 900; color: var(--primary); letter-spacing: 1px; margin: 10px 0; }
+        .header { font-size: 24px; font-weight: 900; color: var(--primary); text-shadow: 0 0 15px var(--primary); margin: 10px 0; }
         
-        /* Quantex Style Black Chart */
+        /* Fancy Quantex Chart Style */
         .chart-box {
             background: #000;
-            border: 1px solid #1a1a1a;
-            border-radius: 12px;
+            border: 2px solid #111;
+            border-radius: 15px;
             display: inline-block;
             position: relative;
-            box-shadow: 0 0 20px rgba(0,255,195,0.05);
-            margin-bottom: 10px;
+            box-shadow: 0 0 30px rgba(0,255,195,0.1);
+            overflow: hidden;
         }
 
-        canvas { border-radius: 8px; }
-
-        /* Dashboard UI */
         .dashboard {
             display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 10px; width: 95%; margin: 10px auto;
-            background: var(--card); padding: 12px; border-radius: 15px;
-            border: 1px solid #111;
+            gap: 10px; width: 95%; margin: 15px auto;
+            background: var(--card); padding: 15px; border-radius: 15px;
+            border: 1px solid #1a1a1a;
         }
-        .stat-card { font-size: 11px; color: #666; }
-        .stat-card b { display: block; font-size: 16px; color: #fff; margin-top: 4px; }
-        .acc-val { color: var(--primary) !important; }
-
-        .signal-banner {
-            font-size: 18px; font-weight: 800; padding: 15px;
-            background: rgba(255,255,255,0.02); border-radius: 10px;
-            margin: 10px auto; width: 90%; border-left: 5px solid var(--primary);
-        }
+        .stat-card { font-size: 10px; color: #888; text-transform: uppercase; }
+        .stat-card b { display: block; font-size: 18px; color: #fff; margin-top: 5px; }
 
         .btn-group button {
-            padding: 15px 35px; margin: 10px; border: none; border-radius: 12px;
-            font-weight: 900; cursor: pointer; transition: 0.3s;
+            padding: 16px 40px; margin: 10px; border: none; border-radius: 12px;
+            font-weight: 900; cursor: pointer; transition: 0.3s; font-size: 16px;
         }
-        .start { background: var(--primary); color: #000; box-shadow: 0 5px 15px rgba(0,255,195,0.2); }
+        .start { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(0,255,195,0.4); }
         .stop { background: #1a1a1a; color: #fff; }
 
-        table { width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 13px; }
-        th { color: #444; padding: 10px; border-bottom: 2px solid #111; }
-        td { padding: 12px; border-bottom: 1px solid #111; }
-
-        .win { color: var(--buy); font-weight: bold; }
-        .loss { color: var(--sell); font-weight: bold; }
+        table { width: 100%; margin-top: 15px; border-collapse: collapse; background: var(--card); border-radius: 10px; }
+        th { color: #555; padding: 12px; font-size: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #111; font-size: 14px; }
+        .win-row { color: var(--buy); font-weight: bold; }
+        .loss-row { color: var(--sell); font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="header">🤖 APX ULTRA V9 GOLD</div>
+    <div class="header">💎 APX ULTRA V10 DIAMOND</div>
     
     <div class="chart-box">
-        <canvas id="chart" width="360" height="220"></canvas>
+        <canvas id="chart" width="360" height="230"></canvas>
     </div>
-
-    <div id="signal-display" class="signal-banner">ENGINE READY...</div>
 
     <div class="dashboard">
         <div class="stat-card">✅ WIN <b id="win">0</b></div>
         <div class="stat-card">❌ LOSS <b id="loss">0</b></div>
         <div class="stat-card">🔥 MTG1 <b id="mtg">0</b></div>
-        <div class="stat-card">🎯 ACC <b id="acc" class="acc-val">0%</b></div>
+        <div class="stat-card">🎯 ACC <b id="acc" style="color:var(--primary)">0%</b></div>
     </div>
 
     <div class="btn-group">
-        <button class="start" onclick="initEngine()">🚀 START</button>
-        <button class="stop" onclick="killEngine()">🛑 STOP</button>
+        <button class="start" onclick="startEngine()">🚀 START ENGINE</button>
+        <button class="stop" onclick="stopEngine()">🛑 STOP ENGINE</button>
     </div>
 
-    <table>
+    <table id="historyTable">
         <thead><tr><th>TIME</th><th>PAIR</th><th>SIGNAL</th><th>RESULT</th></tr></thead>
         <tbody id="rows"></tbody>
     </table>
@@ -87,87 +74,101 @@
     const SEND = "https://bot1.mkapi009.workers.dev/send";
     const pairs = ["USDPKR_otc", "USDBDT_otc", "USDINR_otc", "USDARS_otc", "USDBRL_otc"];
 
-    let loop = null, stats = { w:0, l:0, m:0, t:0 };
+    let engineLoop = null, stats = { w:0, l:0, m:0, t:0 };
 
-    function getTradeTime() {
+    function getEntryTime() {
         let d = new Date();
         d.setMinutes(d.getMinutes() + 1);
         return d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
     }
 
-    async function processSignal() {
+    async function analyzeAndSignal() {
         let pair = pairs[Math.floor(Math.random() * pairs.length)];
         let res = await fetch(API + pair);
-        let candles = await res.json();
-        let data = candles.slice(-35);
+        let j = await res.json();
+        let data = j.slice(-40);
         
-        // Logic: Accuracy Focused
         let last = data[data.length-1], prev = data[data.length-2];
         let sig = last.close > prev.close ? "CALL" : "PUT";
-        let entry = getTradeTime();
+        let entry = getEntryTime();
 
-        renderChart(data, pair, sig, entry);
-        document.getElementById("signal-display").innerHTML = `${pair} | ${sig} @ ${entry}`;
-        
+        drawProChart(data, pair, sig, entry);
         await sendTelegramSignal(pair, sig, entry);
         
-        // Logic: Wait for candle close (approx 58s) to check result
-        setTimeout(() => verifyResult(pair, sig), 58000);
+        // Wait for candle close
+        setTimeout(() => verifyTrade(pair, sig), 59000);
     }
 
-    function renderChart(candles, pair, sig, time) {
+    function drawProChart(candles, pair, sig, time) {
         const c = document.getElementById("chart"), ctx = c.getContext("2d");
-        ctx.fillStyle = "#000"; ctx.fillRect(0,0,360,220);
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,360,230);
 
         let max = Math.max(...candles.map(x=>x.high)), min = Math.min(...candles.map(x=>x.low));
         
-        // Endorsements
-        ctx.fillStyle = "rgba(0,255,195,0.3)"; ctx.font = "9px Arial";
-        ctx.fillText("APX PREMIUM PRO", 15, 20);
-        ctx.fillStyle = "#555";
-        ctx.fillText(`H: ${max.toFixed(4)} | L: ${min.toFixed(4)}`, 260, 20);
+        // APX Endorsement
+        ctx.fillStyle = "rgba(0,255,195,0.2)"; ctx.font = "bold 10px Arial";
+        ctx.fillText("APX PREMIUM DIAMOND V10", 15, 25);
+        ctx.fillStyle = "#444";
+        ctx.fillText(`H: ${max.toFixed(4)} | L: ${min.toFixed(4)}`, 250, 25);
 
+        // Mixed Bars/Indicators (Attractive Look)
         candles.forEach((cand, i) => {
-            let x = i * 10 + 20;
-            let o = 180 - (cand.open-min)/(max-min)*140;
-            let cl = 180 - (cand.close-min)/(max-min)*140;
-            ctx.strokeStyle = "#333"; ctx.beginPath(); ctx.moveTo(x+4, 180-(cand.high-min)/(max-min)*140); ctx.lineTo(x+4, 180-(cand.low-min)/(max-min)*140); ctx.stroke();
+            let x = i * 8 + 30;
+            let o = 190 - (cand.open-min)/(max-min)*150;
+            let cl = 190 - (cand.close-min)/(max-min)*150;
+            
+            // Candle Wicks
+            ctx.strokeStyle = "#222"; ctx.beginPath(); 
+            ctx.moveTo(x+3, 190-(cand.high-min)/(max-min)*150); 
+            ctx.lineTo(x+3, 190-(cand.low-min)/(max-min)*150); ctx.stroke();
+            
+            // Attractive Candle Colors
             ctx.fillStyle = cand.close > cand.open ? "#00ff9d" : "#ff3b3b";
-            ctx.fillRect(x, Math.min(o, cl), 7, Math.max(Math.abs(o-cl), 1));
+            ctx.fillRect(x, Math.min(o, cl), 6, Math.max(Math.abs(o-cl), 1));
+            
+            // Neural Dots (Quantex Style)
+            if(i % 3 === 0) {
+                ctx.fillStyle = i % 2 === 0 ? "#00ffff" : "#ff00ff";
+                ctx.beginPath(); ctx.arc(x+3, o - 10, 1.5, 0, Math.PI*2); ctx.fill();
+            }
         });
 
-        // Left Side Endorsement & Arrow
+        // Directional Arrow
         ctx.fillStyle = sig === "CALL" ? "#00ff9d" : "#ff3b3b";
-        ctx.font = "bold 12px Arial";
-        ctx.fillText(`${pair} | ${time}`, 15, 200);
-        ctx.font = "30px Arial";
-        ctx.fillText(sig === "CALL" ? "↑" : "↓", 310, 200);
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(`${pair} | ${time}`, 15, 215);
+        ctx.font = "40px Arial";
+        ctx.fillText(sig === "CALL" ? "↑" : "↓", 310, 210);
     }
 
-    async function verifyResult(pair, sig) {
+    async function verifyTrade(pair, sig) {
         let res = await fetch(API + pair);
         let j = await res.json();
-        let last = j[j.length-1];
-        let win = (sig === "CALL" && last.close > last.open) || (sig === "PUT" && last.close < last.open);
+        let candle = j[j.length-1];
         
-        let finalRes = win ? "WIN" : "LOSS";
+        let result = "";
+        // Doji Check: If open equals close, it's a DOJI = LOSS
+        if(candle.open === candle.close) {
+            result = "LOSS (DOJI)";
+            stats.l++;
+        } else {
+            let win = (sig === "CALL" && candle.close > candle.open) || (sig === "PUT" && candle.close < candle.open);
+            if(win) { result = "WIN"; stats.w++; }
+            else { result = "LOSS"; stats.l++; }
+        }
+        
         stats.t++;
-        if(win) stats.w++; else { stats.l++; finalRes = "LOSS"; }
-
-        updateStats();
-        addTableRow(pair, sig, finalRes);
-        await sendTelegramResult(pair, finalRes);
+        updateUI(pair, sig, result);
+        await sendTelegramResult(pair, result);
     }
 
-    function updateStats() {
+    function updateUI(pair, sig, res) {
         let acc = ((stats.w / stats.t) * 100 || 0).toFixed(1);
         document.getElementById("win").innerText = stats.w;
         document.getElementById("loss").innerText = stats.l;
         document.getElementById("acc").innerText = acc + "%";
-    }
 
-    function addTableRow(pair, sig, res) {
-        let row = `<tr><td>${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td><td>${pair}</td><td style="color:${sig==='CALL'?'#00ff9d':'#ff3b3b'}">${sig}</td><td class="${res==='WIN'?'win':'loss'}">${res}</td></tr>`;
+        let row = `<tr class="${res.includes('WIN')?'win-row':'loss-row'}"><td>${new Date().toLocaleTimeString()}</td><td>${pair}</td><td>${sig}</td><td>${res}</td></tr>`;
         document.getElementById("rows").insertAdjacentHTML('afterbegin', row);
     }
 
@@ -176,27 +177,37 @@
         let blob = await new Promise(r => canvas.toBlob(r, "image/png"));
         let fd = new FormData();
         fd.append("image", blob, "apx.png");
-        fd.append("text", `🚀 *APX PREMIUM SIGNAL*\n\n📊 *Pair:* ${pair}\n🕒 *Entry:* ${entry}\n⏱ *TF:* M1\n🎯 *Direction:* ${sig === 'CALL' ? 'UP 🟢' : 'DOWN 🔴'}\n✨ *Accuracy:* ${document.getElementById("acc").innerText}\n\n🛰 _Prepare for entry..._`);
+        fd.append("text", `🚀 *APX DIAMOND SIGNAL*\n\n📊 *Pair:* ${pair}\n🕒 *Entry:* ${entry}\n🎯 *Direction:* ${sig === 'CALL' ? 'CALL 🍏' : 'PUT 🍎'}\n✨ *Acc:* ${document.getElementById("acc").innerText}\n\n🛰 _Prepare for the next candle!_`);
         fetch(SEND, { method: "POST", body: fd });
     }
 
     async function sendTelegramResult(pair, res) {
-        let msg = res === "WIN" 
-            ? `✅ *WINNER WINNER!*\n\n📊 *Pair:* ${pair}\n🎉 *Result:* ITM WIN\n💎 *APX Premium is the King!*`
-            : `❌ *LOSS*\n\n📊 *Pair:* ${pair}\n⚠️ *Result:* Better luck next time!\n🔄 _Waiting for next setup..._`;
+        let msg = "";
+        if(res === "WIN") {
+            msg = `✅ *ITM WINNER!* 💰\n\n📊 *Pair:* ${pair}\n🏆 *Result:* WIN\n\n💎 *APX Premium: Accuracy is our Identity! Join now for 100% signals.*`;
+        } else if(res.includes("DOJI")) {
+            msg = `⚖️ *DOJI ALERT* ⚖️\n\n📊 *Pair:* ${pair}\n⚠️ *Result:* LOSS (Market Neutral)\n\n🔄 _Doji means No direction. We take it as Loss for safety._`;
+        } else {
+            msg = `❌ *Ouch! Loss* 🔻\n\n📊 *Pair:* ${pair}\n⚠️ *Result:* LOSS\n\n🦾 _Better luck next time! The market is a cycle, stay disciplined._`;
+        }
         let fd = new FormData(); fd.append("text", msg);
         fetch(SEND, { method: "POST", body: fd });
     }
 
-    function initEngine() {
-        alert("💎 WELCOME TO APX GOLD\nEngine connecting to neural servers...");
-        processSignal();
-        loop = setInterval(processSignal, 62000);
+    async function startEngine() {
+        let welcome = `🌟 *APX ENGINE STARTED* 🌟\n\n🤖 *Model:* V10 Diamond\n⚡ *Status:* Online & Scanning\n\n📈 _High accuracy neural signals incoming..._`;
+        let fd = new FormData(); fd.append("text", welcome); fetch(SEND, { method: "POST", body: fd });
+        
+        alert("💎 APX DIAMOND V10 ACTIVE\nConnecting to OTC Neural Network...");
+        analyzeAndSignal();
+        engineLoop = setInterval(analyzeAndSignal, 62000);
     }
 
-    function killEngine() {
-        clearInterval(loop);
-        alert(`🛑 SESSION ENDED\n\nTotal Trades: ${stats.t}\nWins: ${stats.w}\nAccuracy: ${document.getElementById("acc").innerText}\n\nThanks for using APX PREMIUM!`);
+    async function stopEngine() {
+        clearInterval(engineLoop);
+        let summary = `🛑 *ENGINE STOPPED* 🛑\n\n📊 *Session Summary:*\n✅ Wins: ${stats.w}\n❌ Losses: ${stats.l}\n🎯 Accuracy: ${document.getElementById("acc").innerText}\n\n💎 _Powered by APX Premium_`;
+        let fd = new FormData(); fd.append("text", summary); fetch(SEND, { method: "POST", body: fd });
+        alert("🛑 Session Ended. Check Telegram for Summary.");
     }
 </script>
 </body>
