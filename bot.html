@@ -2,55 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>APX V16 DIAMOND</title>
+    <title>APX V18 ULTIMATE</title>
     <style>
-        :root { --bg: #0a0a0a; --primary: #00ffc3; --gray: #1a1a1a; }
-        body { background: var(--bg); color: #eee; font-family: sans-serif; margin: 0; padding: 10px; text-align: center; }
+        :root { --bg: #050608; --primary: #00ffc3; --card: #0e1014; }
+        body { background: var(--bg); color: #e0e0e0; font-family: 'Inter', sans-serif; margin: 0; padding: 10px; text-align: center; }
         
-        .chart-box { 
-            background: #000; border: 1px solid var(--gray); border-radius: 10px; 
-            display: inline-block; position: relative; margin-top: 10px;
-        }
+        .brand { font-size: 18px; font-weight: 900; color: var(--primary); margin: 10px 0; letter-spacing: 1.5px; }
         
-        .dashboard { 
-            display: flex; justify-content: space-around; background: #111; 
-            padding: 15px; margin: 15px auto; width: 95%; border-radius: 8px;
+        .chart-frame {
+            background: #000; border: 1px solid #1a1c22; border-radius: 12px;
+            display: inline-block; position: relative; padding: 5px;
         }
-        .stat b { display: block; font-size: 18px; color: var(--primary); }
-        .stat span { font-size: 10px; color: #666; }
 
-        .btns button { padding: 15px 40px; margin: 5px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .start { background: var(--primary); color: #000; }
-        .stop { background: #222; color: #fff; }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            width: 95%; margin: 15px auto; background: var(--card);
+            padding: 15px; border-radius: 10px; border: 1px solid #1a1a1a;
+        }
+        .stat-item span { font-size: 9px; color: #555; display: block; text-transform: uppercase; }
+        .stat-item b { font-size: 16px; color: #fff; margin-top: 5px; display: block; }
 
-        table { width: 100%; font-size: 12px; margin-top: 15px; border-collapse: collapse; }
-        td, th { padding: 10px; border-bottom: 1px solid #111; text-align: left; }
+        .btn-panel button { padding: 15px 45px; margin: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-start { background: var(--primary); color: #000; box-shadow: 0 0 20px rgba(0,255,195,0.15); }
+        .btn-stop { background: #1a1a1a; color: #777; }
+
+        table { width: 100%; font-size: 12px; margin-top: 15px; border-collapse: collapse; background: #080808; }
+        th, td { padding: 12px; border-bottom: 1px solid #111; text-align: left; }
         .win { color: #00ff9d; } .loss { color: #ff3b3b; } .mtg { color: #ffea00; }
     </style>
 </head>
 <body>
 
-    <h3 style="color:var(--primary); letter-spacing: 2px;">APX V16 DIAMOND</h3>
+    <div class="brand">💎 APX ULTRA V18 DIAMOND</div>
 
-    <div class="chart-box">
-        <canvas id="apxCanvas" width="360" height="220"></canvas>
+    <div class="chart-frame">
+        <canvas id="apxCanvas" width="360" height="230"></canvas>
     </div>
 
-    <div class="dashboard">
-        <div class="stat"><span>WIN</span><b id="w_c">0</b></div>
-        <div class="stat"><span>LOSS</span><b id="l_c">0</b></div>
-        <div class="stat"><span>MTG1</span><b id="m_c">0</b></div>
-        <div class="stat"><span>ACC</span><b id="a_c">0%</b></div>
+    <div class="stats-grid">
+        <div class="stat-item"><span>WIN</span><b id="w_v">0</b></div>
+        <div class="stat-item"><span>LOSS</span><b id="l_v">0</b></div>
+        <div class="stat-item"><span>MTG1</span><b id="m_v">0</b></div>
+        <div class="stat-item"><span>ACC</span><b id="a_v">0%</b></div>
     </div>
 
-    <div class="btns">
-        <button class="start" onclick="powerOn()">🚀 START</button>
-        <button class="stop" onclick="location.reload()">STOP</button>
+    <div class="btn-panel">
+        <button class="btn-start" onclick="powerOn()">🚀 START</button>
+        <button class="btn-stop" onclick="location.reload()">STOP</button>
     </div>
 
     <table>
         <thead><tr><th>TIME</th><th>PAIR</th><th>SIG</th><th>RESULT</th></tr></thead>
-        <tbody id="log"></tbody>
+        <tbody id="log_body"></tbody>
     </table>
 
 <script>
@@ -59,100 +62,109 @@
     const pairs = ["USDPKR_otc", "USDBDT_otc", "USDINR_otc", "USDBRL_otc"];
     
     let stats = { w:0, l:0, m:0, t:0 };
+    let running = false;
 
-    async function tg(fd) { try { await fetch(SEND, {method:"POST", body:fd}); } catch(e){} }
+    async function tgCall(fd) {
+        try { await fetch(SEND, { method: "POST", body: fd }); } catch(e) {}
+    }
 
-    function draw(data, pair, sig, isMtg = false) {
+    function drawFancy(data, pair, sig, isMtg) {
         const c = document.getElementById("apxCanvas"), ctx = c.getContext("2d");
-        ctx.fillStyle = "#000"; ctx.fillRect(0,0,360,220);
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,360,230);
         let max = Math.max(...data.map(x=>x.high)), min = Math.min(...data.map(x=>x.low));
 
         // APX Endorsement
-        ctx.fillStyle = "rgba(0,255,195,0.4)"; ctx.font = "bold 11px Arial";
-        ctx.fillText("APX PREMIUM", 15, 25);
+        ctx.fillStyle = "rgba(0,255,195,0.4)"; ctx.font = "bold 10px Arial";
+        ctx.fillText("APX PREMIUM ENDORSEMENT", 15, 20);
         
-        // Small Font Info (Top Right)
-        ctx.fillStyle = "#555"; ctx.font = "9px Arial";
-        let now = new Date();
-        ctx.fillText(`${pair} | ${now.toLocaleDateString()} | ${now.toLocaleTimeString()}`, 210, 20);
+        // Small Detail Info
+        ctx.fillStyle = "#444"; ctx.font = "8px Arial";
+        let d = new Date();
+        ctx.fillText(`${pair} | ${d.toLocaleDateString()} | ${d.toLocaleTimeString()}`, 205, 20);
 
-        // Candles
         data.forEach((can, i) => {
             let x = i * 8 + 35;
-            let o = 180 - (can.open-min)/(max-min)*140;
-            let cl = 180 - (can.close-min)/(max-min)*140;
-            ctx.strokeStyle = "#222"; ctx.beginPath(); ctx.moveTo(x+3, 180-(can.high-min)/(max-min)*140); ctx.lineTo(x+3, 180-(can.low-min)/(max-min)*140); ctx.stroke();
+            let o = 190 - (can.open-min)/(max-min)*150;
+            let cl = 190 - (can.close-min)/(max-min)*150;
+            ctx.strokeStyle = "#1a1a1a"; ctx.beginPath(); ctx.moveTo(x+3, 190-(can.high-min)/(max-min)*140); ctx.lineTo(x+3, 190-(can.low-min)/(max-min)*140); ctx.stroke();
             ctx.fillStyle = can.close > can.open ? "#00ff9d" : "#ff3b3b";
-            ctx.fillRect(x, Math.min(o,cl), 5, Math.max(Math.abs(o-cl), 2));
+            ctx.fillRect(x, Math.min(o, cl), 5, Math.max(Math.abs(o-cl), 2));
         });
 
-        // Direction Arrow
         ctx.fillStyle = isMtg ? "#ffea00" : (sig === "CALL" ? "#00ff9d" : "#ff3b3b");
         ctx.font = "bold 14px Arial";
-        ctx.fillText(isMtg ? "⚠️ MTG1 " + sig : "🎯 " + sig, 270, 205);
+        ctx.fillText(isMtg ? "⚠️ MTG1 " + sig : "🎯 SIGNAL: " + sig, 240, 215);
     }
 
-    async function startTrade(forcePair = null, isMtg = false) {
-        let pair = forcePair || pairs[Math.floor(Math.random()*pairs.length)];
+    async function runTrade(p_lock = null, mtg_lock = false) {
+        if(!running && !mtg_lock) return;
+
+        let pair = p_lock || pairs[Math.floor(Math.random() * pairs.length)];
         let res = await fetch(API + pair);
         let candles = (await res.json()).slice(-40);
-        let last = candles[candles.length-1], prev = candles[candles.length-2];
-        let sig = last.close > prev.close ? "CALL" : "PUT";
+        let last = candles[candles.length-1];
+        let sig = last.close > last.open ? "CALL" : "PUT";
         
-        draw(candles, pair, sig, isMtg);
+        drawFancy(candles, pair, sig, mtg_lock);
 
         document.getElementById("apxCanvas").toBlob(async (blob) => {
             let fd = new FormData();
             fd.append("image", blob, "apx.png");
-            fd.append("text", `${isMtg ? '⚠️ *MTG1 ALERT*' : '🚀 *SIGNAL RECEIVED*'}\n\n📊 *Pair:* ${pair}\n🎯 *Side:* ${sig}\n📝 *Type:* ${isMtg ? 'Martingale' : 'Fresh'}\n\n📉 _Start:* ${last.open} | _Live:* ${last.close}\n💎 *Powered by APX Premium*`);
-            await tg(fd);
+            fd.append("text", `${mtg_lock ? '⚠️ *MTG1 RECOVERY*' : '🚀 *APX SIGNAL*'}\n\n📊 *Pair:* ${pair}\n🕒 *Time:* ${new Date().toLocaleTimeString()}\n🎯 *Direction:* ${sig}\n📝 *Mode:* ${mtg_lock ? 'Martingale' : 'Fresh Entry'}\n\n💎 *Powered by APX Premium*`);
+            await tgCall(fd);
         });
 
-        // Wait for candle close (61s)
-        setTimeout(() => check(pair, sig, isMtg), 61000);
+        setTimeout(() => verify(pair, sig, mtg_lock), 61000);
     }
 
-    async function check(pair, sig, wasMtg) {
+    async function verify(pair, sig, wasMtg) {
         let res = await fetch(API + pair);
         let data = await res.json();
         let c = data[data.length-1];
-        let win = (sig === "CALL" && c.close > c.open) || (sig === "PUT" && c.close < c.open);
+        
+        // Strict Doji = Loss
+        let win = Math.abs(c.open - c.close) > 0.00001 && ((sig === "CALL" && c.close > c.open) || (sig === "PUT" && c.close < c.open));
         
         if (win) {
             if(wasMtg) stats.m++; else stats.w++;
             stats.t++;
-            finish(pair, sig, wasMtg ? "MTG1 WIN" : "WIN");
+            update(pair, sig, wasMtg ? "MTG1 WIN" : "WIN");
         } else {
             if (!wasMtg) {
-                // Trigger MTG1 if first loss
-                startTrade(pair, true);
+                runTrade(pair, true); // Trigger MTG1
             } else {
                 stats.l++;
                 stats.t++;
-                finish(pair, sig, "LOSS");
+                update(pair, sig, "LOSS");
             }
         }
     }
 
-    function finish(p, s, r) {
-        document.getElementById("w_c").innerText = stats.w;
-        document.getElementById("l_c").innerText = stats.l;
-        document.getElementById("m_c").innerText = stats.m;
-        document.getElementById("a_c").innerText = (( (stats.w+stats.m) / stats.t)*100).toFixed(1) + "%";
+    function update(p, s, r) {
+        let acc = (((stats.w + stats.m) / stats.t) * 100).toFixed(1);
+        document.getElementById("w_v").innerText = stats.w;
+        document.getElementById("l_v").innerText = stats.l;
+        document.getElementById("m_v").innerText = stats.m;
+        document.getElementById("a_v").innerText = acc + "%";
         
         let row = `<tr><td>${new Date().toLocaleTimeString()}</td><td>${p}</td><td>${s}</td><td class="${r.includes('WIN')?'win':'loss'}">${r}</td></tr>`;
-        document.getElementById("log").insertAdjacentHTML('afterbegin', row);
+        document.getElementById("log_body").insertAdjacentHTML('afterbegin', row);
 
         let fd = new FormData();
-        fd.append("text", `${r.includes('WIN') ? '✅' : '❌'} *RESULT: ${r}*\n\n📊 Pair: ${p}\n💰 Session Accuracy: ${document.getElementById("a_c").innerText}\n💎 *APX Premium: Quality signals only!*`);
-        tg(fd);
+        // Live calculation sent to Telegram
+        let msg = `${r.includes('WIN') ? '✅' : '❌'} *TRADE RESULT: ${r}*\n\n📊 *Asset:* ${p}\n🏆 *Direction:* ${s}\n\n📈 *SESSION STATS:* \n✅ Wins: ${stats.w}\n⚠️ MTG1: ${stats.m}\n❌ Losses: ${stats.l}\n🎯 Accuracy: ${acc}%\n\n👑 _APX Premium - The Best OTC Signals_`;
+        fd.append("text", msg);
+        tgCall(fd);
     }
 
     async function powerOn() {
+        running = true;
         let fd = new FormData();
-        fd.append("text", "🌟 *APX V16 DIAMOND ACTIVE*\n[🟥🟧🟨🟩🟦🟪]\n\n_MTG1 Auto-Recovery Enabled._");
-        await tg(fd);
-        startTrade(); setInterval(() => { if(stats.t % 2 === 0) startTrade(); }, 130000);
+        fd.append("text", "🌟 *APX ULTIMATE ONLINE* 🌟\n[🟥🟧🟨🟩🟦🟪]\n\n_System Synchronized. Live Stats enabled._");
+        await tgCall(fd);
+        alert("🚀 Engine Online!");
+        runTrade();
+        setInterval(() => { if(running) runTrade(); }, 130000);
     }
 </script>
 </body>
