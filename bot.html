@@ -2,76 +2,80 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>APX V19 PREMIUM</title>
+    <title>APX V21 MASTER</title>
     <style>
-        :root { --bg: #0b0d11; --primary: #00ffc3; --dark-gray: #1c1f26; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; }
+        :root { --bg: #0a0b0e; --primary: #00ffc3; --gray: #16181d; }
+        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; text-align: center; }
         
-        /* Premium Interface */
-        .main-container { max-width: 400px; margin: auto; text-align: center; }
-        .chart-wrapper {
-            background: #000; border: 1.5px solid var(--dark-gray); border-radius: 15px;
-            position: relative; margin-bottom: 15px; padding: 5px;
+        .header { font-size: 18px; font-weight: 900; color: var(--primary); margin: 10px 0; letter-spacing: 2px; }
+        
+        /* Premium Fancy Chart */
+        .chart-container {
+            background: #000; border: 2px solid var(--gray); border-radius: 15px;
+            display: inline-block; position: relative; padding: 10px; margin-top: 5px;
         }
 
-        .stats-bar {
-            display: flex; justify-content: space-around; background: var(--dark-gray);
-            padding: 12px; border-radius: 12px; margin-bottom: 15px;
+        .stats-hub {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            width: 95%; margin: 15px auto; background: var(--gray);
+            padding: 12px; border-radius: 10px; border-bottom: 3px solid #111;
         }
-        .stat-item span { font-size: 9px; color: #777; display: block; }
-        .stat-item b { font-size: 16px; color: var(--primary); }
+        .stat-box span { font-size: 9px; color: #666; display: block; }
+        .stat-box b { font-size: 15px; color: #eee; }
 
-        .btn-start { width: 100%; padding: 16px; background: var(--primary); color: #000; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; }
+        .action-btn { width: 95%; padding: 18px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; font-size: 14px; }
         
         table { width: 100%; font-size: 11px; margin-top: 15px; border-collapse: collapse; }
-        td { padding: 10px; border-bottom: 1px solid #1a1a1a; }
-        .win-txt { color: #00ff9d; } .loss-txt { color: #ff3b3b; }
+        td { padding: 10px; border-bottom: 1px solid #151515; text-align: left; }
+        .win { color: #00ff9d; } .loss { color: #ff3b3b; } .mtg { color: #ffea00; }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <h2 style="color: var(--primary); letter-spacing: 1px;">APX PREMIUM</h2>
+    <div class="header">APX PREMIUM V21</div>
 
-    <div class="chart-wrapper">
-        <canvas id="apxChart" width="350" height="220"></canvas>
+    <div class="chart-container">
+        <canvas id="apxCanvas" width="350" height="230"></canvas>
     </div>
 
-    <div class="stats-bar">
-        <div class="stat-item"><span>WIN</span><b id="w_v">0</b></div>
-        <div class="stat-item"><span>LOSS</span><b id="l_v">0</b></div>
-        <div class="stat-item"><span>MTG1</span><b id="m_v">0</b></div>
-        <div class="stat-item"><span>ACC</span><b id="a_v">0%</b></div>
+    <div class="stats-hub">
+        <div class="stat-box"><span>WIN</span><b id="w_v">0</b></div>
+        <div class="stat-box"><span>LOSS</span><b id="l_v">0</b></div>
+        <div class="stat-box"><span>MTG1</span><b id="m_v">0</b></div>
+        <div class="stat-box"><span>ACC</span><b id="a_v">0%</b></div>
     </div>
 
-    <button class="btn-start" onclick="startBot()">🚀 START SIGNAL ENGINE</button>
+    <button class="action-btn" onclick="bootSystem()">🚀 START PREMIUM ENGINE</button>
 
-    <table>
-        <tbody id="history"></tbody>
-    </table>
-</div>
+    <table><tbody id="history"></tbody></table>
 
 <script>
     const API = "https://bot1.mkapi009.workers.dev/candles?pair=";
-    const SEND = "https://bot1.mkapi009.workers.dev/send";
+    const TG = "https://bot1.mkapi009.workers.dev/send";
     const pairs = ["USDPKR_otc", "USDBDT_otc", "USDINR_otc", "USDBRL_otc"];
     
-    let stats = { w:0, l:0, m:0, t:0 };
+    let logs = { w:0, l:0, m:0, t:0 };
 
-    async function tg(fd) { try { await fetch(SEND, { method: "POST", body: fd }); } catch(e) {} }
+    async function tgSend(fd) {
+        try { await fetch(TG, { method: "POST", body: fd }); } catch(e) { console.error("TG Fail"); }
+    }
 
-    function drawChart(data, pair, sig, isMtg) {
-        const c = document.getElementById("apxChart"), ctx = c.getContext("2d");
-        ctx.fillStyle = "#000"; ctx.fillRect(0,0,350,220);
+    function renderFancy(data, pair, sig, isMtg) {
+        const c = document.getElementById("apxCanvas"), ctx = c.getContext("2d");
+        ctx.fillStyle = "#000"; ctx.fillRect(0,0,350,230);
         let max = Math.max(...data.map(x=>x.high)), min = Math.min(...data.map(x=>x.low));
+        let last = data[data.length-1];
 
-        // APX Premium Style
-        ctx.fillStyle = "rgba(0,255,195,0.5)"; ctx.font = "bold 11px Arial";
+        // APX Brand
+        ctx.fillStyle = "rgba(0,255,195,0.6)"; ctx.font = "bold 11px Arial";
         ctx.fillText("APX PREMIUM", 15, 25);
         
-        // Dark Gray Small Info
+        // Small Grey Details
         ctx.fillStyle = "#444"; ctx.font = "9px Arial";
-        ctx.fillText(`${pair} | ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`, 240, 25);
+        let timeLabel = new Date(); timeLabel.setMinutes(timeLabel.getMinutes() + 1);
+        let entryTime = timeLabel.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        ctx.fillText(`${pair} | ${entryTime}`, 250, 20);
+        ctx.fillText(`O: ${last.open.toFixed(4)} C: ${last.close.toFixed(4)}`, 15, 40);
 
         data.forEach((can, i) => {
             let x = i * 7 + 40;
@@ -83,68 +87,72 @@
             ctx.fillRect(x, Math.min(o, cl), 4, Math.max(Math.abs(o-cl), 2));
         });
 
-        // Fancy Arrow
+        // Fancy Signal Arrow
         ctx.fillStyle = sig === "CALL" ? "#00ff9d" : "#ff3b3b";
-        ctx.font = "30px Arial";
-        ctx.fillText(sig === "CALL" ? "↑" : "↓", 310, 200);
+        ctx.font = "bold 35px Arial";
+        ctx.fillText(sig === "CALL" ? "↑" : "↓", 305, 210);
+        ctx.font = "bold 12px Arial";
+        ctx.fillText(isMtg ? "MTG1" : "SIGNAL", 250, 205);
     }
 
-    async function sendSignal(pair_lock = null, mtg = false) {
-        let p = pair_lock || pairs[Math.floor(Math.random() * pairs.length)];
+    async function triggerSignal(p_fix = null, mtg = false) {
+        let p = p_fix || pairs[Math.floor(Math.random() * pairs.length)];
         let res = await fetch(API + p);
-        let candles = (await res.json()).slice(-45);
+        let candles = (await res.json()).slice(-40);
         let last = candles[candles.length-1];
         let sig = last.close > last.open ? "CALL" : "PUT";
         
-        drawChart(candles, p, sig, mtg);
+        renderFancy(candles, p, sig, mtg);
 
-        document.getElementById("apxChart").toBlob(async (blob) => {
+        let timeObj = new Date(); timeObj.setMinutes(timeObj.getMinutes() + 1);
+        let entryTime = timeObj.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+        document.getElementById("apxCanvas").toBlob(async (blob) => {
             let fd = new FormData();
-            fd.append("image", blob, "apx.png");
-            fd.append("text", `${mtg ? '⚠️ *MTG1*' : '🚀 *SIGNAL*'}\n\n📊 *Pair:* ${p}\n🕒 *Time:* ${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}\n🎯 *Side:* ${sig === 'CALL' ? 'UP 🍏' : 'DOWN 🍎'}\n\n📈 *Open:* ${last.open}\n📉 *Close:* ${last.close}\n💎 *APX PREMIUM*`);
-            await tg(fd);
+            fd.append("image", blob, "chart.png");
+            fd.append("text", `${mtg ? '⚠️ *MTG1 RECOVERY*' : '🚀 *APX NEW SIGNAL*'}\n\n📊 *Pair:* ${p}\n🕒 *Entry Time:* ${entryTime}\n🎯 *Side:* ${sig === 'CALL' ? 'UP 🍏' : 'DOWN 🍎'}\n\n📈 *Open:* ${last.open}\n📉 *Close:* ${last.close}\n💎 *APX PREMIUM*`);
+            await tgSend(fd);
         });
 
-        setTimeout(() => checkResult(p, sig, mtg), 61000);
+        setTimeout(() => checkLive(p, sig, mtg), 62000);
     }
 
-    async function checkResult(p, s, wasMtg) {
+    async function checkLive(p, s, wasMtg) {
         let res = await fetch(API + p);
         let data = await res.json();
         let c = data[data.length-1];
         let win = (s === "CALL" && c.close > c.open) || (s === "PUT" && c.close < c.open);
         
         if (win) {
-            if(wasMtg) stats.m++; else stats.w++;
-            stats.t++;
-            postRes(p, s, wasMtg ? "MTG1 WIN" : "WIN");
+            if(wasMtg) logs.m++; else logs.w++;
+            logs.t++;
+            finishUp(p, s, wasMtg ? "MTG1 WIN" : "WIN");
         } else {
-            if (!wasMtg) sendSignal(p, true); // MTG1
-            else { stats.l++; stats.t++; postRes(p, s, "LOSS"); }
+            if (!wasMtg) triggerSignal(p, true); 
+            else { logs.l++; logs.t++; finishUp(p, s, "LOSS"); }
         }
     }
 
-    function postRes(p, s, r) {
-        let acc = (((stats.w + stats.m) / stats.t) * 100).toFixed(1);
-        document.getElementById("w_v").innerText = stats.w;
-        document.getElementById("l_v").innerText = stats.l;
-        document.getElementById("m_v").innerText = stats.m;
+    function finishUp(p, s, r) {
+        let acc = (((logs.w + logs.m) / logs.t) * 100).toFixed(1);
+        document.getElementById("w_v").innerText = logs.w;
+        document.getElementById("l_v").innerText = logs.l;
+        document.getElementById("m_v").innerText = logs.m;
         document.getElementById("a_v").innerText = acc + "%";
 
-        document.getElementById("history").insertAdjacentHTML('afterbegin', `<tr><td>${p}</td><td>${s}</td><td class="${r.includes('WIN')?'win-txt':'loss-txt'}">${r}</td></tr>`);
+        document.getElementById("history").insertAdjacentHTML('afterbegin', `<tr><td>${p}</td><td>${s}</td><td class="${r.includes('WIN')?'win':'loss'}">${r}</td></tr>`);
 
         let fd = new FormData();
-        fd.append("text", `${r.includes('WIN') ? '✅' : '❌'} *RESULT: ${r}*\n\n📊 *Asset:* ${p}\n\n🏆 Wins: ${stats.w}\n⚠️ MTG1: ${stats.m}\n❌ Losses: ${stats.l}\n🎯 Accuracy: ${acc}%\n\n👑 *APX PREMIUM*`);
-        tg(fd);
+        fd.append("text", `${r.includes('WIN') ? '✅' : '❌'} *RESULT: ${r}*\n\n📊 *Pair:* ${p}\n🏆 *Wins:* ${logs.w}\n⚠️ *MTG1:* ${logs.m}\n❌ *Losses:* ${logs.l}\n🎯 *Accuracy:* ${acc}%\n\n👑 *APX PREMIUM*`);
+        tgSend(fd);
     }
 
-    async function startBot() {
-        let bars = "🟥🟧🟨🟩🟦🟪";
+    async function bootSystem() {
         let fd = new FormData();
-        fd.append("text", `🌟 *APX PREMIUM STARTED* 🌟\n\n${bars}${bars}\n\n_Engine is now scanning OTC pairs..._`);
-        await tg(fd);
-        sendSignal();
-        setInterval(sendSignal, 130000);
+        fd.append("text", "🌟 *APX PREMIUM ENGINE STARTED* 🌟\n[🟥🟧🟨🟩🟦🟪]\n\n_Scanning High Liquidity Pairs..._");
+        await tgSend(fd);
+        triggerSignal();
+        setInterval(triggerSignal, 130000);
     }
 </script>
 </body>
