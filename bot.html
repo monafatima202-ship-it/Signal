@@ -2,157 +2,165 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>APX V21 MASTER</title>
+    <title>APX V22 NEON</title>
     <style>
-        :root { --bg: #0a0b0e; --primary: #00ffc3; --gray: #16181d; }
-        body { background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 10px; text-align: center; }
+        :root { --bg: #080a0c; --panel: #12151c; --neon: #00ffc3; --gray-text: #555; }
+        body { background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; margin: 0; padding: 10px; text-align: center; }
         
-        .header { font-size: 18px; font-weight: 900; color: var(--primary); margin: 10px 0; letter-spacing: 2px; }
+        .header { font-size: 22px; font-weight: 900; color: var(--neon); text-shadow: 0 0 10px rgba(0,255,195,0.3); margin: 15px 0; }
         
-        /* Premium Fancy Chart */
-        .chart-container {
-            background: #000; border: 2px solid var(--gray); border-radius: 15px;
-            display: inline-block; position: relative; padding: 10px; margin-top: 5px;
+        /* Neon Chart Frame */
+        .chart-box {
+            background: #000; border: 2px solid var(--panel); border-radius: 15px;
+            display: inline-block; position: relative; padding: 12px; box-shadow: inset 0 0 20px #000;
         }
 
-        .stats-hub {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            width: 95%; margin: 15px auto; background: var(--gray);
-            padding: 12px; border-radius: 10px; border-bottom: 3px solid #111;
+        .stats-grid {
+            display: flex; justify-content: space-around; width: 95%; margin: 15px auto;
+            background: var(--panel); padding: 15px; border-radius: 12px; border: 1px solid #1a1e26;
         }
-        .stat-box span { font-size: 9px; color: #666; display: block; }
-        .stat-box b { font-size: 15px; color: #eee; }
+        .stat-item span { font-size: 10px; color: var(--gray-text); display: block; }
+        .stat-item b { font-size: 18px; color: #eee; }
 
-        .action-btn { width: 95%; padding: 18px; background: var(--primary); color: #000; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; font-size: 14px; }
+        .btn-glow {
+            width: 95%; padding: 18px; background: var(--neon); color: #000; border: none;
+            border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 15px;
+            box-shadow: 0 5px 15px rgba(0,255,195,0.2); transition: 0.3s;
+        }
         
-        table { width: 100%; font-size: 11px; margin-top: 15px; border-collapse: collapse; }
-        td { padding: 10px; border-bottom: 1px solid #151515; text-align: left; }
-        .win { color: #00ff9d; } .loss { color: #ff3b3b; } .mtg { color: #ffea00; }
+        #history_log { width: 100%; margin-top: 20px; font-size: 12px; }
+        .win-row { color: #00ff9d; } .loss-row { color: #ff3b3b; }
     </style>
 </head>
 <body>
 
-    <div class="header">APX PREMIUM V21</div>
+    <div class="header">APX PREMIUM</div>
 
-    <div class="chart-container">
-        <canvas id="apxCanvas" width="350" height="230"></canvas>
+    <div class="chart-box">
+        <canvas id="neonCanvas" width="350" height="230"></canvas>
     </div>
 
-    <div class="stats-hub">
-        <div class="stat-box"><span>WIN</span><b id="w_v">0</b></div>
-        <div class="stat-box"><span>LOSS</span><b id="l_v">0</b></div>
-        <div class="stat-box"><span>MTG1</span><b id="m_v">0</b></div>
-        <div class="stat-box"><span>ACC</span><b id="a_v">0%</b></div>
+    <div class="stats-grid">
+        <div class="stat-item"><span>WINS</span><b id="w_val">0</b></div>
+        <div class="stat-item"><span>LOSS</span><b id="l_val">0</b></div>
+        <div class="stat-item"><span>MTG1</span><b id="m_val">0</b></div>
+        <div class="stat-item"><span>ACC</span><b id="a_val">0%</b></div>
     </div>
 
-    <button class="action-btn" onclick="bootSystem()">🚀 START PREMIUM ENGINE</button>
+    <button class="btn-glow" onclick="launchEngine()">🚀 START NEON ENGINE</button>
 
-    <table><tbody id="history"></tbody></table>
+    <div id="history_log"></div>
 
 <script>
     const API = "https://bot1.mkapi009.workers.dev/candles?pair=";
     const TG = "https://bot1.mkapi009.workers.dev/send";
     const pairs = ["USDPKR_otc", "USDBDT_otc", "USDINR_otc", "USDBRL_otc"];
     
-    let logs = { w:0, l:0, m:0, t:0 };
+    let state = { w:0, l:0, m:0, t:0 };
 
-    async function tgSend(fd) {
-        try { await fetch(TG, { method: "POST", body: fd }); } catch(e) { console.error("TG Fail"); }
+    async function pushTG(fd) {
+        return fetch(TG, { method: "POST", body: fd }).catch(e => console.log("TG Error"));
     }
 
-    function renderFancy(data, pair, sig, isMtg) {
-        const c = document.getElementById("apxCanvas"), ctx = c.getContext("2d");
+    function drawNeonChart(data, pair, sig, isMtg) {
+        const c = document.getElementById("neonCanvas"), ctx = c.getContext("2d");
         ctx.fillStyle = "#000"; ctx.fillRect(0,0,350,230);
         let max = Math.max(...data.map(x=>x.high)), min = Math.min(...data.map(x=>x.low));
         let last = data[data.length-1];
 
-        // APX Brand
-        ctx.fillStyle = "rgba(0,255,195,0.6)"; ctx.font = "bold 11px Arial";
-        ctx.fillText("APX PREMIUM", 15, 25);
+        // APX Watermark
+        ctx.fillStyle = "rgba(0,255,195,0.7)"; ctx.font = "bold 12px Arial";
+        ctx.fillText("APX PREMIUM", 20, 25);
         
-        // Small Grey Details
-        ctx.fillStyle = "#444"; ctx.font = "9px Arial";
-        let timeLabel = new Date(); timeLabel.setMinutes(timeLabel.getMinutes() + 1);
-        let entryTime = timeLabel.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        ctx.fillText(`${pair} | ${entryTime}`, 250, 20);
-        ctx.fillText(`O: ${last.open.toFixed(4)} C: ${last.close.toFixed(4)}`, 15, 40);
+        // Dark Gray Small Info
+        ctx.fillStyle = "#333"; ctx.font = "9px Arial";
+        let targetTime = new Date(); targetTime.setMinutes(targetTime.getMinutes() + 1);
+        ctx.fillText(`${pair} | ${targetTime.getHours()}:${targetTime.getMinutes()}`, 250, 20);
+        ctx.fillText(`O: ${last.open.toFixed(4)} C: ${last.close.toFixed(4)}`, 20, 42);
 
         data.forEach((can, i) => {
             let x = i * 7 + 40;
             let o = 180 - (can.open-min)/(max-min)*140;
             let cl = 180 - (can.close-min)/(max-min)*140;
-            ctx.strokeStyle = "#1a1a1a"; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(x+2, 180-(can.high-min)/(max-min)*140); ctx.lineTo(x+2, 180-(can.low-min)/(max-min)*140); ctx.stroke();
+            ctx.strokeStyle = "#1a1a1a"; ctx.beginPath(); ctx.moveTo(x+2, 180-(can.high-min)/(max-min)*140); ctx.lineTo(x+2, 180-(can.low-min)/(max-min)*140); ctx.stroke();
             ctx.fillStyle = can.close > can.open ? "#00ff9d" : "#ff3b3b";
-            ctx.fillRect(x, Math.min(o, cl), 4, Math.max(Math.abs(o-cl), 2));
+            ctx.fillRect(x, Math.min(o, cl), 4, Math.max(Math.abs(o-cl), 2.5));
         });
 
-        // Fancy Signal Arrow
+        // Neon Signal Arrows
+        ctx.shadowBlur = 10; ctx.shadowColor = sig === "CALL" ? "#00ff9d" : "#ff3b3b";
         ctx.fillStyle = sig === "CALL" ? "#00ff9d" : "#ff3b3b";
-        ctx.font = "bold 35px Arial";
-        ctx.fillText(sig === "CALL" ? "↑" : "↓", 305, 210);
-        ctx.font = "bold 12px Arial";
-        ctx.fillText(isMtg ? "MTG1" : "SIGNAL", 250, 205);
+        ctx.font = "bold 40px Arial";
+        ctx.fillText(sig === "CALL" ? "↑" : "↓", 300, 210);
+        ctx.shadowBlur = 0;
+        ctx.font = "bold 10px Arial";
+        ctx.fillText(isMtg ? "MTG1 RECOVERY" : "ENTRY", 240, 205);
     }
 
-    async function triggerSignal(p_fix = null, mtg = false) {
-        let p = p_fix || pairs[Math.floor(Math.random() * pairs.length)];
+    async function startCycle(pLock = null, isMtg = false) {
+        let p = pLock || pairs[Math.floor(Math.random() * pairs.length)];
         let res = await fetch(API + p);
         let candles = (await res.json()).slice(-40);
         let last = candles[candles.length-1];
         let sig = last.close > last.open ? "CALL" : "PUT";
         
-        renderFancy(candles, p, sig, mtg);
+        drawNeonChart(candles, p, sig, isMtg);
 
-        let timeObj = new Date(); timeObj.setMinutes(timeObj.getMinutes() + 1);
-        let entryTime = timeObj.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        let d = new Date(); d.setMinutes(d.getMinutes() + 1);
+        let entry = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
 
-        document.getElementById("apxCanvas").toBlob(async (blob) => {
+        document.getElementById("neonCanvas").toBlob(async (blob) => {
             let fd = new FormData();
             fd.append("image", blob, "chart.png");
-            fd.append("text", `${mtg ? '⚠️ *MTG1 RECOVERY*' : '🚀 *APX NEW SIGNAL*'}\n\n📊 *Pair:* ${p}\n🕒 *Entry Time:* ${entryTime}\n🎯 *Side:* ${sig === 'CALL' ? 'UP 🍏' : 'DOWN 🍎'}\n\n📈 *Open:* ${last.open}\n📉 *Close:* ${last.close}\n💎 *APX PREMIUM*`);
-            await tgSend(fd);
+            fd.append("text", `${isMtg ? '⚠️ *MTG1 RECOVERY*' : '🚀 *APX NEW SIGNAL*'}\n\n📊 *Asset:* ${p}\n🕒 *Time:* ${entry}\n🎯 *Side:* ${sig === 'CALL' ? 'UP 🍏' : 'DOWN 🍎'}\n\n💎 *APX PREMIUM*`);
+            await pushTG(fd);
         });
 
-        setTimeout(() => checkLive(p, sig, mtg), 62000);
+        // Exact wait for candle close
+        setTimeout(() => getFinalResult(p, sig, isMtg), 62000);
     }
 
-    async function checkLive(p, s, wasMtg) {
+    async function getFinalResult(p, s, wasMtg) {
         let res = await fetch(API + p);
         let data = await res.json();
         let c = data[data.length-1];
         let win = (s === "CALL" && c.close > c.open) || (s === "PUT" && c.close < c.open);
         
         if (win) {
-            if(wasMtg) logs.m++; else logs.w++;
-            logs.t++;
-            finishUp(p, s, wasMtg ? "MTG1 WIN" : "WIN");
+            if(wasMtg) state.m++; else state.w++;
+            state.t++;
+            updateUI(p, s, wasMtg ? "MTG1 WIN" : "WIN");
         } else {
-            if (!wasMtg) triggerSignal(p, true); 
-            else { logs.l++; logs.t++; finishUp(p, s, "LOSS"); }
+            if (!wasMtg) {
+                // Direction remains SAME for MTG1
+                startCycle(p, true);
+            } else {
+                state.l++; state.t++;
+                updateUI(p, s, "LOSS");
+            }
         }
     }
 
-    function finishUp(p, s, r) {
-        let acc = (((logs.w + logs.m) / logs.t) * 100).toFixed(1);
-        document.getElementById("w_v").innerText = logs.w;
-        document.getElementById("l_v").innerText = logs.l;
-        document.getElementById("m_v").innerText = logs.m;
-        document.getElementById("a_v").innerText = acc + "%";
-
-        document.getElementById("history").insertAdjacentHTML('afterbegin', `<tr><td>${p}</td><td>${s}</td><td class="${r.includes('WIN')?'win':'loss'}">${r}</td></tr>`);
+    function updateUI(p, s, r) {
+        let acc = (((state.w + state.m) / state.t) * 100).toFixed(1);
+        document.getElementById("w_val").innerText = state.w;
+        document.getElementById("l_val").innerText = state.l;
+        document.getElementById("m_val").innerText = state.m;
+        document.getElementById("a_val").innerText = acc + "%";
 
         let fd = new FormData();
-        fd.append("text", `${r.includes('WIN') ? '✅' : '❌'} *RESULT: ${r}*\n\n📊 *Pair:* ${p}\n🏆 *Wins:* ${logs.w}\n⚠️ *MTG1:* ${logs.m}\n❌ *Losses:* ${logs.l}\n🎯 *Accuracy:* ${acc}%\n\n👑 *APX PREMIUM*`);
-        tgSend(fd);
+        fd.append("text", `${r.includes('WIN') ? '✅' : '❌'} *TRADE RESULT: ${r}*\n\n📊 *Asset:* ${p}\n🏆 *Wins:* ${state.w}\n⚠️ *MTG1:* ${state.m}\n❌ *Losses:* ${state.l}\n🎯 *Accuracy:* ${acc}%\n\n💎 *APX PREMIUM*`);
+        pushTG(fd);
     }
 
-    async function bootSystem() {
+    async function launchEngine() {
+        let bars = "🟥🟧🟨🟩🟦🟪";
         let fd = new FormData();
-        fd.append("text", "🌟 *APX PREMIUM ENGINE STARTED* 🌟\n[🟥🟧🟨🟩🟦🟪]\n\n_Scanning High Liquidity Pairs..._");
-        await tgSend(fd);
-        triggerSignal();
-        setInterval(triggerSignal, 130000);
+        fd.append("text", `🌟 *APX PREMIUM ENGINE ACTIVE* 🌟\n\n${bars}${bars}\n\n_System Synchronized. Monitoring Assets..._`);
+        await pushTG(fd);
+        alert("🚀 Engine Started!");
+        startCycle();
+        setInterval(startCycle, 130000);
     }
 </script>
 </body>
