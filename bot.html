@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>APX ULTRA V6 PRO</title>
+
+<title>APX ULTRA V7</title>
 
 <style>
 
@@ -63,7 +65,7 @@ color:#aaa;
 
 <body>
 
-<div class="header">🤖 APX ULTRA V6 PRO</div>
+<div class="header">🤖 APX ULTRA V7</div>
 
 <canvas id="chart" width="380" height="240"></canvas>
 
@@ -80,8 +82,8 @@ color:#aaa;
 
 ✅ WIN : <span id="win">0</span> |
 ❌ LOSS : <span id="loss">0</span> |
-🎯 ACC : <span id="acc">0%</span> |
-🔥 MTG1 : <span id="mtg">0</span>
+🔥 MTG1 : <span id="mtg">0</span> |
+🎯 ACC : <span id="acc">0%</span>
 
 </div>
 
@@ -128,13 +130,17 @@ let lastSignal=null
 let lastPair=null
 
 function accuracy(){
+
 if(total==0) return 0
+
 return ((win/total)*100).toFixed(1)
+
 }
 
 function entryTime(){
 
 let d=new Date()
+
 d.setMinutes(d.getMinutes()+1)
 
 return d.toLocaleTimeString([],{
@@ -149,9 +155,11 @@ async function getCandles(){
 let pair=pairs[pairIndex]
 
 pairIndex++
+
 if(pairIndex>=pairs.length) pairIndex=0
 
 let r=await fetch(API+pair)
+
 let j=await r.json()
 
 return {pair,data:j.slice(-30)}
@@ -208,16 +216,38 @@ ctx.fillRect(x,Math.min(open,close),w,Math.abs(open-close))
 
 })
 
+/* indicator dots */
+
+candles.forEach((c,i)=>{
+
+let x=i*(w+gap)+20
+
+let price=200-(c.close-min)/(max-min)*160
+
+ctx.beginPath()
+
+ctx.arc(x+4,price,3,0,Math.PI*2)
+
+ctx.fillStyle=i%2?"#00ffff":"#ff00ff"
+
+ctx.fill()
+
+})
+
 ctx.fillStyle="#00ffc3"
 ctx.font="14px Arial"
 ctx.fillText("APX BOT | "+pair+" | M1",10,20)
 
 if(signal=="BUY"){
+
 ctx.fillStyle="#00ff9d"
 ctx.fillText("BUY ↑",310,220)
+
 }else{
+
 ctx.fillStyle="#ff3b3b"
 ctx.fillText("SELL ↓",300,220)
+
 }
 
 }
@@ -250,11 +280,12 @@ document.getElementById("acc").innerText=accuracy()+"%"
 
 }
 
-async function sendTelegram(pair,signal){
+async function sendSignal(pair,signal){
 
 let entry=entryTime()
 
 let canvas=document.getElementById("chart")
+
 let blob=await new Promise(r=>canvas.toBlob(r,"image/png"))
 
 let form=new FormData()
@@ -280,9 +311,43 @@ body:form
 
 }
 
+async function sendResult(pair,result){
+
+let text=""
+
+if(result=="WIN"){
+
+text="✅ TRADE RESULT\n\n📊 Pair : "+pair+"\n🎉 Result : WIN\n\n🔥 Perfect entry"
+
+}
+
+if(result=="LOSS"){
+
+text="❌ TRADE RESULT\n\n📊 Pair : "+pair+"\n⚠ Result : LOSS"
+
+}
+
+if(result=="MTG1 WIN"){
+
+text="🟡 MARTINGALE RESULT\n\n📊 Pair : "+pair+"\n🎯 Result : MTG1 WIN\n\n💰 Recovery successful"
+
+}
+
+let form=new FormData()
+
+form.append("text",text)
+
+await fetch(SEND,{
+method:"POST",
+body:form
+})
+
+}
+
 async function checkResult(){
 
 let r=await fetch(API+lastPair)
+
 let j=await r.json()
 
 let c=j.slice(-2)
@@ -301,15 +366,21 @@ result=last.close<prev.close?"WIN":"LOSS"
 total++
 
 if(result=="WIN"){
+
 win++
+
 }else{
 
 if(loss==0){
+
 mtg1++
 win++
 result="MTG1 WIN"
+
 }else{
+
 loss++
+
 }
 
 }
@@ -317,6 +388,8 @@ loss++
 updateStats()
 
 addHistory(lastPair,lastSignal,result)
+
+await sendResult(lastPair,result)
 
 }
 
@@ -338,7 +411,7 @@ signal=="BUY"
 ?`<span class="buy">${d.pair} BUY</span>`
 :`<span class="sell">${d.pair} SELL</span>`
 
-await sendTelegram(d.pair,signal)
+await sendSignal(d.pair,signal)
 
 setTimeout(checkResult,60000)
 
